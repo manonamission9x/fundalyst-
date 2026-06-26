@@ -24,7 +24,7 @@ const aboutCards = [
   },
   {
     title: 'Private by Design',
-    text: 'All file parsing, normalization, and calculations happen in your browser. <strong>No data is sent to any server.</strong> No accounts. No database. Your work lives in localStorage — close the tab and come back, it&apos;s still there. Clear your browser data and it&apos;s gone.',
+    text: 'All file parsing, normalization, and calculations happen in your browser. <strong>No data is sent to any server.</strong> No accounts. No database. Your work lives in localStorage — close the tab and come back, it&apos;s still there.',
     svg: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="7" width="10" height="8" rx="1.5" />
@@ -45,7 +45,7 @@ const aboutCards = [
   },
   {
     title: 'Tools Included',
-    text: 'Smart Import (CSV/XLSX with auto-detection), Filing Comparison, DCF Valuation, Cash Efficiency (WC), Financial Ratios, Peer Comparison, Trend Charts, and Growth Rates. <strong>8 tools, all frontend-only.</strong>',
+    text: 'Smart Import (CSV/XLSX with auto-detection), Filing Comparison, DCF Valuation, Cash Efficiency, Financial Ratios, Peer Comparison, Trend Charts, and Growth Rates. <strong>8 tools, all frontend-only.</strong>',
     svg: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="1" y="1" width="6" height="6" rx="1" />
@@ -79,10 +79,8 @@ export default function AboutPage() {
       <div className="about-grid">
         {aboutCards.map((card) => (
           <div key={card.title} className="about-card">
-            <div className="about-card-title">
-              <span className="about-card-icon">{card.svg}</span>
-              {card.title}
-            </div>
+            <div className="about-card-icon">{card.svg}</div>
+            <div className="about-card-title">{card.title}</div>
             <div className="about-card-text" dangerouslySetInnerHTML={{ __html: card.text }} />
           </div>
         ))}
@@ -92,18 +90,34 @@ export default function AboutPage() {
       <Card label="Methodology" style={{ marginTop: '1.5rem' }}>
         <div style={{ padding: '14px 20px', fontSize: 11, lineHeight: 1.7, color: 'var(--text-tertiary)' }}>
           <ul style={{ margin: 0, paddingLeft: 16 }}>
-            <li><strong>DCF:</strong> Two-stage model. Stage 1 projects FCF for 5 years at the user-defined growth rate. Stage 2 uses the Gordon Growth Model for terminal value. Discount rate is WACC.</li>
+            <li><strong>DCF Valuation:</strong> Two-stage model. Stage 1 projects FCF for user-defined years at the user-set growth rate. Stage 2 uses Gordon Growth Model for terminal value. Discount rate = WACC.</li>
             <li><strong>Working Capital:</strong> DSO = (Receivables / Revenue) × 365. DIO = (Inventory / COGS) × 365. DPO = (Payables / COGS) × 365. CCC = DSO + DIO − DPO.</li>
-            <li><strong>Percentage change:</strong> ((B − A) / |A|) × 100.</li>
-            <li><strong>Value normalization:</strong> Smart Import converts Crores, Lakhs, Millions, and Billions to base units.</li>
-            <li><strong>Risk flags:</strong> Debt surge &gt;20%, margin compression &lt;−10%, revenue decline &lt;−5%, profit drop &lt;−15%, cash drop &lt;−20%, pledge increase &gt;5%.</li>
+            <li><strong>Financial Ratios:</strong> Current Ratio, Quick Ratio, Debt/Equity, Debt/Assets, Interest Coverage, Gross Margin, Net Profit Margin, ROE, Asset Turnover.</li>
+            <li><strong>Percentage Change:</strong> ((B − A) / |A|) × 100.</li>
+            <li><strong>Value Normalization:</strong> Smart Import converts Crores, Lakhs, Millions, and Billions to base units automatically.</li>
+            <li><strong>Risk Flags:</strong> Debt surge &gt;20%, margin compression &lt;−10%, revenue decline &lt;−5%, profit drop &lt;−15%, cash drop &lt;−20%.</li>
           </ul>
+        </div>
+      </Card>
+
+      {/* Contact & Support */}
+      <Card label="Support" style={{ marginTop: '1rem' }}>
+        <div style={{ padding: '14px 20px', fontSize: 11, lineHeight: 1.7, color: 'var(--text-tertiary)' }}>
+          <p style={{ margin: 0 }}>
+            Fundalyst is an open-source, client-side-only financial analysis tool.
+            No user data is collected, stored, or transmitted.
+            If you encounter issues, clear your browser data and reload — all state is in localStorage.
+            For feature requests or bug reports, visit the project repository on GitHub.
+          </p>
         </div>
       </Card>
 
       {/* CTA */}
       <div style={{ marginTop: '2rem', textAlign: 'center' }}>
         <Link href="/import" className="btn-primary" style={{ padding: '11px 24px', display: 'inline-flex', textDecoration: 'none', fontSize: 13 }}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M7 2v10M2 7l5-5 5 5" /><path d="M2 12v1h10v-1" />
+          </svg>
           Start analyzing
         </Link>
       </div>

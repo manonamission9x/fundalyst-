@@ -43,6 +43,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
             </main>
           </ErrorBoundary>
+          {/* Site-wide footer */}
+          <footer style={{
+            textAlign: 'center',
+            padding: 'var(--space-6) var(--space-4) var(--space-4)',
+            borderTop: '1px solid var(--border-light)',
+            fontSize: 10,
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--text-muted)',
+            position: 'relative',
+            zIndex: 1,
+          }}>
+            <div style={{ marginBottom: 4 }}>
+              Fundalyst · All calculations client-side · For research purposes only · Not financial advice
+            </div>
+            <div>
+              © Fundalyst · Data never leaves your browser
+            </div>
+          </footer>
         </ToastProvider>
       </body>
     </html>
