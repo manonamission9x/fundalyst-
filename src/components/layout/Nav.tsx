@@ -15,6 +15,7 @@ const items: { id: string; label: string; href: string; group?: string }[] = [
   { id: 'wc', label: 'Cash', href: '/tools/wc', group: 'Analysis' },
   { id: 'ratios', label: 'Ratios', href: '/tools/ratios', group: 'Analysis' },
   { id: 'peer', label: 'Peer', href: '/tools/peer', group: 'Analysis' },
+  { id: 'workspace', label: 'Workspace', href: '/workspace' },
   { id: 'about', label: 'About', href: '/about' },
 ];
 
