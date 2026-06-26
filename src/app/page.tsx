@@ -22,7 +22,7 @@ function QuickCheckForm() {
     if (!r || !a) return null;
 
     const npm = (p / r) * 100;
-    const roe = a > 0 ? (p / (a - d)) * 100 : null;
+    const roe = a > 0 && (a - d) > 0 ? (p / (a - d)) * 100 : null;
     const de = d > 0 && (a - d) > 0 ? d / (a - d) : d > 0 ? null : 0;
     const da = (d / a) * 100;
     const pe = m > 0 && p > 0 ? m / p : null;

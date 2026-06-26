@@ -69,14 +69,14 @@ export function computeDiff(periodA: LineItem[], periodB: LineItem[]): DiffResul
     const bVal = b !== undefined ? b : null;
     const absA = aVal !== null ? Math.abs(aVal) : 0;
     const pct = aVal !== null && bVal !== null && absA > 0 ? ((bVal - aVal) / absA) * 100 : null;
-    const isPct = /margin|holding|ratio|rate|tax|yield|return|efficiency/i.test(label);
+    const isPct = /margin|holding|ratio|tax|yield|return|efficiency|roce|roe|roa/i.test(label) && !/(growth|change|decline)/i.test(label);
     diffs.push({
       label,
       a: aVal,
       b: bVal,
       pct,
       abs: aVal !== null && bVal !== null ? bVal - aVal : null,
-      dir: pct !== null ? (pct > 1 ? 'up' : pct < -1 ? 'down' : 'flat') : 'flat',
+      dir: pct !== null ? (pct > 0.1 ? 'up' : pct < -0.1 ? 'down' : 'flat') : 'flat',
       isPct: isPct && aVal !== null && aVal < 100,
     });
   });

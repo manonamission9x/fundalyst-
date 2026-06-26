@@ -21,10 +21,10 @@ describe('computeDCF', () => {
   it('returns correct intrinsic value with default inputs', () => {
     const r = computeDCF(1240, 10, 5, 10, 3, 180, 100, 450);
     expect(r).not.toBeNull();
-    expect(r!.iv).toBeCloseTo(242.66, 0);
-    expect(r!.ev).toBeCloseTo(24446, -1);
-    expect(r!.eq).toBeCloseTo(24266, -1);
-    expect(r!.mos).toBeCloseTo(-46.1, 0);
+    expect(r!.iv).toBeCloseTo(242.66, 1);
+    expect(r!.ev).toBeCloseTo(24446, 0);
+    expect(r!.eq).toBeCloseTo(24266, 0);
+    expect(r!.mos).toBeCloseTo(-46.1, 1);
   });
 
   it('returns null when shares is 0', () => {
