@@ -11,6 +11,7 @@ function QuickCheckForm() {
   const [profit, setProfit] = useState('');
   const [debt, setDebt] = useState('');
   const [assets, setAssets] = useState('');
+  const [equity, setEquity] = useState('');
   const [mcap, setMcap] = useState('');
 
   const result = useMemo(() => {
@@ -18,37 +19,41 @@ function QuickCheckForm() {
     const p = Number(profit) || 0;
     const d = Number(debt) || 0;
     const a = Number(assets) || 0;
+    const e = Number(equity) || (a - d);  // Use equity if provided, else derive from A - D
     const m = Number(mcap) || 0;
     if (!r || !a) return null;
 
     const npm = (p / r) * 100;
-    const roe = a > 0 && (a - d) > 0 ? (p / (a - d)) * 100 : null;
-    const de = d > 0 && (a - d) > 0 ? d / (a - d) : d > 0 ? null : 0;
+    const roe = e > 0 ? (p / e) * 100 : null;
+    const de_ratio = e > 0 && d > 0 ? d / e : d > 0 ? null : 0;
     const da = (d / a) * 100;
     const pe = m > 0 && p > 0 ? m / p : null;
 
     return {
       npm: { v: npm.toFixed(1) + '%', cls: npm > 10 ? 'good' : npm > 3 ? 'neutral' : 'warn' as const },
       roe: roe !== null ? { v: roe.toFixed(1) + '%', cls: roe > 15 ? 'good' : roe > 5 ? 'neutral' : 'warn' as const } : null,
-      de: de !== null ? { v: de.toFixed(2), cls: de < 1 ? 'good' : de < 2 ? 'neutral' : 'warn' as const } : null,
+      de: de_ratio !== null ? { v: de_ratio.toFixed(2), cls: de_ratio < 1 ? 'good' : de_ratio < 2 ? 'neutral' : 'warn' as const } : null,
       da: { v: da.toFixed(1) + '%', cls: da < 40 ? 'good' : da < 70 ? 'neutral' : 'warn' as const },
       pe: pe !== null ? { v: pe.toFixed(1), cls: pe < 30 ? 'good' : pe < 50 ? 'neutral' : 'warn' as const } : null,
+      equityNote: !equity && a > 0 && d >= 0 ? ' (Assets − Debt)' : '',
     };
-  }, [rev, profit, debt, assets, mcap]);
+  }, [rev, profit, debt, assets, equity, mcap]);
 
   return (
     <div>
-      <div className="field-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+      <div className="field-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         {[
           { l: 'Revenue (₹ Cr)', v: rev, s: setRev },
           { l: 'Net Profit', v: profit, s: setProfit },
           { l: 'Total Debt', v: debt, s: setDebt },
           { l: 'Total Assets', v: assets, s: setAssets },
+          { l: 'Total Equity', v: equity, s: setEquity, h: 'Optional — derived from Assets − Debt if blank' },
           { l: 'Market Cap', v: mcap, s: setMcap },
         ].map((f, i) => (
           <div className="field-group" key={i}>
             <label className="field-label">{f.l}</label>
             <input type="number" className="num-input" value={f.v} onChange={(e) => f.s(e.target.value)} placeholder="0" />
+            {f.h && <div className="field-hint">{f.h}</div>}
           </div>
         ))}
       </div>
@@ -63,12 +68,12 @@ function QuickCheckForm() {
           <div className={`metric-cell ${result.roe?.cls || ''}`}>
             <div className="metric-label">ROE</div>
             <div className="metric-value">{result.roe?.v || '—'}</div>
-            <div className="metric-sub">Return on equity</div>
+            <div className="metric-sub">Return on equity{result.equityNote}</div>
           </div>
           <div className={`metric-cell ${result.de?.cls || ''}`}>
             <div className="metric-label">Debt/Equity</div>
             <div className="metric-value">{result.de?.v || '—'}</div>
-            <div className="metric-sub">Leverage ratio</div>
+            <div className="metric-sub">Leverage ratio{result.equityNote}</div>
           </div>
           <div className={`metric-cell ${result.da.cls}`}>
             <div className="metric-label">Debt/Assets</div>
