@@ -287,9 +287,6 @@ function DataPanel({ datasets }: { datasets: any[] }) {
 
 // ── Filing Panel ──
 function FilingPanel() {
-  const { useFilingStore } = require('@/store');
-  const { state, diffs, showResults } = { state: null, diffs: [], showResults: false };
-  
   return (
     <div>
       <SectionTitle>Filing Comparison</SectionTitle>
