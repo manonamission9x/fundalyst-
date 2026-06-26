@@ -91,7 +91,11 @@ export default function FilingPage() {
       diffs: result,
       flags: flagList,
     });
-    setTimeout(() => setLoading(false), 300);
+    setTimeout(() => {
+      setLoading(false);
+      // Scroll to results
+      document.getElementById('filing-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
     showToast('Comparison complete');
   }
 
@@ -163,6 +167,15 @@ export default function FilingPage() {
                 onChange={(e) => col.setPeriod(e.target.value)}
                 aria-label={`${col.heading} data`}
               />
+              <div className="label-examples">
+                <span className="label-examples-title">Valid labels:</span>
+                <span className="label-examples-item">Revenue</span>
+                <span className="label-examples-item">Net Profit</span>
+                <span className="label-examples-item">EBITDA Margin</span>
+                <span className="label-examples-item">Total Debt</span>
+                <span className="label-examples-item">Promoter Holding</span>
+                <span className="label-examples-more">+ many more</span>
+              </div>
             </div>
           ))}
         </div>
@@ -171,7 +184,7 @@ export default function FilingPage() {
       </Card>
 
       {showResults && diffs.length > 0 && (
-        <ResultPanel label="Results — what changed">
+        <ResultPanel label="Results — what changed" id="filing-results">
           {/* Insight cards for top changes */}
           {topChanges.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
@@ -190,19 +203,38 @@ export default function FilingPage() {
                   <th>{labelA || 'Earlier'}</th>
                   <th>{labelB || 'Latest'}</th>
                   <th>Change</th>
+                  <th>Magnitude</th>
                 </tr>
               </thead>
               <tbody>
-                {diffs.map((d, i) => (
-                  <tr key={i}>
-                    <td>{d.label}</td>
-                    <td>{d.a !== null ? (d.isPct ? d.a + '%' : fmtINR(d.a)) : '—'}</td>
-                    <td>{d.b !== null ? (d.isPct ? d.b + '%' : fmtINR(d.b)) : '—'}</td>
-                    <td className={d.dir === 'up' ? 'change-up' : d.dir === 'down' ? 'change-down' : 'change-flat'}>
-                      {d.dir === 'up' ? '↑' : d.dir === 'down' ? '↓' : '→'} {d.pct !== null ? Math.abs(d.pct).toFixed(1) + '%' : '—'}
-                    </td>
-                  </tr>
-                ))}
+                {(() => {
+                  // Calculate max absolute change for bar scaling
+                  const maxAbs = Math.max(0.01, ...diffs.map(d => Math.abs(d.pct ?? 0)));
+                  return diffs.map((d, i) => {
+                    const absPct = Math.abs(d.pct ?? 0);
+                    const barW = (absPct / maxAbs) * 100;
+                    return (
+                      <tr key={i}>
+                        <td>{d.label}</td>
+                        <td>{d.a !== null ? (d.isPct ? d.a + '%' : fmtINR(d.a)) : '—'}</td>
+                        <td>{d.b !== null ? (d.isPct ? d.b + '%' : fmtINR(d.b)) : '—'}</td>
+                        <td className={d.dir === 'up' ? 'change-up' : d.dir === 'down' ? 'change-down' : 'change-flat'}>
+                          {d.dir === 'up' ? '↑' : d.dir === 'down' ? '↓' : '→'} {d.pct !== null ? Math.abs(d.pct).toFixed(1) + '%' : '—'}
+                        </td>
+                        <td className="change-mag-cell">
+                          {d.pct !== null && (
+                            <div className="change-bar-wrap">
+                              <div
+                                className={`change-bar ${d.dir === 'up' ? 'change-bar-up' : 'change-bar-down'}`}
+                                style={{ width: `${Math.max(4, barW)}%` }}
+                              />
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </table>
           </Card>

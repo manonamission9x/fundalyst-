@@ -61,7 +61,12 @@ export default function YoyPage() {
   function parse() {
     parseWithText(csv);
     const lines = csv.split('\n').filter(Boolean);
-    if (lines.length > 0) showToast('Loaded ' + lines.length + ' metrics');
+    if (lines.length > 0) {
+      showToast('Loaded ' + lines.length + ' metrics');
+      setTimeout(() => {
+        document.getElementById('growth-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
+    }
   }
 
   function handleClear() {
@@ -148,7 +153,7 @@ export default function YoyPage() {
       </Card>
 
       {rows.length > 0 && (
-        <>
+        <div id="growth-results">
           <Card label="Growth rates (YoY %)" style={{ marginTop: '1.5rem' }}>
             <div className="card-body">
               <table className="diff-table">
@@ -228,7 +233,7 @@ export default function YoyPage() {
             <CalcTimestamp />
             <Disclaimer />
           </div>
-        </>
+        </div>
       )}
 
       {!rows.length && (

@@ -62,7 +62,12 @@ export default function TrendsPage() {
   function parse() {
     parseWithText(csv);
     const lines = csv.split('\n').filter(Boolean);
-    if (lines.length > 0) showToast('Loaded ' + (lines.length - 1) + ' metrics');
+    if (lines.length > 0) {
+      showToast('Loaded ' + (lines.length - 1) + ' metrics');
+      setTimeout(() => {
+        document.getElementById('trends-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
+    }
   }
 
   function handleClear() {
@@ -94,7 +99,7 @@ export default function TrendsPage() {
       </Card>
 
       {rows.length > 0 && (
-        <>
+        <div id="trends-results">
           <Card label="Data table" style={{ marginTop: '1.5rem' }}>
             <div className="card-body">
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
@@ -143,7 +148,7 @@ export default function TrendsPage() {
           />
           <CalcTimestamp />
           <Disclaimer />
-        </>
+        </div>
       )}
 
       {!rows.length && (

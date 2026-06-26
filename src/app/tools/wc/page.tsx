@@ -66,6 +66,9 @@ export default function WCPage() {
       inputs.cash === '' ? null : Number(inputs.cash)
     ));
     showToast('Analysis complete');
+    setTimeout(() => {
+      document.getElementById('wc-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
   }
 
   function handleClear() {
@@ -105,9 +108,9 @@ export default function WCPage() {
       </Card>
 
       {res && (
-        <>
-          <Card label="Cash Conversion Metrics">
-            <MetricGrid
+          <div id="wc-results">
+            <Card label="Cash Conversion Metrics">
+              <MetricGrid
               metrics={[
                 {
                   label: 'DSO',
@@ -247,7 +250,7 @@ export default function WCPage() {
           />
           <CalcTimestamp />
           <Disclaimer extra="CCC = DSO + DIO − DPO" />
-        </>
+        </div>
       )}
 
       {!res && (

@@ -456,6 +456,36 @@ textarea.num-input { resize: vertical; min-height: 80px; line-height: 1.7; }
   min-height: 160px;
 }
 
+/* ── Label format examples (Filing) ── */
+.label-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-top: 6px;
+}
+.label-examples-title {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-right: 2px;
+}
+.label-examples-item {
+  font-size: 9px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  background: var(--bg-surface);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+}
+.label-examples-more {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-style: italic;
+}
+
 /* ── Upload Area ── */
 .upload-zone {
   display: flex;
@@ -683,6 +713,47 @@ textarea.num-input { resize: vertical; min-height: 80px; line-height: 1.7; }
 .diff-table tbody tr { transition: background 0.1s ease; }
 .diff-table tbody tr:hover td { background: var(--bg-hover); }
 .diff-table tbody tr:active td { background: var(--primary-subtle); }
+
+/* ── Inline change magnitude bars (Filing) ── */
+.change-mag-cell {
+  width: 80px;
+  min-width: 60px;
+}
+.change-bar-wrap {
+  width: 100%;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.change-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  min-width: 3px;
+}
+.change-bar-up { background: var(--green); }
+.change-bar-down { background: var(--red); }
+
+/* ── Peer comparison inline bars ── */
+.peer-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.peer-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.peer-bar-label {
+  font-size: 8px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  width: 10px;
+  text-align: right;
+  flex-shrink: 0;
+}
 
 /* ── Error message ── */
 .err-msg { font-size: 11px; font-family: var(--font-mono); color: var(--red); }

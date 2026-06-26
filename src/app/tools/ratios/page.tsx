@@ -210,6 +210,10 @@ export default function RatiosPage() {
   function analyze() {
     setRes(computeRatios(data));
     showToast('Ratios calculated');
+    setTimeout(() => {
+      const el = document.querySelector('[class*="SectionTitle"]');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
   }
 
   function handleClear() {

@@ -77,7 +77,12 @@ export default function PeerPage() {
   function parse() {
     parseWithText(csv);
     const lines = csv.split('\n').filter(Boolean);
-    if (lines.length > 0) showToast('Loaded ' + lines.length + ' companies');
+    if (lines.length > 0) {
+      showToast('Loaded ' + lines.length + ' companies');
+      setTimeout(() => {
+        document.getElementById('peer-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
+    }
   }
 
   function handleClear() {
@@ -136,31 +141,59 @@ export default function PeerPage() {
         {rows.length > 0 && (
           <>
             <Card label="Results" style={{ marginTop: '1.5rem' }}>
-              <div className="card-body" style={{ padding: 0 }}>
+              <div id="peer-results" className="card-body" style={{ padding: 0 }}>
                 <table className="diff-table">
                   <thead>
                     <tr>
                       <th>Company</th>
                       {labels.map((l, i) => <th key={i}>{l}</th>)}
+                      <th>Comparison</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((r, i) => (
-                      <tr key={i}>
-                        <td><strong>{r.name}</strong></td>
-                        {r.vals.map((v, j) => {
-                          const b = best(rows, j);
-                          const w = worst(rows, j);
-                          const isBest = b && v === b.value && b.isUnique;
-                          const isWorst = w && v === w.value && w.isUnique;
-                          return (
-                            <td key={j} className={isBest ? 'good' : isWorst ? 'warn' : ''}>
-                              {isNaN(v) ? '—' : fmtNum(v)}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
+                    {(() => {
+                      // Pre-calculate max per column for bar scaling
+                      const maxPerCol = labels.map((_, j) => {
+                        const vals = rows.map(r => r.vals[j]).filter(v => !isNaN(v));
+                        return vals.length > 0 ? Math.max(...vals) : 1;
+                      });
+                      return rows.map((r, i) => (
+                        <tr key={i}>
+                          <td><strong>{r.name}</strong></td>
+                          {r.vals.map((v, j) => {
+                            const b = best(rows, j);
+                            const w = worst(rows, j);
+                            const isBest = b && v === b.value && b.isUnique;
+                            const isWorst = w && v === w.value && w.isUnique;
+                            return (
+                              <td key={j} className={isBest ? 'good' : isWorst ? 'warn' : ''}>
+                                {isNaN(v) ? '—' : fmtNum(v)}
+                              </td>
+                            );
+                          })}
+                          <td className="change-mag-cell">
+                            <div className="peer-bars">
+                              {r.vals.map((v, j) => {
+                                if (isNaN(v) || maxPerCol[j] <= 0) return null;
+                                const pct = (v / maxPerCol[j]) * 100;
+                                const isBest = best(rows, j) && v === best(rows, j)!.value && best(rows, j)!.isUnique;
+                                return (
+                                  <div key={j} className="peer-bar-row">
+                                    <span className="peer-bar-label">{labels[j][0]}</span>
+                                    <div className="change-bar-wrap">
+                                      <div
+                                        className={`change-bar ${isBest ? 'change-bar-up' : 'change-bar-down'}`}
+                                        style={{ width: `${Math.max(4, pct)}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
               </div>

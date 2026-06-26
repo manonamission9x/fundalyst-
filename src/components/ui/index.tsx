@@ -358,10 +358,11 @@ export function CalcTimestamp() {
 interface ResultPanelProps {
   children: React.ReactNode;
   label?: string;
+  id?: string;
 }
-export function ResultPanel({ children, label }: ResultPanelProps) {
+export function ResultPanel({ children, label, id }: ResultPanelProps) {
   return (
-    <div style={{ marginTop: '1.5rem' }}>
+    <div id={id} style={{ marginTop: '1.5rem' }}>
       {label && <SectionTitle>{label}</SectionTitle>}
       {children}
     </div>

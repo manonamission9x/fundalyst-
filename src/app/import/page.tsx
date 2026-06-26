@@ -67,6 +67,28 @@ export default function ImportPage() {
   const [pdfValidating, setPdfValidating] = useState(false);
   const dropZoneRef = useRef<HTMLLabelElement>(null);
 
+  // ── Sample data import for demo ──
+  const handleSampleImport = useCallback(async () => {
+    const sampleCSV = `Metric, FY24, FY25, FY26
+Revenue, 1240, 1410, 1530
+Net Profit, 142, 130, 119
+EBITDA Margin, 18.2, 16.4, 14.6
+Total Debt, 410, 500, 590
+Promoter Holding, 72.5, 70.1, 68.3
+Total Assets, 3200, 3600, 4100
+Current Assets, 1400, 1550, 1700
+Current Liabilities, 800, 900, 1050
+Cash & Equivalents, 200, 180, 150
+Inventory, 600, 700, 800
+Receivables, 900, 1050, 1200
+Depreciation, 80, 85, 90
+Interest Expense, 45, 52, 60`;
+    const blob = new Blob([sampleCSV], { type: 'text/csv' });
+    const file = new File([blob], 'sample-financial-data.csv', { type: 'text/csv' });
+    setUploadedFile(file);
+    await startImport(file);
+  }, [startImport]);
+
   useEffect(() => {
     const handlePaste = async (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -148,6 +170,24 @@ export default function ImportPage() {
               </label>
             </div>
           </Card>
+
+          {/* Try sample data — bypass file selection */}
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <button
+              type="button"
+              className="btn-primary"
+              style={{ fontSize: 12, padding: '8px 20px' }}
+              onClick={handleSampleImport}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3">
+                <path d="M2 7h10M7 2v10" />
+              </svg>
+              Try with sample data →
+            </button>
+            <div style={{ marginTop: 6, fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+              No file needed — loads sample financial data to see how import works
+            </div>
+          </div>
 
           {/* PDF validation result */}
           {pdfValidating && (
