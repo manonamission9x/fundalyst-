@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
-import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { Inter, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/layout/Nav';
 import ToastProvider from '@/components/shared/ToastProvider';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 
-const ibmPlexSans = IBM_Plex_Sans({
-  variable: '--font-ibm-plex-sans',
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
 });
@@ -23,14 +23,14 @@ export const metadata: Metadata = {
     'Upload financial statements, compare periods, analyze ratios, build DCF valuations, benchmark peers — all in your browser, no server uploads.',
   icons: {
     icon: [
-      { url: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22><rect width=%2220%22 height=%2220%22 rx=%223%22 fill=%22%2360626A%22/><path d=%22M5 14V6L10 10L15 6V14%22 stroke=%22%23141416%22 stroke-width=%221.5%22 fill=%22none%22/></svg>', type: 'image/svg+xml' },
+      { url: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22><rect width=%2220%22 height=%2220%22 rx=%223%22 fill=%22%237B8DA0%22/><path d=%22M5 14V6L10 10L15 6V14%22 stroke=%22%230D0D0F%22 stroke-width=%221.5%22 fill=%22none%22/></svg>', type: 'image/svg+xml' },
     ],
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable}`}>
       <body>
         <div className="bg-noise" aria-hidden="true" />
 

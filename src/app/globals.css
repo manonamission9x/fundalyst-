@@ -1,6 +1,5 @@
-/* ── Fundalyst Design System v7 — Bloomberg Monochrome ── */
+/* ── Fundalyst Design System v8 — Inter + Restrained Accent ── */
 :root {
-  /* ── Neutral Palette — no accent color, information only ── */
   --bg: #0D0D0F;
   --bg-elevated: #161618;
   --bg-surface: #1E1E20;
@@ -10,21 +9,19 @@
   --border: #2C2C2E;
   --border-light: #222224;
   --border-strong: #38383A;
-  --border-focus: #60626A;
+  --border-focus: #7B8DA0;
 
-  /* ── Text — full grayscale hierarchy ── */
   --text: #E0E0E4;
   --text-secondary: #A0A2A8;
   --text-tertiary: #787A80;
   --text-muted: #585A60;
 
-  /* ── Primary = no accent color. Neutral. ── */
-  --primary: var(--text);
-  --primary-hover: var(--text-secondary);
-  --primary-subtle: rgba(255,255,255,0.04);
-  --primary-subtle-hover: rgba(255,255,255,0.07);
+  /* Restrained accent — muted slate blue for wayfinding only */
+  --primary: #7B8DA0;
+  --primary-hover: #8FA0B2;
+  --primary-subtle: rgba(123, 141, 160, 0.06);
+  --primary-subtle-hover: rgba(123, 141, 160, 0.12);
 
-  /* ── Semantic Colors — green/red for financial data only ── */
   --green: #3DA06D;
   --green-subtle: rgba(61, 160, 109, 0.06);
   --green-strong: #4AB07D;
@@ -34,12 +31,9 @@
   --amber: #B08C40;
   --amber-subtle: rgba(176, 140, 64, 0.06);
 
-  /* ── Shadows ── */
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.4);
   --shadow-md: 0 2px 8px rgba(0,0,0,0.5);
-
-  /* ── Border Radius ── */
   --radius-sm: 3px;
   --radius-md: 5px;
   --radius-lg: 8px;
@@ -73,7 +67,7 @@
 * { box-sizing: border-box; }
 
 body {
-  font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
   color: var(--text);
   margin: 0; padding: 0;
@@ -81,6 +75,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
   font-size: var(--text-base);
+  font-variant-numeric: tabular-nums;
 }
 
 body::before {
@@ -116,7 +111,7 @@ body::before {
 .nav-tab { font-size: 11px; font-weight: 500; color: var(--text-tertiary); padding: 9px 10px; cursor: pointer; border: none; background: none; transition: color var(--transition); white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
 .nav-tab svg { flex-shrink: 0; }
 .nav-tab:hover { color: var(--text-secondary); }
-.nav-tab.active { color: var(--text); font-weight: 600; }
+.nav-tab.active { color: var(--primary); font-weight: 600; }
 .nav-cta { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 5px 10px; cursor: pointer; text-decoration: none; transition: all var(--transition); background: transparent; }
 .nav-cta:hover { border-color: var(--border-strong); color: var(--text-secondary); }
 .nav-cta svg { width: 12px; height: 12px; flex-shrink: 0; }
@@ -145,7 +140,7 @@ body::before {
 
 /* ── Buttons — all ghost, no filled backgrounds ── */
 button, .btn {
-  font-family: 'IBM Plex Sans', sans-serif; font-size: var(--text-sm);
+  font-family: 'Inter', sans-serif; font-size: var(--text-sm);
   font-weight: 500; background: transparent;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md); padding: 5px 12px;
@@ -154,12 +149,12 @@ button, .btn {
   display: inline-flex; align-items: center; gap: 5px;
   text-decoration: none; user-select: none;
 }
-button:hover, .btn:hover { color: var(--text); border-color: var(--text-tertiary); }
+button:hover, .btn:hover { color: var(--primary); border-color: var(--primary); }
 button:active, .btn:active { opacity: 0.8; }
 button:focus-visible, .btn:focus-visible { outline: 1px solid var(--border-focus); outline-offset: 1px; }
 
-.btn-primary { color: var(--text); border-color: var(--border-strong); }
-.btn-primary:hover { color: var(--text); border-color: var(--text-tertiary); }
+.btn-primary { color: var(--primary); border-color: var(--border-strong); }
+.btn-primary:hover { color: var(--primary-hover); border-color: var(--primary-hover); }
 
 .btn-sm { padding: 3px 8px; font-size: 11px; }
 .btn-ghost { border-color: transparent; background: transparent; color: var(--text-muted); }
@@ -272,7 +267,7 @@ textarea.num-input { resize: vertical; min-height: 72px; line-height: 1.6; }
 
 .next-links { display: flex; align-items: center; gap: 12px; padding: 10px 0 6px; }
 .next-links .next-label { font-size: 10px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
-.next-links a { font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: var(--text); text-decoration: none; }
+.next-links a { font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: var(--primary); text-decoration: none; }
 .next-links a:hover { text-decoration: underline; }
 
 .calc-timestamp { display: flex; align-items: center; gap: 4px; font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--text-muted); padding: 6px 0; }
