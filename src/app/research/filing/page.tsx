@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { parseLines, computeDiff, generateRiskFlags, fmtINR } from '@/lib/calculations';
 import { readFile, downloadCSV } from '@/lib/helpers';
 import { useFilingStore, useAnalysisStore } from '@/store';
@@ -43,6 +43,37 @@ export default function FilingPage() {
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // ── Textarea refs for each column ──
+  const textareaRefs = useRef<(HTMLTextAreaElement | null)[]>([null, null]);
+
+  // ── Chip click handler: insert metric name into textarea ──
+  const handleChipClick = useCallback((col: number, metric: string) => {
+    const setPeriod = col === 0 ? setPeriodA : setPeriodB;
+    const current = col === 0 ? periodA : periodB;
+    const insert = current ? `\n${metric}: ` : `${metric}: `;
+    const newVal = current + insert;
+    setPeriod(newVal);
+    // Focus and position cursor after React state flush
+    requestAnimationFrame(() => {
+      const ta = textareaRefs.current[col];
+      if (ta) {
+        ta.focus();
+        const pos = newVal.length;
+        ta.setSelectionRange(pos, pos);
+      }
+    });
+  }, [periodA, periodB, setPeriodA, setPeriodB]);
+
+  const handleChipKeyDown = useCallback((e: React.KeyboardEvent, col: number, metric: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleChipClick(col, metric);
+    }
+  }, [handleChipClick]);
+
+  // ── Metrics that appear as clickable chips ──
+  const chipMetrics = ['Revenue', 'Net Profit', 'EBITDA Margin', 'Total Debt', 'Total Equity', 'Total Assets', 'Operating Profit', 'Cash & Equivalents', 'Gross Profit', 'Operating Expenses', 'Interest Expense', 'Depreciation', 'Tax', 'Promoter Holding'];
 
   async function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -166,15 +197,24 @@ export default function FilingPage() {
                 value={col.period}
                 onChange={(e) => col.setPeriod(e.target.value)}
                 aria-label={`${col.heading} data`}
+                ref={(el) => { textareaRefs.current[ci] = el; }}
               />
               <div className="label-examples">
-                <span className="label-examples-title">Tap to add:</span>
-                <span className="label-examples-item">Revenue</span>
-                <span className="label-examples-item">Net Profit</span>
-                <span className="label-examples-item">EBITDA Margin</span>
-                <span className="label-examples-item">Total Debt</span>
-                <span className="label-examples-item">Promoter Holding</span>
-                <span className="label-examples-more">+ many more</span>
+                <span className="label-examples-title">Add:</span>
+                {chipMetrics.slice(0, 5).map((m) => (
+                  <span
+                    key={m}
+                    className="label-examples-item label-chip"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Insert ${m}`}
+                    onClick={() => handleChipClick(ci, m)}
+                    onKeyDown={(e) => handleChipKeyDown(e, ci, m)}
+                  >
+                    {m}
+                  </span>
+                ))}
+                <span className="label-examples-more">+{chipMetrics.length - 5} more</span>
               </div>
             </div>
           ))}
@@ -251,19 +291,16 @@ export default function FilingPage() {
           )}
 
           {/* Export and next steps */}
-          <div className="flex gap-3 mt-4">
+          <div className="flex items-center gap-3 mt-4">
             <button type="button" className="btn-primary btn-sm" onClick={handleExportCSV}>
               Download CSV
             </button>
           </div>
 
-          <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--primary-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(91,110,245,0.15)' }}>
-          <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Next Steps</div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <a href="/research/trends" style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--primary)', textDecoration: 'none' }}>→ Plot trends over time</a>
-            <a href="/tools/dcf" style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--primary)', textDecoration: 'none' }}>→ Estimate intrinsic value</a>
-          </div>
-        </div>
+          <NextLinks links={[
+            { label: 'Plot trends over time', href: '/research/trends' },
+            { label: 'Estimate intrinsic value', href: '/tools/dcf' },
+          ]} />
           <CalcTimestamp />
           <Disclaimer extra="Pct change = ((B−A)/|A|)×100" />
         </ResultPanel>

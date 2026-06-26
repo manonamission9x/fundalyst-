@@ -154,7 +154,6 @@ export function NextLinks({ links }: { links: NextLink[] }) {
 export function Disclaimer({ extra }: { extra?: string }) {
   return (
     <div className="disclaimer">
-      <span>All calculations performed client-side</span>
       <span>For research purposes only · Not financial advice</span>
       {extra && <span>{extra}</span>}
     </div>

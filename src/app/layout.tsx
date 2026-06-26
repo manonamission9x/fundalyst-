@@ -32,26 +32,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}>
       <body>
-        {/* Skip to content — keyboard navigation (CSS-only, no JS needed) */}
+        <div className="bg-noise" aria-hidden="true" />
+
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>
-
-        {/* Premium Background Layers */}
-        <div className="bg-noise" aria-hidden="true" />
-        <div className="bg-curves" aria-hidden="true">
-          <svg viewBox="0 0 1200 800" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <path className="bg-curve-path" d="M0,600 C200,400 300,700 600,500 C800,350 950,550 1200,450" />
-            <path className="bg-curve-path" d="M0,300 C150,450 400,200 600,350 C800,500 1000,250 1200,400" />
-            <path className="bg-curve-path" d="M0,700 C250,550 450,800 700,600 C900,450 1050,650 1200,550" />
-            <path className="bg-curve-path" d="M0,200 C300,350 500,150 750,250 C950,350 1100,150 1200,300" />
-          </svg>
-        </div>
-
-        {/* Mouse parallax for background depth */}
-        <script dangerouslySetInnerHTML={{
-          __html: "document.addEventListener('mousemove',function(e){var x=e.clientX/window.innerWidth*100,y=e.clientY/window.innerHeight*100;document.documentElement.style.setProperty('--glow-x-1',(20+x*0.15)+'%');document.documentElement.style.setProperty('--glow-y-1',(15+y*0.15)+'%');document.documentElement.style.setProperty('--glow-x-2',(70-x*0.1)+'%');document.documentElement.style.setProperty('--glow-y-2',(75-y*0.1)+'%');})"
-        }} />
 
         <ToastProvider>
           <Nav />
@@ -60,23 +45,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
             </main>
           </ErrorBoundary>
-          {/* Site-wide footer */}
-          <footer style={{
-            textAlign: 'center',
-            padding: 'var(--space-6) var(--space-4) var(--space-4)',
-            borderTop: '1px solid var(--border-light)',
-            fontSize: 10,
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--text-muted)',
-            position: 'relative',
-            zIndex: 1,
-          }}>
-            <div style={{ marginBottom: 4 }}>
-              Fundalyst · All calculations client-side · For research purposes only · Not financial advice
-            </div>
-            <div>
-              © Fundalyst · Data never leaves your browser
-            </div>
+          <footer className="site-footer">
+            <div>Fundalyst · For research purposes only · Not financial advice</div>
+            <div>&copy; Fundalyst</div>
           </footer>
         </ToastProvider>
       </body>

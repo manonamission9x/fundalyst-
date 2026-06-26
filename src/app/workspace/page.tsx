@@ -8,13 +8,20 @@ import { SectionTitle, Disclaimer } from '@/components/ui';
 
 // ── Workspace step definitions ──
 const steps = [
-  { id: 'overview', label: 'Company Overview', icon: '◉' },
-  { id: 'import', label: 'Import Data', icon: '↥' },
-  { id: 'data', label: 'Financial Data', icon: '☰' },
-  { id: 'filing', label: 'Filing Comparison', icon: '⇅' },
-  { id: 'dcf', label: 'DCF Valuation', icon: '∑' },
-  { id: 'ratios', label: 'Ratios & Metrics', icon: '%' },
-  { id: 'thesis', label: 'Investment Thesis', icon: '✦' },
+  { id: 'overview', label: 'Company Overview',
+    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="7" cy="7" r="6" /><path d="M7 4v3l2 2" /></svg> },
+  { id: 'import', label: 'Import Data',
+    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M7 2v8M3 6l4-4 4 4" /><path d="M2 11v1h10v-1" /></svg> },
+  { id: 'data', label: 'Financial Data',
+    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="10" height="8" rx="1" /><path d="M5 7h4M5 9h2" /></svg> },
+  { id: 'filing', label: 'Filing Comparison',
+    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2h5l3 3v7a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" /><path d="M8 2v3h3" /><path d="M5 7l2 2 3-3" /></svg> },
+  { id: 'dcf', label: 'DCF Valuation',
+    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12l4-5 3 2 5-6" /><circle cx="11.5" cy="3.5" r="1.5" fill="currentColor" stroke="none" /></svg> },
+  { id: 'ratios', label: 'Ratios & Metrics',
+    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12V5l3 2 3-5 3 7 2-3" /><circle cx="13" cy="3" r="1" fill="currentColor" stroke="none" /></svg> },
+  { id: 'thesis', label: 'Investment Thesis',
+    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v10M10 2v10M2 4h10M2 10h10" /><path d="M7 2v10" /><path d="M2 7h10" /></svg> },
 ] as const;
 
 type StepId = (typeof steps)[number]['id'];

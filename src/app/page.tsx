@@ -19,7 +19,7 @@ function QuickCheckForm() {
     const p = Number(profit) || 0;
     const d = Number(debt) || 0;
     const a = Number(assets) || 0;
-    const e = Number(equity) || (a - d);  // Use equity if provided, else derive from A - D
+    const e = Number(equity) || (a - d);
     const m = Number(mcap) || 0;
     if (!r || !a) return null;
 
@@ -121,13 +121,6 @@ const tools = [
   },
 ];
 
-const trustItems = [
-  { text: 'All computation runs in your browser — nothing is uploaded to any server.', detail: 'Privacy first' },
-  { text: 'Indian market formats: ₹, Cr, Lakhs, Crores, NSE/BSE terminology.', detail: 'Local by design' },
-  { text: 'Every formula is documented and visible. No black-box calculations.', detail: 'No black boxes' },
-  { text: 'No account, no sign-up, no setup. Start analyzing in seconds.', detail: 'Use instantly' },
-];
-
 export default function HomePage() {
   const datasets = useGlobalDataStore((s) => s.datasets);
   const activeDataset = useGlobalDataStore((s) => {
@@ -140,21 +133,14 @@ export default function HomePage() {
       {/* ── Hero ── */}
       <section className="home-hero">
         <div className="home-hero-inner">
-          <div className="home-eyebrow">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M2 10l3-3 2 2 5-5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Browser-based · No uploads to any server
-          </div>
-
           <h1>
-            Understand any company&apos;s financial health
+            Upload annual reports.
             <br />
-            <span className="home-hero-sub">in minutes, not hours.</span>
+            <span className="home-hero-sub">Compare periods. Estimate value.</span>
           </h1>
           <p className="home-subtitle">
-            Upload a CSV, Excel file, or paste numbers directly. Fundalyst extracts the data,
-            runs the calculations, and shows you what matters — all inside your browser.
+            Enter financial data and get period comparisons, DCF valuations, ratio analysis,
+            and peer benchmarking — all in your browser.
           </p>
 
           <div className="home-cta-row">
@@ -182,36 +168,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── How it works ── */}
-      <section className="home-section">
-        <div className="section-title">Three steps to insight</div>
-        <div className="home-steps">
-          {[
-            {
-              step: '01',
-              title: 'Import your data',
-              desc: 'Upload a CSV, Excel file, PDF, or paste numbers directly. Fundalyst detects periods, normalizes ₹/Cr/Lakh values, and maps metrics automatically.',
-            },
-            {
-              step: '02',
-              title: 'Review the mapping',
-              desc: 'Check how your data was interpreted. Fix any mismatches with one click, then load the cleaned dataset into any analysis tool.',
-            },
-            {
-              step: '03',
-              title: 'Run your analysis',
-              desc: 'Compare periods, value companies, check ratios, and benchmark peers — all tools share the same data. No re-importing, no duplicate work.',
-            },
-          ].map((item) => (
-            <div key={item.step} className="home-step">
-              <div className="home-step-num">{item.step}</div>
-              <div className="home-step-title">{item.title}</div>
-              <div className="home-step-desc">{item.desc}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* ── Tools grid ── */}
       {tools.map((group) => (
         <section key={group.section} className="home-section">
@@ -233,30 +189,6 @@ export default function HomePage() {
           </div>
         </section>
       ))}
-
-      {/* ── Trust section ── */}
-      <section className="home-trust-section">
-        <div className="home-trust-grid">
-          {trustItems.map((item) => (
-            <div key={item.text} className="home-trust-card">
-              <div className="home-trust-card-text">{item.text}</div>
-              <div className="home-trust-card-detail">{item.detail}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Final CTA ── */}
-      <section className="home-cta-final">
-        <h2>Ready to analyze your first company?</h2>
-        <p>No account needed. No data leaves your browser.</p>
-        <Link href="/import" className="home-cta-primary">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M8 2v10M3 7l5-5 5 5" /><path d="M2 13v1h12v-1" />
-          </svg>
-          Upload financial data
-        </Link>
-      </section>
 
       {/* ── Quick Company Check ── */}
       <section className="home-section" style={{ marginTop: 'var(--space-10)' }}>

@@ -234,8 +234,8 @@ export default function DCFPage() {
       {/* ── Empty state ── */}
       {!show && (
         <EmptyState
-          title="Enter assumptions above, then click Calculate value."
-          desc="Adjust the default values or enter your own — the sensitivity table shows how changes in assumptions affect intrinsic value."
+          title="Adjust assumptions above, then click Calculate value."
+          desc="Defaults pre-filled. Adjust the values or enter your own to see how assumptions affect intrinsic value."
         />
       )}
     </div>
@@ -350,16 +350,13 @@ function DCFResults({
                   <tr key={row.g}>
                     <td>{row.g}%</td>
                     {row.cols.map((c) => {
-                      // Heatmap: intensity based on distance from price
                       const diff = c.iv - priceVal;
-                      const isBase = c.iv === sens.find(r => r.g === row.g)?.cols.find(co => co.d === c.d)?.iv;
-                      // Actually check if this is the base scenario (g=3%, d=10% when user has those values)
                       const isBaseCell = Math.abs(row.g - 3) < 0.5 && c.d === Number(discount);
                       const cls = diff > 0 ? 'sens-td-up' : diff < 0 ? 'sens-td-down' : '';
                       return (
                         <td key={c.d} className={`${cls}${isBaseCell ? ' sens-td-base' : ''}`}>
-                          {'₹' + fmtNum(Math.round(c.iv * 10) / 10)}
-                        </td>
+                              {'₹' + fmtNum(Math.round(c.iv * 10) / 10)}
+                            </td>
                       );
                     })}
                   </tr>
