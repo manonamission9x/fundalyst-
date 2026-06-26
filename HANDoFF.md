@@ -476,3 +476,138 @@ git push origin main
 9. **Hook safety.** Never put inline function references in useEffect dependency arrays. Use refs.
 
 10. **Accessibility is correctness.** Skip-to-content, labels, ARIA, touch targets, reduced motion, semantic HTML.
+
+---
+
+## ROADMAP & NEXT STEPS
+
+### Critical (Ship-blocking for public launch)
+
+| Priority | Feature | Why | Effort |
+|---|---|---|---|
+| P0 | **Client-side error tracking** | Errors stored in localStorage but user never sees them. Add a "Support" button that exports error logs, or integrate Sentry (free tier, client-side only) | Low |
+| P0 | **Loading skeletons on all pages** | DCF and Filing have auto-execute, but on slow connections the initial page load shows nothing. Add skeleton placeholders for all tool pages | Low |
+| P0 | **Page transition loading state** | Navigating between tools on slow connections shows blank page briefly. Add a route change loading indicator | Low |
+
+### High Impact (Biggest user value per engineering hour)
+
+| Priority | Feature | Why | Effort |
+|---|---|---|---|
+| P1 | **NSE/BSE XBRL auto-fetch** | Users currently paste data manually. If Fundalyst could fetch XBRL data from NSE/BSE corporate sites (client-side fetch from public URLs), it eliminates 90% of manual entry. Requires CORS proxy or browser extension | High |
+| P1 | **Portfolio / watchlist** | LocalStorage-based list of companies the user is tracking. Each company stores its imported datasets. Creates retention loop without backend | Medium |
+| P1 | **Multi-sheet Excel support** | SheetJS can read all sheets, but UI only shows first. Add sheet selector dropdown when workbook has multiple sheets | Low |
+| P1 | **Download extracted data as CSV** | After import review, user can download the mapped data as CSV before confirming. Enables data portability | Low |
+
+### Medium Impact (Polishes the experience)
+
+| Priority | Feature | Why | Effort |
+|---|---|---|---|
+| P2 | **Keyboard shortcuts** | Power users spend hours researching. Keyboard shortcuts for "Run calculation" (Ctrl+Enter), "Clear" (Ctrl+Shift+C), "Navigate tools" (1-9) increase efficiency significantly | Medium |
+| P2 | **Chart export as PNG** | Every chart should have a download button. Recharts supports this via `toDataURL()` on the SVG container | Low |
+| P2 | **PWA / offline support** | Many Indian users have unreliable internet. A service worker + manifest would let the app work offline after first load. All data is already client-side | Medium |
+| P2 | **Mobile-first responsive** | Current responsive works down to 480px but isn't optimized for mobile use. Nav should collapse to hamburger, tool sections should stack better, font sizes should adjust | Medium |
+
+### Lower Priority (Valuable but substantial)
+
+| Priority | Feature | Why | Effort |
+|---|---|---|---|
+| P3 | **Multi-language (Hindi, Tamil, Telugu)** | Majority of Indian retail investors prefer local languages. Requires i18n framework + translations for all UI text | High |
+| P3 | **Data screening engine** | Filter companies by financial metrics (P/E < 15, ROE > 15%, Debt/Equity < 1, etc.). Requires data API integration | Very High |
+| P3 | **Pre-built company templates** | Pre-filled financial data for NSE 500 companies. Users select a company and get all tools pre-populated. Requires data sourcing | Very High |
+| P3 | **Social sharing / public analysis links** | Share a company analysis via URL (data encoded in hash). Enables word-of-mouth without backend | Medium |
+
+---
+
+## CURRENT SHORTCOMINGS
+
+### Functional Shortcomings
+
+1. **No data API** — Users must manually upload/paste financial data. This is the #1 barrier to adoption. Every competitor (Screener, Tickertape, Trendlyne) has built-in data.
+
+2. **No persistence beyond localStorage** — Clear browser data = lose all work. No cloud sync, no export/import of workspace state.
+
+3. **No company watchlist** — Users research one company at a time with no way to save their research history or track multiple companies.
+
+4. **No keyboard shortcuts** — Power researchers navigate with keyboard. Current UI requires mouse clicks for every action.
+
+5. **No chart export** — Users can't save or share charts as images.
+
+6. **No data screening** — Users can't discover companies by financial criteria (e.g. "show me all companies with ROE > 15% and debt < 100 Cr").
+
+7. **Single-period Filing import only** — The Filing tool only compares two periods. Importing 5-year trends requires going to the Trends tool separately.
+
+### UX Shortcomings
+
+8. **No loading skeletons on non-auto tools** — WC, Ratios, Peer, Trends, Growth pages show nothing while loading. DCF and Filing show data immediately because of auto-execute.
+
+9. **Mobile experience is basic** — Works at 480px but nav tabs are small, tool cards don't stack optimally, input fields are cramped.
+
+10. **No "Quick tour" on first visit** — First-time users land on the home page with no guided onboarding. They have to figure out the workflow themselves.
+
+11. **Results positioning** — After clicking "Calculate" on WC/Ratios/Peer, the page doesn't scroll to results. Users have to scroll down manually.
+
+### Technical Shortcomings
+
+12. **No error reporting** — Crashes are logged to localStorage but never surfaced to developers. Silent failures are invisible.
+
+13. **Bundle size** — Next.js+Tesseract.js+pdfjs-dist+Recharts is a heavy client payload. Tesseract alone is ~1MB. Could be code-split more aggressively.
+
+14. **No automated accessibility testing** — Manual accessibility pass was done but no automated CI checks exist.
+
+15. **No TypeScript path aliases for importer** — `@/lib/importer/types` works but some internal imports use relative paths (`../../types`). Inconsistent.
+
+### Business Shortcomings
+
+16. **No monetization** — Zero revenue model. All features free. No way to fund development or API integrations.
+
+17. **No user analytics** — Impossible to know which features users actually use, where they get stuck, or what drives retention.
+
+18. **No competitive moat** — Everything is client-side and open source. Competitors can replicate features. The only moat is user trust + data integrations.
+
+---
+
+## IMPROVEMENT ROADMAP
+
+### Phase 1: Launch Polish (1-2 weeks, no backend)
+
+1. **Add loading skeletons** to all tool pages (WC, Ratios, Peer, Trends, Growth)
+2. **Add keyboard shortcuts**: Enter to run, Escape to clear, 1-9 for nav
+3. **Add chart export** as PNG download button
+4. **Auto-scroll to results** after calculation on all tools
+5. **Add "Quick tour" modal** on first visit showing the 3-step workflow
+
+### Phase 2: User Retention (2-4 weeks, no backend)
+
+6. **Build portfolio/watchlist** in localStorage — companies, imported datasets, last viewed
+7. **Add data export/import** — export all tool data as JSON, import to restore workspace
+8. **Add PWA manifest + service worker** — installable on mobile home screen, offline-capable
+
+### Phase 3: Data Integration (4-8 weeks, requires CORS proxy or backend)
+
+9. **NSE/BSE XBRL scraper** — fetch annual/quarterly results from exchange websites
+10. **Screening engine** — filter companies by financial criteria
+11. **Company profiles** — pre-built financial summaries for NSE 500 companies
+
+### Phase 4: Scale (8+ weeks)
+
+12. **Cloud accounts** — sync workspace across devices, share analyses
+13. **Mobile app** (React Native or PWA-first) — tap into India's mobile-first user base
+14. **Multi-language** — Hindi, Tamil, Telugu, Bengali, Marathi
+15. **API for developers** — programmatic access to Fundalyst's calculation engine
+
+---
+
+## VERDICT
+
+Fundalyst is a **powerful, polished analysis tool** that solves a real problem for Indian retail investors. Its strengths are:
+
+- **Zero friction** — no accounts, no sign-up, instant start
+- **Privacy-first** — all computation client-side
+- **Financial accuracy** — 29 tests, validated formulas, transparent methodology
+- **Professional design** — dark theme, IBM Plex, information-dense
+
+Its biggest weakness is the **lack of built-in financial data**. The manual paste/upload workflow is tolerable for occasional use but won't retain users long-term. The single highest-impact investment would be integrating NSE/BSE XBRL data — even if it's client-side fetching from public URLs.
+
+**Current stage:** Beta-ready for small user group.
+**Target:** Indispensable research tool for Indian retail value investors.
+**North star:** "Bloomberg Terminal for Indian retail investors — in the browser, no server, no cost."
