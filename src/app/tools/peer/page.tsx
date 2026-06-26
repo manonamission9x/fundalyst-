@@ -121,6 +121,31 @@ export default function PeerPage() {
       {/* ── Upload ── */}
         <UploadBar onUpload={handleCsvFile} hint="Company, Revenue, Profit, Assets, Debt" />
 
+        {/* ── Quick sample data button ── */}
+        <div style={{ marginTop: '-0.5rem', marginBottom: '1rem', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={() => {
+              const sample = `Tata Motors, 420000, 28500, 345000, 105000
+Reliance, 900000, 74500, 1620000, 280000
+HDFC Bank, 185000, 45200, 3650000, 85000
+Infosys, 156000, 28700, 172000, 24000`;
+              setCsv(sample);
+              parseWithText(sample);
+              showToast('Loaded 4 sample companies');
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3">
+              <path d="M2 6h8M6 2v8" />
+            </svg>
+            Load sample companies
+          </button>
+          <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+            Or paste your own data below
+          </span>
+        </div>
+
         {/* ── Input Card ── */}
         <Card label="Company data (Company, Revenue, Profit, Assets, Debt)">
           <div className="card-body">

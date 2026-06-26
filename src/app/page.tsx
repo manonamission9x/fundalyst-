@@ -1,7 +1,100 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, useMemo } from 'react';
+import { Card } from '@/components/ui';
 import { useGlobalDataStore } from '@/store/global-data-store';
+
+// ── Quick Company Check (inline tool) ──
+function QuickCheckForm() {
+  const [rev, setRev] = useState('');
+  const [profit, setProfit] = useState('');
+  const [debt, setDebt] = useState('');
+  const [assets, setAssets] = useState('');
+  const [mcap, setMcap] = useState('');
+
+  const result = useMemo(() => {
+    const r = Number(rev) || 0;
+    const p = Number(profit) || 0;
+    const d = Number(debt) || 0;
+    const a = Number(assets) || 0;
+    const m = Number(mcap) || 0;
+    if (!r || !a) return null;
+
+    const npm = (p / r) * 100;
+    const roe = a > 0 ? (p / (a - d)) * 100 : null;
+    const de = d > 0 && (a - d) > 0 ? d / (a - d) : d > 0 ? null : 0;
+    const da = (d / a) * 100;
+    const pe = m > 0 && p > 0 ? m / p : null;
+
+    return {
+      npm: { v: npm.toFixed(1) + '%', cls: npm > 10 ? 'good' : npm > 3 ? 'neutral' : 'warn' as const },
+      roe: roe !== null ? { v: roe.toFixed(1) + '%', cls: roe > 15 ? 'good' : roe > 5 ? 'neutral' : 'warn' as const } : null,
+      de: de !== null ? { v: de.toFixed(2), cls: de < 1 ? 'good' : de < 2 ? 'neutral' : 'warn' as const } : null,
+      da: { v: da.toFixed(1) + '%', cls: da < 40 ? 'good' : da < 70 ? 'neutral' : 'warn' as const },
+      pe: pe !== null ? { v: pe.toFixed(1), cls: pe < 30 ? 'good' : pe < 50 ? 'neutral' : 'warn' as const } : null,
+    };
+  }, [rev, profit, debt, assets, mcap]);
+
+  return (
+    <div>
+      <div className="field-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+        {[
+          { l: 'Revenue (₹ Cr)', v: rev, s: setRev },
+          { l: 'Net Profit', v: profit, s: setProfit },
+          { l: 'Total Debt', v: debt, s: setDebt },
+          { l: 'Total Assets', v: assets, s: setAssets },
+          { l: 'Market Cap', v: mcap, s: setMcap },
+        ].map((f, i) => (
+          <div className="field-group" key={i}>
+            <label className="field-label">{f.l}</label>
+            <input type="number" className="num-input" value={f.v} onChange={(e) => f.s(e.target.value)} placeholder="0" />
+          </div>
+        ))}
+      </div>
+
+      {result && (
+        <div className="metric-grid" style={{ marginTop: 16 }}>
+          <div className={`metric-cell ${result.npm.cls}`}>
+            <div className="metric-label">Net Profit Margin</div>
+            <div className="metric-value">{result.npm.v}</div>
+            <div className="metric-sub">Profit ÷ Revenue</div>
+          </div>
+          <div className={`metric-cell ${result.roe?.cls || ''}`}>
+            <div className="metric-label">ROE</div>
+            <div className="metric-value">{result.roe?.v || '—'}</div>
+            <div className="metric-sub">Return on equity</div>
+          </div>
+          <div className={`metric-cell ${result.de?.cls || ''}`}>
+            <div className="metric-label">Debt/Equity</div>
+            <div className="metric-value">{result.de?.v || '—'}</div>
+            <div className="metric-sub">Leverage ratio</div>
+          </div>
+          <div className={`metric-cell ${result.da.cls}`}>
+            <div className="metric-label">Debt/Assets</div>
+            <div className="metric-value">{result.da.v}</div>
+            <div className="metric-sub">Debt burden</div>
+          </div>
+          <div className={`metric-cell ${result.pe?.cls || ''}`}>
+            <div className="metric-label">P/E Ratio</div>
+            <div className="metric-value">{result.pe?.v || '—'}</div>
+            <div className="metric-sub">Price ÷ Earnings</div>
+          </div>
+        </div>
+      )}
+
+      {!result && rev && (
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 12, textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
+          Enter revenue and assets at minimum to see ratios
+        </p>
+      )}
+
+      <div style={{ marginTop: 12, textAlign: 'center', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+        Results update instantly as you type. For full analysis, use the tools above.
+      </div>
+    </div>
+  );
+}
 
 const tools = [
   {
@@ -158,6 +251,19 @@ export default function HomePage() {
           </svg>
           Upload financial data
         </Link>
+      </section>
+
+      {/* ── Quick Company Check ── */}
+      <section className="home-section" style={{ marginTop: 'var(--space-10)' }}>
+        <div className="section-title">Quick Company Check</div>
+        <Card>
+          <div className="card-body">
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '0 0 14px', fontFamily: 'var(--font-mono)', lineHeight: 1.5 }}>
+              Enter 5 numbers to get an instant health overview. No file upload needed.
+            </p>
+            <QuickCheckForm />
+          </div>
+        </Card>
       </section>
 
       {/* ── Footer ── */}
