@@ -165,8 +165,8 @@ Infosys, 156000, 28700, 172000, 24000`;
         {/* ── Results ── */}
         {rows.length > 0 && (
           <>
-            <Card label="Results" style={{ marginTop: '1.5rem' }}>
-              <div id="peer-results" className="card-body" style={{ padding: 0 }}>
+            <Card label="Results" className="mt-6">
+              <div className="card-body p-0">
                 <table className="diff-table">
                   <thead>
                     <tr>
@@ -224,7 +224,7 @@ Infosys, 156000, 28700, 172000, 24000`;
               </div>
               <div style={{ textAlign: 'center', padding: '12px 20px' }}>
                 <button
-                  className="btn btn-secondary"
+                  className="btn-secondary"
                   onClick={() => {
                     const headers = ['Company', ...labels];
                     const data = rows.map((r) => [r.name, ...r.vals.map((v) => (isNaN(v) ? '' : v))]);
@@ -237,7 +237,7 @@ Infosys, 156000, 28700, 172000, 24000`;
             </Card>
 
             {/* ── Insights ── */}
-            <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="result-section flex flex-col gap-3">
               {bestRevenue && (
                 <InsightCard
                   type="positive"

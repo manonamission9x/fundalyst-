@@ -140,7 +140,7 @@ export default function WCPage() {
             />
           </Card>
 
-          <Card style={{ marginTop: '1.5rem' }}>
+          <Card className="mt-6">
             {res.dso !== null && res.dso > 90 && (
               <WarningCard
                 level="danger"

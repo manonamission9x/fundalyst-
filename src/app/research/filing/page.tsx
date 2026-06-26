@@ -179,7 +179,7 @@ export default function FilingPage() {
             </div>
           ))}
         </div>
-        {errMsg && <div style={{ padding: '0 14px 10px' }}><span className="err-msg">{errMsg}</span></div>}
+        {errMsg && <div className="px-5 py-3"><span className="err-msg">{errMsg}</span></div>}
         <Toolbar onClear={handleClear} onAction={handleCompare} actionLabel={loading ? 'Comparing...' : 'Compare'} isLoading={loading} />
       </Card>
 
@@ -187,7 +187,7 @@ export default function FilingPage() {
         <ResultPanel label="Results — what changed" id="filing-results">
           {/* Insight cards for top changes */}
           {topChanges.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            <div className="flex flex-col gap-3 mb-4">
               {topChanges.map((ic, i) => (
                 <InsightCard key={i} type={ic.type} title={ic.title} text={ic.text} formula={ic.formula} />
               ))}
@@ -251,8 +251,8 @@ export default function FilingPage() {
           )}
 
           {/* Export and next steps */}
-          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-            <button type="button" className="btn-primary" onClick={handleExportCSV} style={{ fontSize: 11, padding: '6px 14px' }}>
+          <div className="flex gap-3 mt-4">
+            <button type="button" className="btn-primary btn-sm" onClick={handleExportCSV}>
               Download CSV
             </button>
           </div>

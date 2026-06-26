@@ -100,7 +100,7 @@ export default function TrendsPage() {
 
       {rows.length > 0 && (
         <div id="trends-results">
-          <Card label="Data table" style={{ marginTop: '1.5rem' }}>
+          <Card label="Data table" className="mt-6">
             <div className="card-body">
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
                 {rows[0]?.label || 'Revenue'} Trend (₹ Cr)
@@ -129,7 +129,7 @@ export default function TrendsPage() {
             </table>
             <div className="card-body" style={{ textAlign: 'center' }}>
               <button
-                className="btn btn-secondary"
+                className="btn-secondary"
                 onClick={() => {
                   const hdrs = ['Metric', ...headers.slice(1)];
                   const data = rows.map((r) => [r.label, ...r.vals.map((v) => (isNaN(v) ? '' : v))]);

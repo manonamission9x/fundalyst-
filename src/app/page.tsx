@@ -265,30 +265,6 @@ export default function HomePage() {
           </div>
         </Card>
       </section>
-
-      {/* ── Footer ── */}
-      <footer style={{
-        marginTop: 'var(--space-8)',
-        padding: 'var(--space-6) 0 var(--space-4)',
-        borderTop: '1px solid var(--border-light)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: 'var(--space-3)',
-      }}>
-        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-          Fundalyst · Financial analysis for Indian markets
-        </div>
-        <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'center' }}>
-          <Link href="/about" style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textDecoration: 'none' }}>
-            About
-          </Link>
-          <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
-            All calculations client-side · For research purposes only
-          </span>
-        </div>
-      </footer>
     </div>
   );
 }

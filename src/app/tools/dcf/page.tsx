@@ -211,7 +211,7 @@ export default function DCFPage() {
       </Card>
 
       {/* ── Toolbar ── */}
-      <div style={{ marginTop: '1.5rem' }}>
+      <div className="mt-6">
         <Toolbar
           onClear={handleClear}
           onAction={runDCF}
@@ -297,14 +297,14 @@ function DCFResults({
       </Card>
 
       {/* ── Chart ── */}
-      <Card label="Chart" style={{ marginTop: '1rem' }}>
+      <Card label="Chart" className="mt-4">
         <div className="chart-wrap">
           <DCFChart projected={summary.projected} tv={summary.tv} pvTv={summary.pvTv} currentPrice={priceVal} />
         </div>
       </Card>
 
       {/* ── Projected Cash Flows ── */}
-      <Card label="Projected Cash Flows" style={{ marginTop: '1rem' }}>
+      <Card label="Projected Cash Flows" className="mt-4">
         <table className="diff-table">
           <thead>
             <tr><th>Year</th><th>Projected FCF</th><th>Discount Factor</th><th>PV of FCF</th></tr>
@@ -330,7 +330,7 @@ function DCFResults({
 
       {/* ── Sensitivity Analysis ── */}
       {sens.length > 0 && (
-        <Card label="Sensitivity Analysis" style={{ marginTop: '1rem' }}>
+        <Card label="Sensitivity Analysis" className="mt-4">
           <div className="card-body" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
             Intrinsic value per share at varying terminal growth rates (rows) vs discount rates (columns).<br />
             <span style={{ color: 'var(--text-muted)' }}>Base assumption highlighted. Green = undervalued vs ₹{fmtNum(priceVal)}, Red = overvalued.</span>

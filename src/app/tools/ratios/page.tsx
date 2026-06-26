@@ -256,7 +256,7 @@ export default function RatiosPage() {
 
       {/* ── Download ── */}
       {res && (
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+        <div className="mt-6 text-center">
           <button className="btn btn-secondary" onClick={() =>
             downloadCSV('ratios.csv', [
               ['Section', 'Metric', 'Value'],
@@ -267,8 +267,8 @@ export default function RatiosPage() {
       )}
 
       {res && (
-        <div style={{ marginTop: '1.5rem' }}>
-          <NextLinks links={[
+        <div className="mt-6">
+            <NextLinks links={[
             { label: 'Cash efficiency', href: '/tools/wc' },
             { label: 'Estimate value', href: '/tools/dcf' },
           ]} />

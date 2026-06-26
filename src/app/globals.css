@@ -995,3 +995,81 @@ textarea.num-input { resize: vertical; min-height: 80px; line-height: 1.7; }
   .import-dropzone { min-height: 44px; }
   .num-input, .period-label-input { min-height: 44px; font-size: 16px; }
 }
+
+
+/* ── Utility Classes ── */
+.mt-1 { margin-top: var(--space-1); } .mt-2 { margin-top: var(--space-2); }
+.mt-3 { margin-top: var(--space-3); } .mt-4 { margin-top: var(--space-4); }
+.mt-5 { margin-top: var(--space-5); } .mt-6 { margin-top: var(--space-6); }
+.mt-8 { margin-top: var(--space-8); }
+.mb-2 { margin-bottom: var(--space-2); } .mb-3 { margin-bottom: var(--space-3); }
+.mb-4 { margin-bottom: var(--space-4); }
+.p-0 { padding: 0; }
+.p-3 { padding: var(--space-3); } .p-4 { padding: var(--space-4); }
+.p-5 { padding: var(--space-5); }
+.px-5 { padding-left: var(--space-5); padding-right: var(--space-5); }
+.py-3 { padding-top: var(--space-3); padding-bottom: var(--space-3); }
+.gap-2 { gap: var(--space-2); } .gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.text-center { text-align: center; }
+.text-mono { font-family: var(--font-mono); }
+.text-xs { font-size: var(--text-xs); }
+.text-sm { font-size: var(--text-sm); }
+.text-muted { color: var(--text-muted); }
+.text-tertiary { color: var(--text-tertiary); }
+.w-full { width: 100%; }
+
+/* ── Button secondary (missing class) ── */
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+}
+.btn-secondary:hover {
+  color: var(--text);
+  border-color: var(--text-tertiary);
+  background: var(--bg-hover);
+}
+
+/* ── Table number alignment ── */
+.diff-table td.num, td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.diff-table th.num, th.num {
+  text-align: right;
+}
+/* Right-align all numeric columns by default */
+.diff-table td:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.diff-table th:not(:first-child) {
+  text-align: right;
+}
+/* But keep change indicator left-aligned visually */
+.diff-table td.change-up, .diff-table td.change-down, .diff-table td.change-flat,
+.diff-table td.change-mag-cell {
+  text-align: left;
+}
+
+/* ── Metric cell value consistency ── */
+.metric-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Results section spacing ── */
+.result-section {
+  margin-top: var(--space-6);
+}
+.result-gap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
