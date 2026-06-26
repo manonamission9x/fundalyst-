@@ -149,6 +149,9 @@ export function validateDCFInputs(
   if (discount === '' || discount === null) errors.push({ field: 'discount', message: 'Discount rate (WACC) is required' });
   else if (discountN < 0 || discountN > 100) errors.push({ field: 'discount', message: 'WACC must be between 0% and 100%' });
 
+  if (growth !== '' && growth !== null && discount !== '' && discount !== null && growthN >= discountN && discountN > 0)
+    errors.push({ field: 'growth', message: 'Growth rate must be less than WACC for meaningful valuation' });
+
   if (terminal === '' || terminal === null) errors.push({ field: 'terminal', message: 'Terminal growth rate is required' });
   else if (terminalN > discountN && discountN > 0) errors.push({ field: 'terminal', message: 'Terminal growth must be less than WACC' });
 

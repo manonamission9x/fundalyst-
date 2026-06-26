@@ -11,6 +11,9 @@ import {
   computeRatios,
   fmtNum,
   fmtINR,
+  parseLines,
+  computeDiff,
+  generateRiskFlags,
 } from './calculations';
 
 // ── DCF Valuation ──
@@ -107,7 +110,7 @@ describe('computeDCFSensitivity', () => {
 
 describe('validateDCFInputs', () => {
   it('returns no errors for valid inputs', () => {
-    const errors = validateDCFInputs(1240, 10, 5, 10, 3, 180, 100, 450);
+    const errors = validateDCFInputs(1240, 8, 5, 10, 3, 180, 100, 450);
     expect(errors).toHaveLength(0);
   });
 
