@@ -168,7 +168,7 @@ export default function FilingPage() {
                 aria-label={`${col.heading} data`}
               />
               <div className="label-examples">
-                <span className="label-examples-title">Valid labels:</span>
+                <span className="label-examples-title">Tap to add:</span>
                 <span className="label-examples-item">Revenue</span>
                 <span className="label-examples-item">Net Profit</span>
                 <span className="label-examples-item">EBITDA Margin</span>
