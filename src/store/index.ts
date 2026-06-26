@@ -87,7 +87,7 @@ interface DCFState {
 
 export const useDCFStore = create<DCFState>()(
   (set) => ({
-    inputs: { fcf: 1240, growth: 10, years: 5, discount: 10, terminal: 3, netDebt: 180, shares: 100, price: 450 },
+    inputs: { fcf: 1240, growth: 8, years: 5, discount: 10, terminal: 3, netDebt: 180, shares: 100, price: 450 },
     show: false,
     summary: null,
     sens: [],

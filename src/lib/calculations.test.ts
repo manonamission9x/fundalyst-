@@ -19,15 +19,15 @@ import {
 // ── DCF Valuation ──
 
 describe('computeDCF', () => {
-  const defaults = { fcf: 1240, growth: 10, years: 5, discount: 10, terminal: 3, netDebt: 180, shares: 100, price: 450 };
+  const defaults = { fcf: 1240, growth: 8, years: 5, discount: 10, terminal: 3, netDebt: 180, shares: 100, price: 450 };
 
   it('returns correct intrinsic value with default inputs', () => {
-    const r = computeDCF(1240, 10, 5, 10, 3, 180, 100, 450);
+    const r = computeDCF(1240, 8, 5, 10, 3, 180, 100, 450);
     expect(r).not.toBeNull();
-    expect(r!.iv).toBeCloseTo(242.66, 1);
-    expect(r!.ev).toBeCloseTo(24446, 0);
-    expect(r!.eq).toBeCloseTo(24266, 0);
-    expect(r!.mos).toBeCloseTo(-46.1, 1);
+    expect(r!.iv).toBeCloseTo(223.36, 1);
+    expect(r!.ev).toBeCloseTo(22516, 0);
+    expect(r!.eq).toBeCloseTo(22336, 0);
+    expect(r!.mos).toBeCloseTo(-50.4, 1);
   });
 
   it('returns null when shares is 0', () => {
