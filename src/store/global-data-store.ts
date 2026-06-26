@@ -44,7 +44,11 @@ export const useGlobalDataStore = create<GlobalDataState>()(
           updated = [...existing];
           updated[idx] = dataset;
         } else {
-          updated = [...existing, dataset];
+          // If adding a real (non-sample) dataset, remove any sample datasets
+          const filtered = dataset.sourceType !== 'sample'
+            ? existing.filter((d) => d.sourceType !== 'sample')
+            : existing;
+          updated = [...filtered, dataset];
         }
         set({
           datasets: updated,
