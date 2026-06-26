@@ -200,18 +200,25 @@ export function extractFilingInputs(
 ): { labelA: string; labelB: string; periodA: string; periodB: string } | null {
   const byPeriod = new Map<string, CanonicalFact[]>();
   for (const fact of dataset.facts) {
-    if (fact.metric === 'unknown') continue;
+    if (fact.metric === 'unknown' || fact.value === null) continue;
     const existing = byPeriod.get(fact.periodLabel) || [];
     existing.push(fact);
     byPeriod.set(fact.periodLabel, existing);
   }
 
-  const periods = [...byPeriod.keys()];
+  const periods = [...byPeriod.keys()].sort();
   if (periods.length < 2) return null;
 
-  const [p0, p1] = periods;
+  // Use earliest and latest period for comparison
+  const p0 = periods[0];
+  const p1 = periods[periods.length - 1];
   const facts0 = byPeriod.get(p0)!;
   const facts1 = byPeriod.get(p1)!;
+
+  // Sort facts alphabetically by metric for consistent ordering
+  const sortByMetric = (a: CanonicalFact, b: CanonicalFact) => a.metric.localeCompare(b.metric);
+  facts0.sort(sortByMetric);
+  facts1.sort(sortByMetric);
 
   const periodA = facts0.map((f) => `${f.labelOriginal}: ${f.value}`).join('\n');
   const periodB = facts1.map((f) => `${f.labelOriginal}: ${f.value}`).join('\n');

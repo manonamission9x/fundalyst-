@@ -115,20 +115,29 @@ export function extractFacts(
 }
 
 /**
- * Get the latest value for a given metric from the dataset (by last occurrence).
+ * Get the latest value for a given metric from the dataset.
+ * Periods are sorted chronologically before selecting the latest.
  */
 export function getLatestValue(
   dataset: FundalystDataset | null,
   metricKey: string
 ): number | null {
   if (!dataset) return null;
-  const matching = dataset.facts.filter((f) => f.metric === metricKey);
-  if (matching.length === 0) return null;
-  return matching[matching.length - 1].value;
+  const facts = dataset.facts.filter(
+    (f) => f.metric === metricKey && f.value !== null && f.value !== undefined
+  );
+  if (facts.length === 0) return null;
+  // Sort by period for deterministic ordering
+  const sorted = [...facts].sort((a, b) => {
+    if (a.periodLabel < b.periodLabel) return -1;
+    if (a.periodLabel > b.periodLabel) return 1;
+    return 0;
+  });
+  // Return the last (most recent) period
+  return sorted[sorted.length - 1].value;
 }
 
 /**
- * Run accounting sanity checks on a dataset.
  * These do not block the user — they show warnings if checks fail.
  */
 export function runValidationChecks(dataset: FundalystDataset): ValidationCheck[] {

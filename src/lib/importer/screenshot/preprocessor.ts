@@ -10,8 +10,8 @@
  *   - Sharpening text edges
  */
 
-/** Maximum dimension for OCR input (1600px on longest side) */
-const MAX_DIMENSION = 1600;
+/** Maximum dimension for OCR input (1200px = faster OCR, good accuracy) */
+const MAX_DIMENSION = 1200;
 /** Minimum dimension for OCR input */
 const MIN_DIMENSION = 600;
 
