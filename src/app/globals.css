@@ -1,39 +1,39 @@
 /* ── Fundalyst Design System v4.5 (Premium Refined Dark Fintech) ── */
 :root {
-  /* ── Color System ── (Premium v5 — warm dark, high contrast, refined) */
-  --bg: #0B0C12;
-  --bg-elevated: #13151C;
-  --bg-surface: #1A1D28;
-  --bg-hover: #212433;
-  --bg-active: #272A3C;
-  --bg-field: #161822;
-  --border: #272B3E;
-  --border-light: #1C1F2E;
-  --border-strong: #31354B;
-  --border-focus: #5B6EF5;
+  /* ── Premium Light Theme (Navy + Gold + Clean Neutrals) ── */
+  --bg: #F7FAFC;
+  --bg-elevated: #FFFFFF;
+  --bg-surface: #EDF2F7;
+  --bg-hover: #E2E8F0;
+  --bg-active: #CBD5E0;
+  --bg-field: #FFFFFF;
+  --border: #CBD5E0;
+  --border-light: #E2E8F0;
+  --border-strong: #A0AEC0;
+  --border-focus: #0D47A1;
 
-  --text: #F1F0EC;
-  --text-secondary: #D1D2DC;
-  --text-tertiary: #9DA0B5;
-  --text-muted: #6B6F87;
+  --text: #1A202C;
+  --text-secondary: #4A5568;
+  --text-tertiary: #718096;
+  --text-muted: #A0AEC0;
 
   /* ── Brand ── */
-  --primary: #5B6EF5;
-  --primary-hover: #7585FF;
-  --primary-subtle: rgba(91, 110, 245, 0.08);
-  --primary-subtle-hover: rgba(91, 110, 245, 0.15);
+  --primary: #0D47A1;
+  --primary-hover: #1565C0;
+  --primary-subtle: rgba(13, 71, 161, 0.06);
+  --primary-subtle-hover: rgba(13, 71, 161, 0.12);
 
   /* ── Semantic Colors (muted, professional) ── */
-  --green: #27AE60;
-  --green-subtle: rgba(39, 174, 96, 0.08);
-  --green-strong: #2DBB6A;
-  --red: #E53E3E;
-  --red-subtle: rgba(229, 62, 62, 0.08);
-  --red-strong: #F05A5A;
-  --amber: #F0B429;
-  --amber-subtle: rgba(240, 180, 41, 0.08);
-  --blue: #3498DB;
-  --blue-subtle: rgba(52, 152, 219, 0.08);
+  --green: #2F855A;
+  --green-subtle: rgba(47, 133, 90, 0.08);
+  --green-strong: #38A169;
+  --red: #C53030;
+  --red-subtle: rgba(197, 48, 48, 0.08);
+  --red-strong: #E53E3E;
+  --amber: #B7791F;
+  --amber-subtle: rgba(183, 121, 31, 0.08);
+  --blue: #2B6CB0;
+  --blue-subtle: rgba(43, 108, 176, 0.08);
 
   /* ── Shadows ── */
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.4);
@@ -105,16 +105,14 @@ body {
   font-size: var(--text-base);
 }
 
-/* ── Premium Background Animation System ── */
-
-/* Layer 1: Subtle grid — thinner, slower pulse */
+/* ── Light theme body::before grid uses primary at very low opacity */
 body::before {
   content: '';
   position: fixed; top: 0; left: 0;
   width: 100%; height: 100%;
   background-image:
-    linear-gradient(rgba(91,110,245,0.012) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(91,110,245,0.012) 1px, transparent 1px);
+    linear-gradient(rgba(13,71,161,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(13,71,161,0.04) 1px, transparent 1px);
   background-size: 64px 64px;
   pointer-events: none;
   z-index: 0;
@@ -127,9 +125,9 @@ body::after {
   position: fixed; top: 0; left: 0;
   width: 100%; height: 100%;
   background:
-    radial-gradient(ellipse 60% 50% at var(--glow-x-1, 25%) var(--glow-y-1, 20%), rgba(91,110,245,0.035) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 60% at var(--glow-x-2, 70%) var(--glow-y-2, 75%), rgba(39,174,96,0.02) 0%, transparent 55%),
-    radial-gradient(ellipse 40% 40% at var(--glow-x-3, 50%) var(--glow-y-3, 50%), rgba(91,110,245,0.015) 0%, transparent 50%);
+    radial-gradient(ellipse 60% 50% at var(--glow-x-1, 25%) var(--glow-y-1, 20%), rgba(13,71,161,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at var(--glow-x-2, 70%) var(--glow-y-2, 75%), rgba(47,133,90,0.03) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at var(--glow-x-3, 50%) var(--glow-y-3, 50%), rgba(13,71,161,0.02) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
   animation: ambientDrift 20s ease-in-out infinite alternate;
@@ -261,7 +259,7 @@ body::after {
 /* ── Navigation ── */
 .nav {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(10, 11, 15, 0.88);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(20px) saturate(1.4);
   -webkit-backdrop-filter: blur(20px) saturate(1.4);
   border-bottom: 1px solid var(--border-light);
