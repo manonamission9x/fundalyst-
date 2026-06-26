@@ -3,6 +3,259 @@
 import Link from 'next/link';
 import { useRef } from 'react';
 
+// ── Premium SVG Icon Components ──
+// All icons: 20×20 viewBox, 1.5px stroke, round caps/joins, currentColor
+
+export function IconFiling() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 3h7l4 4v10H4V3z" /><path d="M11 3v4h4" /><path d="M7 12l2 2 3-3" />
+    </svg>
+  );
+}
+export function IconTrends() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 16l4-5 3 2 5-6" /><circle cx="14.5" cy="7.5" r="2.5" stroke="currentColor" /><path d="M14.5 5v5" />
+    </svg>
+  );
+}
+export function IconGrowth() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="3" height="6" rx="0.5" /><rect x="8.5" y="7" width="3" height="10" rx="0.5" /><rect x="14" y="3" width="3" height="14" rx="0.5" /><path d="M3 17h14" />
+    </svg>
+  );
+}
+export function IconDCF() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="7" /><path d="M10 6v4l3 2" /><path d="M6 14l3-3" strokeWidth="1.2" />
+    </svg>
+  );
+}
+export function IconCash() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="6" /><path d="M10 7v6" /><path d="M8 9h4" /><path d="M8 11h4" />
+    </svg>
+  );
+}
+export function IconRatios() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7" cy="7" r="3" /><circle cx="14" cy="13" r="3" /><path d="M9 9l4 4" />
+    </svg>
+  );
+}
+export function IconPeer() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7" cy="7" r="3" /><circle cx="14" cy="7" r="3" /><rect x="4" y="13" width="6" height="4" rx="1" /><rect x="12" y="13" width="6" height="4" rx="1" />
+    </svg>
+  );
+}
+export function IconImport() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 3v10M5 8l5-5 5 5" /><path d="M3 15v2h14v-2" />
+    </svg>
+  );
+}
+export function IconWorkspace() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="6" height="6" rx="1" /><rect x="12" y="3" width="5" height="6" rx="1" /><rect x="3" y="12" width="5" height="5" rx="1" /><rect x="11" y="11" width="6" height="6" rx="1" />
+    </svg>
+  );
+}
+export function IconQuickCheck() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 9.5V15a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2h5" /><path d="M15 3l-6 6-2-2" /><circle cx="16" cy="4" r="2" />
+    </svg>
+  );
+}
+export function IconAbout() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="7" /><path d="M10 9v4" /><circle cx="10" cy="6.5" r="0.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+export function IconUpload() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 2v8M4 6l4-4 4 4" /><path d="M2 12v2h12v-2" />
+    </svg>
+  );
+}
+export function IconArrowRight() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 8h10M9 4l4 4-4 4" />
+    </svg>
+  );
+}
+export function IconCheck() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 8l4 4 6-6" />
+    </svg>
+  );
+}
+export function IconClock() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="6" cy="6" r="5" /><path d="M6 3v3l2 2" />
+    </svg>
+  );
+}
+export function IconCalc() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 7l3 3 5-5" />
+    </svg>
+  );
+}
+export function IconClear() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 3l8 8M11 3l-8 8" />
+    </svg>
+  );
+}
+export function IconPlus() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+      <path d="M7 2v10M2 7h10" />
+    </svg>
+  );
+}
+export function IconDownload() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 2v8M4 7l3 3 3-3" /><path d="M2 11v1h10v-1" />
+    </svg>
+  );
+}
+export function IconSearch() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="6.5" cy="6.5" r="4" /><path d="M13 13l-3-3" />
+    </svg>
+  );
+}
+
+// ── Tool icon set for nav ──
+export function IconNavHome() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 6l5-4 5 4v5a1 1 0 01-1 1H3a1 1 0 01-1-1V6z" /><path d="M5 11V8h4v3" />
+    </svg>
+  );
+}
+export function IconNavImport() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 2v7M4 6l3 3 3-3" /><path d="M2 11v1h10v-1" />
+    </svg>
+  );
+}
+export function IconNavFiling() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 2h5l3 3v7a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" /><path d="M8 2v3h3" /><path d="M5 8l2 2 3-3" />
+    </svg>
+  );
+}
+export function IconNavTrends() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12l4-5 3 2 4-5" />
+    </svg>
+  );
+}
+export function IconNavGrowth() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="8" width="2" height="4" rx="0.5" /><rect x="6" y="5" width="2" height="7" rx="0.5" /><rect x="10" y="2" width="2" height="10" rx="0.5" />
+    </svg>
+  );
+}
+export function IconNavDCF() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7" cy="7" r="5" /><path d="M7 5v3l2 1" />
+    </svg>
+  );
+}
+export function IconNavCash() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7" cy="7" r="4" /><path d="M7 5v4" /><path d="M6 7h2" />
+    </svg>
+  );
+}
+export function IconNavRatios() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="5" cy="5" r="2" /><circle cx="10" cy="9" r="2" /><path d="M6 6l3 3" />
+    </svg>
+  );
+}
+export function IconNavPeer() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="5" cy="5" r="2" /><circle cx="9" cy="5" r="2" /><rect x="3" y="9" width="4" height="3" rx="0.5" /><rect x="8" y="9" width="4" height="3" rx="0.5" />
+    </svg>
+  );
+}
+export function IconNavWorkspace() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="4" height="4" rx="0.5" /><rect x="8" y="2" width="4" height="4" rx="0.5" /><rect x="2" y="8" width="4" height="4" rx="0.5" /><rect x="8" y="8" width="4" height="4" rx="0.5" />
+    </svg>
+  );
+}
+export function IconNavAbout() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7" cy="7" r="5" /><path d="M7 6v3" /><circle cx="7" cy="4.5" r="0.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+// ── Insight card icons ──
+export function IconInsightPositive() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 16l5-5 3 3 6-6" /><path d="M12 8h4v4" />
+    </svg>
+  );
+}
+export function IconInsightRisk() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 1L1 17h16L9 1z" /><path d="M9 7v4" /><circle cx="9" cy="13.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+export function IconInsightWarning() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="9" r="8" /><path d="M9 5v5" /><circle cx="9" cy="13" r="0.8" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+export function IconInsightInfo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="9" r="8" /><path d="M9 8v5" /><circle cx="9" cy="5.5" r="0.8" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 // ── PageHeader ──
 interface PageHeaderProps {
   title: string;
@@ -19,7 +272,7 @@ export function PageHeader({ title, subtitle, answer }: PageHeaderProps) {
   );
 }
 
-// ── Card (generic container) ──
+// ── Card ──
 interface CardProps {
   label?: string;
   children: React.ReactNode;
@@ -30,7 +283,7 @@ interface CardProps {
 export function Card({ label, children, style, className, accent }: CardProps) {
   return (
     <div className={`card${className ? ' ' + className : ''}`} style={style}>
-      {accent && <div style={{ height: 3, backgroundColor: 'var(--primary)', borderTopLeftRadius: 8, borderTopRightRadius: 8 }} />}
+      {accent && <div className="card-accent" />}
       {label && (
         <div className="card-header">
           <span className="card-label">{label}</span>
@@ -50,9 +303,7 @@ export function UploadBar({ onUpload, hint }: UploadBarProps) {
   return (
     <div className="upload-zone">
       <label className="upload-label">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3">
-          <path d="M7 2v10M2 7h10" />
-        </svg>
+        <IconUpload />
         Upload file
         <input type="file" accept=".csv,.tsv,.txt,.xlsx,.xls,.pdf,.png,.jpg,.jpeg,.gif,.webp" style={{ display: 'none' }} onChange={onUpload} />
       </label>
@@ -105,8 +356,8 @@ export function Toolbar({ onClear, onAction, actionLabel, hint, isLoading }: Too
   return (
     <div className="card-actions">
       {onClear && (
-        <button type="button" onClick={onClear} className="btn-ghost">
-          Clear
+        <button type="button" onClick={onClear} className="btn-ghost btn-sm">
+          <IconClear /> Clear
         </button>
       )}
       {hint && <span className="upload-hint">{hint}</span>}
@@ -121,10 +372,10 @@ export function Toolbar({ onClear, onAction, actionLabel, hint, isLoading }: Too
           {isLoading ? (
             <>
               <span className="spinner" style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', marginRight: 6, verticalAlign: 'middle', animation: 'spin 0.6s linear infinite' }} />
-              Calculating…
+              {actionLabel}
             </>
           ) : (
-            actionLabel
+            <>{actionLabel} <IconArrowRight /></>
           )}
         </button>
       )}
@@ -143,7 +394,7 @@ export function NextLinks({ links }: { links: NextLink[] }) {
       <span className="next-label">Next:</span>
       {links.map((l, i) => (
         <span key={i}>
-          <Link href={l.href}>{l.label} →</Link>
+          <Link href={l.href}><IconArrowRight /> {l.label}</Link>
         </span>
       ))}
     </div>
@@ -166,12 +417,10 @@ interface EmptyStateProps {
   desc: string;
   icon?: string;
 }
-export function EmptyState({ title, desc, icon }: EmptyStateProps) {
+export function EmptyState({ title, desc }: EmptyStateProps) {
   return (
     <Card style={{ marginTop: '1.5rem' }}>
-      <div style={{ height: 3, backgroundColor: 'var(--primary)', borderTopLeftRadius: 8, borderTopRightRadius: 8 }} />
       <div className="empty-state">
-        {icon && <div className="empty-state-icon">{icon}</div>}
         <div className="empty-state-title">{title}</div>
         <div className="empty-state-desc">{desc}</div>
       </div>
@@ -185,9 +434,7 @@ interface Metric {
   value: string;
   sub?: string;
   cls?: 'good' | 'warn' | 'neutral' | '';
-  /** Trend direction: up, down, or flat */
   trend?: 'up' | 'down' | 'flat';
-  /** Optional inline bar value (0-1) for comparison visuals */
   bar?: number;
 }
 export function MetricGrid({ metrics }: { metrics: Metric[] }) {
@@ -227,33 +474,10 @@ interface InsightCardProps {
 }
 export function InsightCard({ type, title, text, formula }: InsightCardProps) {
   const icons: Record<string, React.ReactNode> = {
-    positive: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M2 16l5-5 3 3 6-6" />
-        <path d="M12 8h4v4" />
-      </svg>
-    ),
-    risk: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 1L1 17h16L9 1z" />
-        <path d="M9 7v4" />
-        <circle cx="9" cy="13.5" r="1" fill="currentColor" stroke="none" />
-      </svg>
-    ),
-    warning: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="9" cy="9" r="8" />
-        <path d="M9 5v5" />
-        <circle cx="9" cy="13" r="0.8" fill="currentColor" stroke="none" />
-      </svg>
-    ),
-    info: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="9" cy="9" r="8" />
-        <path d="M9 8v5" />
-        <circle cx="9" cy="5.5" r="0.8" fill="currentColor" stroke="none" />
-      </svg>
-    ),
+    positive: <IconInsightPositive />,
+    risk: <IconInsightRisk />,
+    warning: <IconInsightWarning />,
+    info: <IconInsightInfo />,
   };
   return (
     <div className={`insight-card ${type}`}>
@@ -295,26 +519,26 @@ interface DataQualityBarProps {
 export function DataQualityBar({ source, periods, metrics, missing }: DataQualityBarProps) {
   const dotClass = source === 'Manual mode' ? 'muted' : source.includes('sample') ? 'warn' : 'good';
   return (
-    <div className="data-quality" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1.5rem', alignItems: 'center', padding: '0.5rem 0' }}>
-      <span className="data-quality-item" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-        <span className={`data-quality-dot ${dotClass}`} style={{ width: 10, height: 10, borderRadius: '50%', display: 'inline-block' }} />
+    <div className="data-quality">
+      <span className="data-quality-item">
+        <span className={`data-quality-dot ${dotClass}`} />
         Source: {source}
       </span>
       {periods && (
-        <span className="data-quality-item" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span className={`data-quality-dot ${dotClass}`} style={{ width: 10, height: 10, borderRadius: '50%', display: 'inline-block' }} />
+        <span className="data-quality-item">
+          <span className={`data-quality-dot ${dotClass}`} />
           {periods}
         </span>
       )}
       {metrics !== undefined && (
-        <span className="data-quality-item" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span className="data-quality-dot good" style={{ width: 10, height: 10, borderRadius: '50%', display: 'inline-block' }} />
+        <span className="data-quality-item">
+          <span className="data-quality-dot good" />
           {metrics} metrics
         </span>
       )}
       {missing !== undefined && missing > 0 && (
-        <span className="data-quality-item" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span className="data-quality-dot warn" style={{ width: 10, height: 10, borderRadius: '50%', display: 'inline-block' }} />
+        <span className="data-quality-item">
+          <span className="data-quality-dot warn" />
           {missing} missing
         </span>
       )}
@@ -341,19 +565,18 @@ export function SectionTitle({ children }: { children: React.ReactNode }) {
   return <div className="section-title">{children}</div>;
 }
 
-// ── Calculated timestamp ──
+// ── CalcTimestamp ──
 export function CalcTimestamp() {
   const timeRef = useRef(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }));
   return (
     <div className="calc-timestamp">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="6" cy="6" r="5" />
-        <path d="M6 3v3l2 2" />
-      </svg>
+      <IconClock />
       Calculated {timeRef.current}
     </div>
   );
 }
+
+// ── ResultPanel ──
 interface ResultPanelProps {
   children: React.ReactNode;
   label?: string;

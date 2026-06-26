@@ -184,7 +184,9 @@ body::after {
   transition: color var(--transition);
   white-space: nowrap; text-decoration: none;
   border-radius: 0; position: relative;
+  display: inline-flex; align-items: center; gap: 6px;
 }
+.nav-tab svg { flex-shrink: 0; }
 .nav-tab:hover { color: var(--text-secondary); }
 .nav-tab.active { color: var(--text); }
 .nav-tab.active::after {

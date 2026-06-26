@@ -4,19 +4,20 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useGlobalDataStore } from '@/store/global-data-store';
+import { IconNavHome, IconNavImport, IconNavFiling, IconNavTrends, IconNavGrowth, IconNavDCF, IconNavCash, IconNavRatios, IconNavPeer, IconNavWorkspace, IconNavAbout, IconUpload } from '@/components/ui';
 
-const items: { id: string; label: string; href: string; group?: string }[] = [
-  { id: 'home', label: 'Home', href: '/' },
-  { id: 'import', label: 'Import', href: '/import' },
-  { id: 'filing', label: 'Filing', href: '/research/filing', group: 'Research' },
-  { id: 'trends', label: 'Trends', href: '/research/trends', group: 'Research' },
-  { id: 'growth', label: 'Growth', href: '/research/growth', group: 'Research' },
-  { id: 'dcf', label: 'DCF', href: '/tools/dcf', group: 'Analysis' },
-  { id: 'wc', label: 'Cash', href: '/tools/wc', group: 'Analysis' },
-  { id: 'ratios', label: 'Ratios', href: '/tools/ratios', group: 'Analysis' },
-  { id: 'peer', label: 'Peer', href: '/tools/peer', group: 'Analysis' },
-  { id: 'workspace', label: 'Workspace', href: '/workspace' },
-  { id: 'about', label: 'About', href: '/about' },
+const items: { id: string; label: string; href: string; group?: string; icon: React.ReactNode }[] = [
+  { id: 'home', label: 'Home', href: '/', icon: <IconNavHome /> },
+  { id: 'import', label: 'Import', href: '/import', icon: <IconNavImport /> },
+  { id: 'filing', label: 'Filing', href: '/research/filing', group: 'Research', icon: <IconNavFiling /> },
+  { id: 'trends', label: 'Trends', href: '/research/trends', group: 'Research', icon: <IconNavTrends /> },
+  { id: 'growth', label: 'Growth', href: '/research/growth', group: 'Research', icon: <IconNavGrowth /> },
+  { id: 'dcf', label: 'DCF', href: '/tools/dcf', group: 'Analysis', icon: <IconNavDCF /> },
+  { id: 'wc', label: 'Cash', href: '/tools/wc', group: 'Analysis', icon: <IconNavCash /> },
+  { id: 'ratios', label: 'Ratios', href: '/tools/ratios', group: 'Analysis', icon: <IconNavRatios /> },
+  { id: 'peer', label: 'Peer', href: '/tools/peer', group: 'Analysis', icon: <IconNavPeer /> },
+  { id: 'workspace', label: 'Workspace', href: '/workspace', icon: <IconNavWorkspace /> },
+  { id: 'about', label: 'About', href: '/about', icon: <IconNavAbout /> },
 ];
 
 export default function Nav() {
@@ -59,6 +60,7 @@ export default function Nav() {
                 role="tab"
                 aria-selected={isActive(item.href)}
               >
+                {item.icon}
                 {item.label}
               </Link>
             </React.Fragment>
@@ -76,9 +78,7 @@ export default function Nav() {
             </span>
           )}
           <Link href="/import" className="nav-cta">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M7 2v8M3 6l4-4 4 4" /><path d="M2 10v2h10v-2" />
-            </svg>
+            <IconUpload />
             {activeDataset ? 'Import more' : 'Upload Data'}
           </Link>
           {activeDataset && (
