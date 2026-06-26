@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     'Upload financial statements, compare periods, analyze ratios, build DCF valuations, benchmark peers — all in your browser, no server uploads.',
   icons: {
     icon: [
-      { url: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22><rect width=%2220%22 height=%2220%22 rx=%224%22 fill=%22%23C4A882%22/><path d=%22M5 14V6L10 10L15 6V14%22 stroke=%22%23141414%22 stroke-width=%221.5%22 fill=%22none%22/></svg>', type: 'image/svg+xml' },
+      { url: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22><rect width=%2220%22 height=%2220%22 rx=%224%22 fill=%22%234F6EF7%22/><path d=%22M5 14V6L10 10L15 6V14%22 stroke=%22white%22 stroke-width=%221.5%22 fill=%22none%22/></svg>', type: 'image/svg+xml' },
     ],
   },
 };

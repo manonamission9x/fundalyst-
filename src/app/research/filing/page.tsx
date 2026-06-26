@@ -308,8 +308,8 @@ export default function FilingPage() {
 
       {!showResults && (
         <EmptyState
-          title="See what changed between two reporting periods."
-          desc="Paste line items as Label: value in both columns above, then click Compare. Sample data is pre-loaded — click Clear to start fresh."
+          title="Paste line items for two periods above, then click Compare."
+          desc="Enter each metric on its own line as 'Label: value'. The tool compares both periods and highlights what changed — revenue growth, margin compression, debt increases."
         />
       )}
     </div>
