@@ -241,7 +241,7 @@ export default function FilingPage() {
 
           {/* Risk flags */}
           {riskFlags.length > 0 && (
-            <Card label="Risk flags" style={{ marginTop: 16 }}>
+            <Card label="Risk flags" className="mt-4">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {riskFlags.map((f, i) => (
                   <WarningCard key={i} level={f.level} label={f.label} text={f.text} />
