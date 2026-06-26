@@ -18,6 +18,7 @@ import {
   NextLinks,
   Disclaimer,
   DataQualityBar,
+  CalcTimestamp,
 } from '@/components/ui';
 import { useGlobalImportFill, extractWCInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
 
@@ -64,6 +65,7 @@ export default function WCPage() {
       inputs.payables === '' ? null : Number(inputs.payables),
       inputs.cash === '' ? null : Number(inputs.cash)
     ));
+    showToast('Analysis complete');
   }
 
   function handleClear() {
@@ -243,6 +245,7 @@ export default function WCPage() {
               { label: 'Estimate value', href: '/tools/dcf' },
             ]}
           />
+          <CalcTimestamp />
           <Disclaimer extra="CCC = DSO + DIO − DPO" />
         </>
       )}

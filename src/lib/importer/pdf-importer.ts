@@ -215,6 +215,42 @@ export async function importPdf(
   };
 }
 
+// ── Common non-financial label patterns to silently skip ──
+
+const NON_FINANCIAL_LABELS = [
+  /^(q[1-4]|quarter|half.?year|annual|year|month|january|february|march|april|may|june|july|august|september|october|november|december)$/i,
+  /^(germany|uk|turkey|türkiye|africa|egypt|europe|asia|india|china|japan|usa|france|italy|spain|netherlands|sweden|switzerland)$/i,
+  /^(group|total|subtotal|common functions|corporate|other|others|continuing|discontinued)$/i,
+  /^(references|introduction|background|overview|summary|conclusion|notes|note|refer|source)$/i,
+  /^(this|that|these|those|our|their|its|the|and|or|for|from|with|in|on|by|at|to|of)$/i,
+  /^["""'']/,
+  /(?:management|directors?|board|chairman)\s+(?:discussion|report|commentary|analysis|statement)/i,
+  /(?:accounting|audit|tax)\s+(?:policies?|standards?|estimates?|assumptions?)/i,
+  /\b(?:risk|uncertainty|outlook|guidance|forecast|strategy|initiative)\b/i,
+  /^%\s+of/i,
+  /^\d+%\s+(of|in|to)/,
+  /(?:please|kindly|note|refer)\s+(?:see|to)/i,
+  /^(?:the|this|our|we)\s+(?:following|table|report|quarter|year|period|measure|change|increase|decrease)/i,
+  /(?:is|are|was|were|has|have|been|being)\s+(?:calculated|derived|based|prepared|presented|shown|stated|included|excluded|recognised|recognized)/i,
+  /(?:in|for|during)\s+(?:accordance|compliance|conformity|line)\s+with/i,
+  /^["""''](?:risk|management|discussion|analysis)/i,
+];
+
+/** Check if a label is clearly non-financial text that should be silently ignored */
+function isNonFinancialLabel(label: string): boolean {
+  const trimmed = label.trim();
+  if (!trimmed || trimmed.length < 2) return true;      // too short
+  if (trimmed.length > 60) return true;                  // narrative sentence, not a data row
+  if (/^[\d,.₹$£€¥%()\-]+$/.test(trimmed) && !/[a-zA-Z]/.test(trimmed)) return true; // pure number
+  if (NON_FINANCIAL_LABELS.some((p) => p.test(trimmed))) return true;
+  return false;
+}
+
+/** Check if a label looks like a plausible financial metric label */
+function looksFinancial(label: string): boolean {
+  return /(revenue|income|profit|loss|asset|liability|equity|debt|cash|expense|cost|margin|ratio|tax|ebit|pat|sales|turnover|depreciation|interest|dividend|reserve|surplus|borrowing|payable|receivable|inventory|investment|shareholder|fund|capital|goodwill|intangible|current|fixed|tangible|operating|financing|investing|capex|eps|earnings|comprehensive|adjusted|organic|service|mobile|fixed|group|total|net|gross|operating)/i.test(label);
+}
+
 // ── Build FundalystDataset from ImportedTable[] ─────────────────────────────
 
 /**
@@ -249,10 +285,17 @@ function buildDatasetFromTables(
         continue;
       }
 
+      // Skip clearly non-financial labels silently (no warnings)
+      if (isNonFinancialLabel(labelOriginal)) continue;
+
       // Find metric match
       const match = findBestMetricMatch(labelOriginal);
       const canonicalMetric = match?.canonical || 'unknown';
       const statement = (match?.statement as StatementType) || 'unknown';
+
+      // Auto-skip: no match AND label doesn't look financial → skip silently
+      if (!match && !looksFinancial(labelOriginal)) continue;
+      if (match && match.confidence < 0.2 && !looksFinancial(labelOriginal)) continue;
 
       // Process value columns (columns 1..N)
       for (let colIdx = 1; colIdx < row.length; colIdx++) {

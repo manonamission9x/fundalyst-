@@ -1,12 +1,21 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { PageHeader, Card, Disclaimer, DataQualityBar } from '@/components/ui';
 import { useImporterStore } from '@/store/importer-store';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { canonicalDisplayName } from '@/lib/importer/metric-aliases';
+import { validatePdfFile, deepValidatePdf } from '@/lib/importer/pdf-validator';
 import type { MetricMapping } from '@/lib/importer/types';
+import type { PdfValidationResult } from '@/lib/importer/pdf-validator';
+import dynamic from 'next/dynamic';
+
+// Lazy-load PDF viewer (heavy dependency)
+const PdfViewer = dynamic(() => import('@/components/import/PdfViewer'), {
+  ssr: false,
+  loading: () => <div className="skeleton" style={{ width: '100%', height: 200, borderRadius: 'var(--radius-md)' }} />,
+});
 
 export default function ImportPage() {
   const {
@@ -19,11 +28,67 @@ export default function ImportPage() {
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      setUploadedFile(file);
+      setPdfValidation(null);
+
+      // Track for image preview in review
+      if (file.type.startsWith('image/')) {
+        setPastedFile(file);
+      } else {
+        setPastedFile(null);
+      }
+
+      // Validate PDF before processing
+      if (file.name.toLowerCase().endsWith('.pdf')) {
+        const quickCheck = validatePdfFile(file);
+        if (!quickCheck.valid) {
+          setPdfValidation(quickCheck);
+          setPdfValidating(false);
+          return; // Don't proceed with import
+        }
+        setPdfValidating(true);
+        // Deep validation (async, checks encryption, pages, etc.)
+        const deep = await deepValidatePdf(file);
+        setPdfValidating(false);
+        setPdfValidation(deep);
+        if (!deep.valid) return; // Don't proceed
+      }
+
       await startImport(file);
       e.target.value = '';
     },
     [startImport]
   );
+
+  // Clipboard paste support for screenshots
+  const [pastedFile, setPastedFile] = useState<File | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [pdfValidation, setPdfValidation] = useState<PdfValidationResult | null>(null);
+  const [pdfValidating, setPdfValidating] = useState(false);
+  const dropZoneRef = useRef<HTMLLabelElement>(null);
+
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            const imageFile = new File([file], 'clipboard-screenshot.png', {
+              type: file.type || 'image/png',
+            });
+            setPastedFile(imageFile);
+            await startImport(imageFile);
+          }
+          return;
+        }
+      }
+    };
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [startImport]);
 
   const handleConfirm = useCallback(() => {
     const dataset = confirmImport();
@@ -70,8 +135,11 @@ export default function ImportPage() {
                   <span>·</span>
                   <span>PDF</span>
                   <span>·</span>
-                  <span>Image</span>
-                  <span style={{ color: 'var(--amber)', fontSize: 8 }}>BETA</span>
+                  <span>Screenshot</span>
+                  <span style={{ color: 'var(--amber)', fontSize: 8 }}>NEW</span>
+                </div>
+                <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', marginTop: 6 }}>
+                  Or paste a screenshot from clipboard (Ctrl+V)
                 </div>
                 <span className="upload-label" style={{ padding: '8px 18px', fontSize: 12 }}>
                   Upload file
@@ -80,6 +148,34 @@ export default function ImportPage() {
               </label>
             </div>
           </Card>
+
+          {/* PDF validation result */}
+          {pdfValidating && (
+            <Card style={{ marginBottom: '1.5rem' }}>
+              <div className="pdf-progress">
+                <div className="pdf-progress-bar">
+                  <div className="pdf-progress-fill" style={{ width: '60%' }} />
+                </div>
+                <span className="pdf-progress-label">Validating PDF…</span>
+              </div>
+            </Card>
+          )}
+          {pdfValidation && !pdfValidation.valid && (
+            <div className={`pdf-validation error`}>
+              <span className="pdf-validation-icon">✕</span>
+              <div>{pdfValidation.error}</div>
+            </div>
+          )}
+          {pdfValidation && pdfValidation.valid && pdfValidation.warnings.length > 0 && (
+            <div className={`pdf-validation warning`}>
+              <span className="pdf-validation-icon">!</span>
+              <div>
+                {pdfValidation.warnings.map((w, i) => (
+                  <div key={i}>{w}</div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Workflow steps */}
           <div className="workflow-steps">
@@ -117,13 +213,25 @@ export default function ImportPage() {
         </>
       )}
 
-      {/* Loading state */}
+      {/* Loading state — enhanced for PDF and screenshots */}
       {isImporting && (
         <Card>
-          <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-            <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-              Parsing file...
+          <div className="pdf-progress">
+            <div className="pdf-progress-bar">
+              <div className="pdf-progress-fill" style={{ width: '45%' }} />
             </div>
+            <span className="pdf-progress-label">
+              {uploadedFile?.name.toLowerCase().endsWith('.pdf')
+                ? 'Extracting financial data from PDF…'
+                : pastedFile
+                  ? 'Processing screenshot…'
+                  : 'Parsing file…'}
+            </span>
+          </div>
+          <div style={{ padding: '0 20px 14px', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>
+            {uploadedFile?.name.toLowerCase().endsWith('.pdf')
+              ? `Processing ${uploadedFile.name} — this may take a moment for multi-page documents`
+              : 'This may take a few seconds for images'}
           </div>
         </Card>
       )}
@@ -147,6 +255,8 @@ export default function ImportPage() {
           onUpdateMapping={updateMapping}
           onConfirm={handleConfirm}
           onCancel={cancelImport}
+          sourceImageUrl={pastedFile ? URL.createObjectURL(pastedFile) : undefined}
+          uploadedFile={uploadedFile}
         />
       )}
     </div>
@@ -160,11 +270,15 @@ function ImportReview({
   onUpdateMapping,
   onConfirm,
   onCancel,
+  sourceImageUrl,
+  uploadedFile,
 }: {
   review: NonNullable<ReturnType<typeof useImporterStore.getState>['review']>;
   onUpdateMapping: (label: string, updates: Partial<MetricMapping>) => void;
   onConfirm: () => void;
   onCancel: () => void;
+  sourceImageUrl?: string;
+  uploadedFile?: File | null;
 }) {
   const factsCount = review.rawFacts.length;
   const mappedCount = review.mappings.filter((m) => m.canonicalMetric !== 'unknown' && !m.ignored).length;
@@ -177,6 +291,43 @@ function ImportReview({
       {/* Detection Summary */}
       <Card label="File detected">
         <div className="card-body">
+          {review.sourceType === 'ocr' && sourceImageUrl && (
+            <div style={{
+              marginBottom: 14, display: 'flex', gap: 14, alignItems: 'flex-start',
+            }}>
+              <img
+                src={sourceImageUrl}
+                alt="Uploaded screenshot"
+                style={{
+                  maxWidth: 160, maxHeight: 120,
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border)',
+                  objectFit: 'contain',
+                  background: 'var(--bg)',
+                }}
+              />
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                <strong style={{ color: 'var(--text-secondary)' }}>Screenshot imported</strong>
+                <br />
+                Text extracted via OCR. Values shown below are the best guess from the image.
+                <br />
+                Always review uncertain values before confirming.
+              </div>
+            </div>
+          )}
+
+          {/* PDF viewer — shown when reviewing a PDF import */}
+          {(review.sourceType === 'pdf-text' || review.sourceType === 'ocr') && uploadedFile && uploadedFile.name.toLowerCase().endsWith('.pdf') && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+                Source document
+              </div>
+              <PdfViewer
+                file={uploadedFile}
+                height={360}
+              />
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             <DetectItem label="File" value={review.fileName} />
             <DetectItem label="Company" value={review.metadata.company || 'Not detected'} />
@@ -191,6 +342,29 @@ function ImportReview({
             metrics={mappedCount}
             missing={unknownCount}
           />
+
+          {/* Extraction quality summary */}
+          <div style={{
+            marginTop: 12, display: 'flex', gap: 12, flexWrap: 'wrap',
+            fontSize: 10, fontFamily: 'var(--font-mono)',
+          }}>
+            {factsCount > 0 && (
+              <>
+                <span style={{ color: 'var(--green)' }}>
+                  ● {review.rawFacts.filter(f => f.metric !== 'unknown' && f.confidence >= 0.7).length} high
+                </span>
+                <span style={{ color: 'var(--amber)' }}>
+                  ● {review.rawFacts.filter(f => f.metric !== 'unknown' && f.confidence >= 0.4 && f.confidence < 0.7).length} medium
+                </span>
+                <span style={{ color: 'var(--red)' }}>
+                  ● {review.rawFacts.filter(f => f.metric === 'unknown' || f.confidence < 0.4).length} low
+                </span>
+                <span style={{ color: 'var(--text-muted)' }}>
+                  {factsCount} total values
+                </span>
+              </>
+            )}
+          </div>
           <div style={{ marginTop: 8, display: 'flex', gap: 16, fontSize: 11, fontFamily: 'var(--font-mono)' }}>
             <span style={{ color: 'var(--green)' }}>{factsCount} values found</span>
             <span style={{ color: 'var(--primary)' }}>{mappedCount} metrics mapped ({pctMapped}%)</span>
@@ -293,9 +467,29 @@ function ImportReview({
 
       {/* Actions */}
       <div className="card-actions" style={{ justifyContent: 'space-between', marginTop: 2, border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '12px 20px' }}>
-        <button type="button" onClick={onCancel} style={{ fontSize: 12 }}>
-          Cancel
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button type="button" onClick={onCancel} style={{ fontSize: 12 }}>
+            Cancel
+          </button>
+          {review.sourceType === 'ocr' && review.mappings.some((m) => m.confidence < 0.5) && (
+            <button
+              type="button"
+              onClick={() => {
+                // Accept all high-confidence mappings (≥50%), ignore low-confidence ones
+                for (const m of review.mappings) {
+                  if (m.confidence < 0.5) {
+                    onUpdateMapping(m.originalLabel, { ignored: true });
+                  } else if (!m.userConfirmed) {
+                    onUpdateMapping(m.originalLabel, { userConfirmed: true });
+                  }
+                }
+              }}
+              style={{ fontSize: 11, padding: '6px 12px', color: 'var(--amber)', border: '1px solid var(--amber)', borderRadius: 'var(--radius-sm)', background: 'transparent', cursor: 'pointer' }}
+            >
+              Accept high-confidence, skip low
+            </button>
+          )}
+        </div>
         <button type="button" className="btn-primary" onClick={onConfirm} style={{ fontSize: 12 }}>
           Confirm mapping — load into tools →
         </button>
@@ -456,11 +650,19 @@ function DetectItem({ label, value }: { label: string; value: string }) {
 function ConfidenceBadge({ score }: { score: number }) {
   const pct = Math.round(score * 100);
   let color = 'var(--red)';
-  if (pct >= 80) color = 'var(--green)';
-  else if (pct >= 50) color = 'var(--amber)';
+  let label = 'low';
+  if (pct >= 80) { color = 'var(--green)'; label = 'high'; }
+  else if (pct >= 50) { color = 'var(--amber)'; label = 'medium'; }
 
   return (
-    <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color, fontWeight: 500 }}>
+    <span
+      style={{
+        fontSize: 10, fontFamily: 'var(--font-mono)', color, fontWeight: 500,
+        padding: '1px 6px', borderRadius: 2,
+        background: pct < 50 ? 'var(--red-subtle)' : 'transparent',
+      }}
+      title={`${label} confidence`}
+    >
       {pct}%
     </span>
   );

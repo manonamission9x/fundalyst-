@@ -16,6 +16,7 @@ import {
   FormulaDisclosure,
   SectionTitle,
   NextLinks,
+  CalcTimestamp,
   Disclaimer,
   EmptyState,
   DataQualityBar,
@@ -208,6 +209,7 @@ export default function RatiosPage() {
 
   function analyze() {
     setRes(computeRatios(data));
+    showToast('Ratios calculated');
   }
 
   function handleClear() {
@@ -323,6 +325,7 @@ export default function RatiosPage() {
                 { label: 'Estimate value', href: '/tools/dcf' },
               ]}
             />
+            <CalcTimestamp />
             <Disclaimer />
           </div>
         )}

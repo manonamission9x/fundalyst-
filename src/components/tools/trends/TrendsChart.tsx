@@ -1,14 +1,16 @@
 'use client';
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import type { TrendRow } from '@/types/financial';
+import { SERIES_COLORS, chartGrid, axisTick, tooltipStyle as baseTooltip, fmtINR } from '@/lib/chart-theme';
 
 interface TrendsChartProps {
   rows: TrendRow[];
   headers: string[];
 }
-
-const COLORS = ['#4F6EF7', '#34A86C', '#CBA344', '#E5484D', '#8B5CF6'];
 
 export default function TrendsChart({ rows, headers }: TrendsChartProps) {
   const labels = headers.slice(1);
@@ -21,36 +23,51 @@ export default function TrendsChart({ rows, headers }: TrendsChartProps) {
     return point;
   });
 
+  // Custom tooltip with financial formatting
+  const tooltipProps = {
+    ...baseTooltip,
+    formatter: (value: any, name: any) => [fmtINR(value), name] as [string, string],
+  };
+
   return (
-    <ResponsiveContainer width="100%" height={250}>
-      <LineChart data={data}>
-        <CartesianGrid stroke="#2A2D3E33" strokeDasharray="3 3" />
-        <XAxis dataKey="name" tick={{ fill: '#74768A', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11 }} />
+    <ResponsiveContainer width="100%" height={280}>
+      <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <CartesianGrid {...chartGrid} vertical={false} />
+        <XAxis
+          dataKey="name"
+          tick={axisTick}
+          axisLine={{ stroke: '#2A2D42' }}
+          tickLine={false}
+        />
         <YAxis
-          tick={{ fill: '#74768A', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11 }}
-          tickFormatter={(v: number) => '₹' + v.toLocaleString('en-IN')}
+          tick={axisTick}
+          axisLine={false}
+          tickLine={false}
+          tickFormatter={(v: number) => fmtINR(v)}
         />
-        <Tooltip
-          contentStyle={{ background: '#1C1E2A', border: '1px solid #2A2D3E', borderRadius: 4 }}
-          labelStyle={{ color: '#F0EFEA', fontWeight: 600, fontSize: 12 }}
-          itemStyle={{ color: '#D0D1DC', fontSize: 12 }}
-        />
+        <Tooltip {...tooltipProps} />
         <Legend
-          wrapperStyle={{ fontSize: 11, fontFamily: 'IBM Plex Sans', color: '#D0D1DC' }}
+          wrapperStyle={{ fontSize: 11, fontFamily: 'IBM Plex Sans, sans-serif', color: '#C8C9D4', paddingTop: 8 }}
           iconType="line"
           iconSize={12}
         />
-        {rows.map((r, i) => (
-          <Line
-            key={r.label}
-            type="monotone"
-            dataKey={r.label}
-            stroke={COLORS[i % COLORS.length]}
-            strokeWidth={2}
-            dot={{ r: 4, fill: COLORS[i % COLORS.length] }}
-            activeDot={{ r: 6 }}
-          />
-        ))}
+
+        {rows.map((r, i) => {
+          const color = SERIES_COLORS[i % SERIES_COLORS.length];
+          const isPrimary = i === 0;
+          return (
+            <Line
+              key={r.label}
+              type="monotone"
+              dataKey={r.label}
+              stroke={color}
+              strokeWidth={isPrimary ? 2.5 : 1.5}
+              dot={isPrimary ? { r: 4, fill: color, strokeWidth: 0 } : false}
+              activeDot={{ r: 5, fill: color, strokeWidth: 0 }}
+              strokeOpacity={isPrimary ? 1 : 0.7}
+            />
+          );
+        })}
       </LineChart>
     </ResponsiveContainer>
   );

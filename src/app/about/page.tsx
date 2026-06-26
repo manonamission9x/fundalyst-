@@ -1,6 +1,73 @@
 import Link from 'next/link';
 import { PageHeader, Card, Disclaimer } from '@/components/ui';
 
+const aboutCards = [
+  {
+    title: 'What Fundalyst Is',
+    text: 'Fundalyst lets you paste or upload financial data and get a complete analysis — from period comparisons to DCF valuations — computed locally in your browser. <strong>Built for Indian markets</strong> (₹, Cr/L, NSE/BSE terminology), but works with any financial data.',
+    svg: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 3h5l2 2h5v8H2V3z" />
+        <path d="M2 11V2h5l2 2h5" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Who It Is For',
+    text: 'Curious investors, value researchers, finance beginners, and anyone who wants to understand company financials without spreadsheet pain. <strong>No finance degree needed.</strong>',
+    svg: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="8" cy="5" r="3" />
+        <path d="M3 14c0-3 2.2-5 5-5s5 2 5 5" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Private by Design',
+    text: 'All file parsing, normalization, and calculations happen in your browser. <strong>No data is sent to any server.</strong> No accounts. No database. Your work lives in localStorage — close the tab and come back, it&apos;s still there. Clear your browser data and it&apos;s gone.',
+    svg: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="7" width="10" height="8" rx="1.5" />
+        <path d="M5 7V5a3 3 0 016 0v2" />
+        <circle cx="8" cy="10.5" r="1" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
+  {
+    title: 'No Black-Box Finance',
+    text: 'Every formula is documented. Every output shows its assumptions. The DCF model, working capital formulas, ratio calculations — all visible, all verifiable. <strong>You never have to trust a black box.</strong>',
+    svg: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" />
+        <circle cx="8" cy="8" r="2" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Tools Included',
+    text: 'Smart Import (CSV/XLSX with auto-detection), Filing Comparison, DCF Valuation, Cash Efficiency (WC), Financial Ratios, Peer Comparison, Trend Charts, and Growth Rates. <strong>8 tools, all frontend-only.</strong>',
+    svg: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1" y="1" width="6" height="6" rx="1" />
+        <rect x="9" y="1" width="6" height="6" rx="1" />
+        <rect x="1" y="9" width="6" height="6" rx="1" />
+        <rect x="9" y="9" width="6" height="6" rx="1" />
+      </svg>
+    ),
+  },
+  {
+    title: 'What It Does Not Do',
+    text: 'Fundalyst is a <strong>research tool</strong>, not a broker, trading platform, or data provider. It does not give financial advice, generate buy/sell signals, or guarantee accuracy of user-uploaded data. Always verify calculations independently.',
+    svg: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 1L1 15h14L8 1z" />
+        <path d="M8 6v3" />
+        <circle cx="8" cy="11.5" r="0.8" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
+];
+
 export default function AboutPage() {
   return (
     <div>
@@ -9,54 +76,16 @@ export default function AboutPage() {
         subtitle="A browser-based financial analysis tool for Indian markets. No server uploads. No accounts. No black boxes."
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: '1.5rem' }}>
-        {/* What it is */}
-        <div className="about-card">
-          <div className="about-card-title">📖 What Fundalyst Is</div>
-          <div className="about-card-text">
-            Fundalyst lets you paste or upload financial data and get a complete analysis — from period comparisons to DCF valuations — computed locally in your browser. <strong>Built for Indian markets</strong> (₹, Cr/L, NSE/BSE terminology), but works with any financial data.
+      <div className="about-grid">
+        {aboutCards.map((card) => (
+          <div key={card.title} className="about-card">
+            <div className="about-card-title">
+              <span className="about-card-icon">{card.svg}</span>
+              {card.title}
+            </div>
+            <div className="about-card-text" dangerouslySetInnerHTML={{ __html: card.text }} />
           </div>
-        </div>
-
-        {/* Who it is for */}
-        <div className="about-card">
-          <div className="about-card-title">🎯 Who It Is For</div>
-          <div className="about-card-text">
-            Curious investors, value researchers, finance beginners, and anyone who wants to understand company financials without spreadsheet pain. <strong>No finance degree needed.</strong>
-          </div>
-        </div>
-
-        {/* Privacy */}
-        <div className="about-card">
-          <div className="about-card-title">🔒 Private by Design</div>
-          <div className="about-card-text">
-            All file parsing, normalization, and calculations happen in your browser. <strong>No data is sent to any server.</strong> No accounts. No database. Your work lives in localStorage — close the tab and come back, it&apos;s still there. Clear your browser data and it&apos;s gone.
-          </div>
-        </div>
-
-        {/* No black-box */}
-        <div className="about-card">
-          <div className="about-card-title">📐 No Black-Box Finance</div>
-          <div className="about-card-text">
-            Every formula is documented. Every output shows its assumptions. The DCF model, working capital formulas, ratio calculations — all visible, all verifiable. <strong>You never have to trust a black box.</strong>
-          </div>
-        </div>
-
-        {/* Tools */}
-        <div className="about-card">
-          <div className="about-card-title">🧰 Tools Included</div>
-          <div className="about-card-text">
-            Smart Import (CSV/XLSX with auto-detection), Filing Comparison, DCF Valuation, Cash Efficiency (WC), Financial Ratios, Peer Comparison, Trend Charts, and Growth Rates. <strong>8 tools, all frontend-only.</strong>
-          </div>
-        </div>
-
-        {/* What it does not do */}
-        <div className="about-card">
-          <div className="about-card-title">⚠️ What It Does Not Do</div>
-          <div className="about-card-text">
-            Fundalyst is a <strong>research tool</strong>, not a broker, trading platform, or data provider. It does not give financial advice, generate buy/sell signals, or guarantee accuracy of user-uploaded data. Always verify calculations independently.
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Methodology */}

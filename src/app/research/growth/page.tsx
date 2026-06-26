@@ -11,6 +11,7 @@ import {
   Toolbar,
   NextLinks,
   Disclaimer,
+  CalcTimestamp,
   EmptyState,
   InsightCard,
   DataQualityBar,
@@ -224,6 +225,7 @@ export default function YoyPage() {
                 { label: 'Review filings', href: '/research/filing' },
               ]}
             />
+            <CalcTimestamp />
             <Disclaimer />
           </div>
         </>

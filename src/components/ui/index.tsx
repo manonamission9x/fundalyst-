@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRef } from 'react';
 
 // ── PageHeader ──
 interface PageHeaderProps {
@@ -152,9 +153,9 @@ export function NextLinks({ links }: { links: NextLink[] }) {
 // ── Disclaimer ──
 export function Disclaimer({ extra }: { extra?: string }) {
   return (
-    <div className="disclaimer" style={{ fontSize: '0.9rem', padding: '1rem 1.25rem' }}>
-      <span>Calculated in browser · No data uploaded</span>
-      <span>Research tool only · Not financial advice</span>
+    <div className="disclaimer">
+      <span>All calculations performed client-side</span>
+      <span>For research purposes only · Not financial advice</span>
       {extra && <span>{extra}</span>}
     </div>
   );
@@ -185,15 +186,33 @@ interface Metric {
   value: string;
   sub?: string;
   cls?: 'good' | 'warn' | 'neutral' | '';
+  /** Trend direction: up, down, or flat */
+  trend?: 'up' | 'down' | 'flat';
+  /** Optional inline bar value (0-1) for comparison visuals */
+  bar?: number;
 }
 export function MetricGrid({ metrics }: { metrics: Metric[] }) {
   return (
     <div className="metric-grid">
       {metrics.map((m, i) => (
         <div className={'metric-cell' + (m.cls ? ' ' + m.cls : '')} key={i}>
-          <div className="metric-label">{m.label}</div>
-          <div className={'metric-value' + (m.cls ? ' ' + m.cls : '')}>{m.value}</div>
+          <div className="metric-label">
+            {m.trend && (
+              <span className={`trend-arrow trend-${m.trend}`}>
+                {m.trend === 'up' ? '↑' : m.trend === 'down' ? '↓' : '→'}
+              </span>
+            )}
+            {m.label}
+          </div>
+          <div className={'metric-value' + (m.cls ? ' ' + m.cls : '')}>
+            {m.value}
+          </div>
           {m.sub && <div className="metric-sub">{m.sub}</div>}
+          {m.bar !== undefined && (
+            <div className="metric-bar">
+              <div className="metric-bar-fill" style={{ width: `${Math.max(2, m.bar * 100)}%` }} />
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -323,7 +342,19 @@ export function SectionTitle({ children }: { children: React.ReactNode }) {
   return <div className="section-title">{children}</div>;
 }
 
-// ── ResultPanel ──
+// ── Calculated timestamp ──
+export function CalcTimestamp() {
+  const timeRef = useRef(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }));
+  return (
+    <div className="calc-timestamp">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="6" cy="6" r="5" />
+        <path d="M6 3v3l2 2" />
+      </svg>
+      Calculated {timeRef.current}
+    </div>
+  );
+}
 interface ResultPanelProps {
   children: React.ReactNode;
   label?: string;

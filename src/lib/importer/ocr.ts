@@ -301,7 +301,7 @@ export async function extractPdfText(
 
     for (const row of rows) {
       row.items.sort((a, b) => a.x - b.x);
-      const rowText = row.items.map((it) => it.text).join('  ');
+      const rowText = row.items.map((it) => it.text).join('   ');
       allPageTexts.push(rowText);
     }
 
@@ -492,7 +492,13 @@ function parseOcrTextToTables(rawText: string, sourceName: string): ImportedTabl
       if (line.includes('\t')) {
         return line.split('\t').map((c) => c.trim());
       }
-      return line.split(/\s{3,}/).map((c) => c.trim());
+      const cells = line.split(/\s{3,}/).map((c) => c.trim());
+      // If 3+ spaces didn't produce multiple cells, try 2+ spaces
+      if (cells.length < 2) {
+        const cells2 = line.split(/\s{2,}/).map((c) => c.trim());
+        if (cells2.length >= 2) return cells2;
+      }
+      return cells;
     });
 
     tables.push({
@@ -542,6 +548,27 @@ const REMOVE_KEYWORDS = [
   /corp\.?\s+office/i,
   /principal\s+business/i,
   /(?:this|that)\s+is\s+(?:to\s+)?certify/i,
+  // Additional noise patterns for financial PDFs
+  /notes?\s+to\s+(?:the\s+)?(?:accounts|financial\s+statements)/i,
+  /significant\s+accounting\s+polic/i,
+  /accounting\s+(?:policies|standards|convention)/i,
+  /(?:management|directors?)\s+(?:discussion|report|analysis)/i,
+  /audit(?:ors?)?\s+report/i,
+  /report\s+of\s+(?:the\s+)?(?:board|directors|auditors?)/i,
+  /statement\s+of\s+(?:profit|cash\s+flows?|changes?\s+in\s+equity)/i,
+  /schedule[s]?\s+(?:forming|to\s+the|attached|referred)/i,
+  /balance\s+sheet\s+as\s+at/i,
+  /profit\s+(?:and|&)\s+loss\s+(?:account|statement)/i,
+  /\b(?:note|notes?|sch(?:edule)?\.?\s*\d+)\s*(?::|–|—|-|\d)/i,
+  /figures?\s+(?:in|are)\s+(?:rs\.?|₹|crores?|lakhs?|millions?)/i,
+  /(?:all|amounts?)\s+(?:in|are)\s+(?:rs\.?|₹|crores?|lakhs?)/i,
+  /previous\s+year\s+figures/i,
+  /current\s+year\s+figures/i,
+  /corporate\s+(?:overview|information|identity)/i,
+  /consolidated\s+(?:balance\s+sheet|statement|financials?)/i,
+  /standalone\s+(?:balance\s+sheet|statement|financials?)/i,
+  /\b(?:year|period)\s+ended\s+(?:31st|30th|31)\s+(?:march|mar|december|dec|september|sep|june|jun)/i,
+  /\b(?:31st|30th|31)\s+(?:march|mar|december|dec)\s+\d{4}/i,
 ];
 
 /**

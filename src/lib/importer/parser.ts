@@ -6,46 +6,17 @@ import { findBestMetricMatch, canonicalDisplayName } from './metric-aliases';
 import { detectFileType, cleanOcrText } from './ocr';
 import { importPdf } from './pdf-importer';
 
+import { parseCsvWithDetection } from './csv-detector';
+
 // ── Parse raw file content into rows ──
 
 /** Parse CSV text into RawRow[] */
 export function parseCSVToRows(text: string): RawRow[] {
-  const lines = text.split(/\r?\n/);
-  const rows: RawRow[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    // Split on commas (respecting quoted values)
-    const cells = parseCSVLine(line);
-    rows.push({ rowIndex: i, cells });
-  }
-
-  return rows;
+  const rows = parseCsvWithDetection(text);
+  return rows.map((cells, i) => ({ rowIndex: i, cells }));
 }
 
 /** Parse a single CSV line respecting quoted fields */
-function parseCSVLine(line: string): string[] {
-  const cells: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      inQuotes = !inQuotes;
-    } else if (ch === ',' && !inQuotes) {
-      cells.push(current.trim());
-      current = '';
-    } else {
-      current += ch;
-    }
-  }
-  cells.push(current.trim());
-  return cells;
-}
-
-/** Parse an XLSX file buffer into RawRow[] */
 export function parseXLSXToRows(buffer: ArrayBuffer): RawRow[] {
   const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array' });
   const sheetName = workbook.SheetNames[0];
@@ -190,113 +161,141 @@ export function buildDataset(
 
 async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportReviewState> {
   const sourceType: SourceType = isPdf ? 'pdf-text' : 'ocr';
-  let ocrResult;
 
   if (isPdf) {
-    ocrResult = await importPdf(file, undefined, 'text');
-  } else {
-    // Image OCR
-    const { performOcr, cleanOcrText: cleanFn } = await import('./ocr');
-    ocrResult = await performOcr(file);
-  }
+    // PDF text extraction — use existing pipeline
+    const { importPdf } = await import('./pdf-importer');
+    const ocrResult = await importPdf(file, undefined, 'text');
 
-  // Build facts from tables
-  const facts: CanonicalFact[] = [];
-  const warnings: string[] = ocrResult.warnings || [];
-  let companyName: string | undefined;
+    // Build facts from tables
+    const facts: CanonicalFact[] = [];
+    const warnings: string[] = ocrResult.warnings || [];
+    let companyName: string | undefined;
 
-  for (const table of (ocrResult as any).tables || []) {
-    for (let ri = 1; ri < (table.rows || []).length; ri++) {
-      const row = table.rows[ri];
-      if (!row || row.length < 2) continue;
-      const label = row[0]?.trim();
-      if (!label) continue;
-      const value = parseFloat(String(row[1] || '').replace(/[^0-9.-]/g, ''));
-      if (isNaN(value)) continue;
+    for (const table of (ocrResult as any).tables || []) {
+      // Use cleanedRows (filtered by cleanOcrText) instead of raw rows
+      const sourceRows = (table.cleanedRows && table.cleanedRows.length > 0)
+        ? table.cleanedRows
+        : (table.rows || []).slice(1); // fallback: skip header row
 
-      const { findBestMetricMatch } = await import('./metric-aliases');
-      const match = findBestMetricMatch(label);
-      facts.push({
-        company: companyName,
-        sourceType,
-        statement: (match?.statement as any) || 'unknown',
-        metric: match?.canonical || 'unknown',
-        labelOriginal: label,
-        value,
-        periodLabel: 'Period 1',
-        currency: 'UNKNOWN',
-        unit: 'ones',
-        confidence: (match?.confidence ?? 0.3),
-        sourceRow: ri,
-        sourceColumn: 0,
-      });
+      // Detect period labels from the table's header-like content
+      // Look at the first data row's cells to determine how many value columns exist
+      let maxColumns = 0;
+      for (const row of sourceRows) {
+        if (row && row.length > maxColumns) maxColumns = row.length;
+      }
+      const periodCount = Math.max(0, maxColumns - 1); // columns after the label
+
+      for (let ri = 0; ri < sourceRows.length; ri++) {
+        const row = sourceRows[ri];
+        if (!row || row.length < 2) continue;
+        const label = row[0]?.trim();
+        if (!label) continue;
+        // Skip rows that are purely numeric (subtotals, continuation rows)
+        if (/^[\d,.₹$£€¥%()\-]+$/.test(label) && !/[a-zA-Z]/.test(label)) continue;
+        // Skip rows shorter than 3 chars (likely noise)
+        if (label.length < 3) continue;
+
+        // Generate one fact per value column with proper period label
+        for (let colIdx = 1; colIdx < row.length; colIdx++) {
+          const rawValue = row[colIdx]?.trim() || '';
+          if (!rawValue) continue;
+          const value = parseFloat(rawValue.replace(/[^0-9.-]/g, ''));
+          if (isNaN(value)) continue;
+
+          const { findBestMetricMatch } = await import('./metric-aliases');
+          const match = findBestMetricMatch(label);
+          // Auto-ignore: skip facts where metric match is null or very low confidence
+          // and the label doesn't look like a financial term
+          const isFinancialTerm = /(revenue|income|profit|loss|asset|liability|equity|debt|cash|expense|cost|margin|ratio|tax|ebit|pat|sales|turnover|depreciation|interest|dividend|reserve|surplus|borrowing|payable|receivable|inventory|investment|shareholder|fund|capital|goodwill|intangible|current|fixed|tangible|operating|financing|investing|capex|eps|earnings|comprehensive)/i.test(label);
+          if (!match && !isFinancialTerm) continue;
+          if (match && match.confidence < 0.2 && !isFinancialTerm) continue;
+
+          const periodLabel = periodCount > 1 ? `Period ${colIdx}` : 'Period 1';
+          facts.push({
+            company: companyName,
+            sourceType,
+            statement: (match?.statement as any) || 'unknown',
+            metric: match?.canonical || 'unknown',
+            labelOriginal: label,
+            value,
+            periodLabel,
+            currency: 'UNKNOWN',
+            unit: 'ones',
+            confidence: (match?.confidence ?? 0.3),
+            sourceRow: ri,
+            sourceColumn: colIdx,
+          });
+        }
+      }
     }
-  }
 
-  // After cleaning tables, rebuild facts
-  if (ocrResult.tables) {
-    const cleaned = (await import('./ocr')).cleanOcrText(ocrResult.tables);
-    // ... use cleaned tables for better facts
-  }
+    const presentMetrics = new Set(facts.map((f) => f.metric));
+    const importantMetrics = [
+      'revenue', 'netProfit', 'ebit', 'totalAssets', 'totalDebt', 'equity',
+      'currentAssets', 'currentLiabilities', 'inventory', 'receivables', 'payables',
+      'cash', 'operatingCashFlow', 'interestExpense',
+    ];
+    const missingFields = importantMetrics.filter((m) => !presentMetrics.has(m));
 
-  const presentMetrics = new Set(facts.map((f) => f.metric));
-  const importantMetrics = [
-    'revenue', 'netProfit', 'ebit', 'totalAssets', 'totalDebt', 'equity',
-    'currentAssets', 'currentLiabilities', 'inventory', 'receivables', 'payables',
-    'cash', 'operatingCashFlow', 'interestExpense',
-  ];
-  const missingFields = importantMetrics.filter((m) => !presentMetrics.has(m));
-
-  const dataset: FundalystDataset = {
-    id: 'ds_' + Date.now(),
-    sourceType,
-    companyName,
-    currency: 'UNKNOWN',
-    unit: 'ones',
-    periods: ['Period 1'],
-    facts,
-    tables: ocrResult.tables || [],
-    warnings,
-    missingFields,
-    confidence: facts.length > 0
-      ? Math.round(facts.reduce((s, f) => s + f.confidence, 0) / facts.length * 100) / 100
-      : 0,
-    createdAt: new Date().toISOString(),
-  };
-
-  const mappings = facts
-    .filter((f, i, arr) => arr.findIndex((x) => x.labelOriginal === f.labelOriginal) === i)
-    .map((f) => ({
-      originalLabel: f.labelOriginal,
-      canonicalMetric: f.metric,
-      statement: f.statement,
-      confidence: f.confidence,
-      userConfirmed: false,
-      ignored: false,
-    }));
-
-  warnings.push(`[${isPdf ? 'PDF' : 'OCR'} BETA] Results are experimental. Please review all mappings before confirming.`);
-
-  return {
-    fileName: file.name,
-    sourceType,
-    metadata: {
-      company: companyName || null,
+    const dataset: FundalystDataset = {
+      id: 'ds_' + Date.now(),
+      sourceType,
+      companyName,
       currency: 'UNKNOWN',
       unit: 'ones',
       periods: ['Period 1'],
-      statementTypes: ['unknown'],
-      headerRowIndex: 0,
-      metricColIndex: 0,
-      valueColIndices: [1],
-      periodLabels: ['Period 1'],
-      confidence: dataset.confidence,
-    },
-    rawFacts: facts,
-    mappings,
-    dataset,
-    warnings,
-  };
+      facts,
+      tables: (ocrResult as any).tables || [],
+      warnings,
+      missingFields,
+      confidence: facts.length > 0
+        ? Math.round(facts.reduce((s, f) => s + f.confidence, 0) / facts.length * 100) / 100
+        : 0,
+      createdAt: new Date().toISOString(),
+    };
+
+    const mappings = facts
+      .filter((f, i, arr) => arr.findIndex((x) => x.labelOriginal === f.labelOriginal) === i)
+      .map((f) => ({
+        originalLabel: f.labelOriginal,
+        canonicalMetric: f.metric,
+        statement: f.statement,
+        confidence: f.confidence,
+        userConfirmed: false,
+        ignored: f.confidence < 0.3 && !/(revenue|income|profit|loss|asset|liability|equity|debt|cash|expense|cost|margin|ratio|tax|ebit|pat|sales|turnover|depreciation|interest|dividend|reserve|surplus|borrowing|payable|receivable|inventory|investment|shareholder|fund|capital|goodwill|intangible|current|fixed|tangible|operating|financing|investing|capex|eps|earnings|comprehensive)/i.test(f.metric),
+      }));
+
+    warnings.push('[PDF BETA] Results are experimental. Please review all mappings before confirming.');
+
+    return {
+      fileName: file.name,
+      sourceType,
+      metadata: {
+        company: companyName || null,
+        currency: 'UNKNOWN',
+        unit: 'ones',
+        periods: ['Period 1'],
+        statementTypes: ['unknown'],
+        headerRowIndex: 0,
+        metricColIndex: 0,
+        valueColIndices: [1],
+        periodLabels: ['Period 1'],
+        confidence: dataset.confidence,
+      },
+      rawFacts: facts,
+      mappings,
+      dataset,
+      warnings,
+    };
+  }
+
+  // ═══ Image / Screenshot — use new production-grade pipeline ═══
+  const { processScreenshot, screenshotResultToReviewState } =
+    await import('./screenshot/pipeline');
+
+  const result = await processScreenshot(file);
+  return screenshotResultToReviewState(result, file.name);
 }
 
 // ── Build initial review state from file ──

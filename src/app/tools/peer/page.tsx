@@ -14,6 +14,7 @@ import {
   Disclaimer,
   NextLinks,
   DataQualityBar,
+  CalcTimestamp,
 } from '@/components/ui';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import type { PeerRow } from '@/types/financial';
@@ -218,6 +219,7 @@ export default function PeerPage() {
                   { label: 'Estimate value', href: '/tools/dcf' },
                 ]}
               />
+              <CalcTimestamp />
               <Disclaimer />
             </div>
           </>

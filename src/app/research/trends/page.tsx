@@ -5,7 +5,7 @@ import { fmtNum } from '@/lib/calculations';
 import { useTrendsStore, useAnalysisStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
-import { PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer, EmptyState, DataQualityBar } from '@/components/ui';
+import { PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer, EmptyState, DataQualityBar, CalcTimestamp } from '@/components/ui';
 import dynamic from 'next/dynamic';
 import { useGlobalImportFill, extractTrendsCSV, getDataSourceLabel } from '@/lib/importer/import-hooks';
 
@@ -141,6 +141,7 @@ export default function TrendsPage() {
               { label: 'Estimate value', href: '/tools/dcf' },
             ]}
           />
+          <CalcTimestamp />
           <Disclaimer />
         </>
       )}

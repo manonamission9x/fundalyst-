@@ -1,19 +1,20 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useGlobalDataStore } from '@/store/global-data-store';
 
-const items = [
+const items: { id: string; label: string; href: string; group?: string }[] = [
   { id: 'home', label: 'Home', href: '/' },
   { id: 'import', label: 'Import', href: '/import' },
-  { id: 'filing', label: 'Filing', href: '/research/filing' },
-  { id: 'trends', label: 'Trends', href: '/research/trends' },
-  { id: 'dcf', label: 'DCF', href: '/tools/dcf' },
-  { id: 'wc', label: 'Cash', href: '/tools/wc' },
-  { id: 'ratios', label: 'Ratios', href: '/tools/ratios' },
-  { id: 'peer', label: 'Peer', href: '/tools/peer' },
-  { id: 'growth', label: 'Growth', href: '/research/growth' },
+  { id: 'filing', label: 'Filing', href: '/research/filing', group: 'Research' },
+  { id: 'trends', label: 'Trends', href: '/research/trends', group: 'Research' },
+  { id: 'growth', label: 'Growth', href: '/research/growth', group: 'Research' },
+  { id: 'dcf', label: 'DCF', href: '/tools/dcf', group: 'Analysis' },
+  { id: 'wc', label: 'Cash', href: '/tools/wc', group: 'Analysis' },
+  { id: 'ratios', label: 'Ratios', href: '/tools/ratios', group: 'Analysis' },
+  { id: 'peer', label: 'Peer', href: '/tools/peer', group: 'Analysis' },
   { id: 'about', label: 'About', href: '/about' },
 ];
 
@@ -43,31 +44,33 @@ export default function Nav() {
           </svg>
           <span>Fundalyst</span>
         </Link>
-        {items.map((item) => (
-          <Link
-            key={item.id}
-            href={item.href}
-            className={`nav-tab${isActive(item.href) ? ' active' : ''}`}
-            id={`${item.id}-tab`}
-            role="tab"
-            aria-selected={isActive(item.href)}
-          >
-            {item.label}
-          </Link>
-        ))}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+        {items.map((item, i) => {
+          // Show separator before first item of a new group (skip first item overall)
+          const prevGroup = i > 0 ? items[i - 1].group : null;
+          const showSep = item.group && prevGroup && item.group !== prevGroup;
+          return (
+            <React.Fragment key={item.id}>
+              {showSep && <span className="nav-sep" />}
+              <Link
+                href={item.href}
+                className={`nav-tab${isActive(item.href) ? ' active' : ''}`}
+                id={`${item.id}-tab`}
+                role="tab"
+                aria-selected={isActive(item.href)}
+              >
+                {item.label}
+              </Link>
+            </React.Fragment>
+          );
+        })}
+        <div className="nav-right">
           {/* Global data status badge */}
           {activeDataset && (
             <span
+              className="nav-badge"
               title={`${activeDataset.companyName || 'Data'} — ${activeDataset.facts.length} facts, ${activeDataset.periods.length} periods`}
-              style={{
-                fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--green)',
-                display: 'flex', alignItems: 'center', gap: 4,
-                padding: '4px 8px', border: '1px solid rgba(46,204,113,0.2)',
-                borderRadius: 'var(--radius-sm)',
-              }}
             >
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--green)', flexShrink: 0 }} />
+              <span className="nav-badge-dot" />
               {activeDataset.companyName || `${activeDataset.facts.length} metrics`}
             </span>
           )}
@@ -80,13 +83,9 @@ export default function Nav() {
           {activeDataset && (
             <button
               type="button"
+              className="nav-clear"
               onClick={clearAllData}
               title="Clear all imported data"
-              style={{
-                fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)',
-                background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
-                padding: '3px 8px', cursor: 'pointer',
-              }}
             >
               Clear
             </button>

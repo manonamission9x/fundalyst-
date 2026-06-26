@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { parseLines, computeDiff, generateRiskFlags, fmtINR } from '@/lib/calculations';
 import { readFile, downloadCSV } from '@/lib/helpers';
 import { useFilingStore, useAnalysisStore } from '@/store';
@@ -8,7 +8,7 @@ import { useToast } from '@/components/shared/ToastProvider';
 import {
   PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer,
   EmptyState, InsightCard, WarningCard, SectionTitle, ResultPanel,
-  DataQualityBar,
+  DataQualityBar, CalcTimestamp,
 } from '@/components/ui';
 import { useGlobalImportFill, getDataSourceLabel, extractFilingInputs } from '@/lib/importer/import-hooks';
 
@@ -32,6 +32,17 @@ export default function FilingPage() {
     },
     extractFilingInputs
   );
+
+  // Auto-demo: run comparison on first visit with sample data
+  const autoDemoRef = useRef(false);
+  useEffect(() => {
+    if (autoDemoRef.current) return;
+    autoDemoRef.current = true;
+    if (!showResults && periodA && periodB) {
+      const timer = setTimeout(() => handleCompare(), 500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   async function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -81,6 +92,7 @@ export default function FilingPage() {
       flags: flagList,
     });
     setTimeout(() => setLoading(false), 300);
+    showToast('Comparison complete');
   }
 
   function handleClear() {
@@ -132,8 +144,8 @@ export default function FilingPage() {
             { heading: 'Latest period', label: labelB, setLabel: setLabelB, period: periodB, setPeriod: setPeriodB, phLabel: 'e.g. Q4 FY26', phPeriod: 'Revenue: 1530' },
           ].map((col, ci) => (
             <div className="input-col" key={ci}>
-              <label className="input-col-label" htmlFor={`period-${ci}`}>{col.heading}</label>
-              <div style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>Label: value per line</div>
+              <div className="input-col-label">{col.heading}</div>
+              <div className="field-hint" style={{ marginBottom: 4 }}>Label: value per line</div>
               <input
                 id={`period-${ci}`}
                 type="text"
@@ -145,8 +157,7 @@ export default function FilingPage() {
               <textarea
                 id={`period-text-${ci}`}
                 rows={8}
-                className="num-input"
-                style={{ width: '100%', lineHeight: 1.7, fontSize: 12, fontFamily: 'var(--font-mono)' }}
+                className="filing-textarea num-input"
                 placeholder={col.phPeriod}
                 value={col.period}
                 onChange={(e) => col.setPeriod(e.target.value)}
@@ -187,7 +198,7 @@ export default function FilingPage() {
                     <td>{d.label}</td>
                     <td>{d.a !== null ? (d.isPct ? d.a + '%' : fmtINR(d.a)) : '—'}</td>
                     <td>{d.b !== null ? (d.isPct ? d.b + '%' : fmtINR(d.b)) : '—'}</td>
-                    <td style={{ color: d.dir === 'up' ? 'var(--green)' : d.dir === 'down' ? 'var(--red)' : 'var(--text-tertiary)' }}>
+                    <td className={d.dir === 'up' ? 'change-up' : d.dir === 'down' ? 'change-down' : 'change-flat'}>
                       {d.dir === 'up' ? '↑' : d.dir === 'down' ? '↓' : '→'} {d.pct !== null ? Math.abs(d.pct).toFixed(1) + '%' : '—'}
                     </td>
                   </tr>
@@ -215,6 +226,7 @@ export default function FilingPage() {
           </div>
 
           <NextLinks links={[{ label: 'Plot trends', href: '/research/trends' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
+          <CalcTimestamp />
           <Disclaimer extra="Pct change = ((B−A)/|A|)×100" />
         </ResultPanel>
       )}

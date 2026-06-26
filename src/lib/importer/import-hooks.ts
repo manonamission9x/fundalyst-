@@ -48,15 +48,14 @@ export function useGlobalImportFill<T>(
     }
 
     const values = extractRef.current(activeDataset);
-    if (values === null || values === undefined) return;
-
-    const hasData = typeof values === 'string'
-      ? values.trim().length > 0
-      : Object.values(values as any).some((v) => v !== null && v !== '' && v !== undefined);
-
-    if (hasData) {
-      setterRef.current(values);
-      lastFilledRef.current = activeDataset.id;
+    if (values !== null && values !== undefined) {
+      const hasData = typeof values === 'string'
+        ? values.trim().length > 0
+        : Object.values(values as any).some((v) => v !== null && v !== '' && v !== undefined);
+      if (hasData) {
+        setterRef.current(values);
+        lastFilledRef.current = activeDataset.id;
+      }
     }
 
     setState({
@@ -168,13 +167,20 @@ export function extractDCFInputs(dataset: FundalystDataset): Record<string, numb
   const debt = getLatestValue(dataset, 'totalDebt');
   const cash = getLatestValue(dataset, 'cash');
   const price = getLatestValue(dataset, 'price');
+  const revenue = getLatestValue(dataset, 'revenue');
+  const netProfit = getLatestValue(dataset, 'netProfit');
+  const ebit = getLatestValue(dataset, 'ebit');
 
-  if (fcf === null && shares === null) return null;
+  // If no financial data at all, skip
+  if (fcf === null && shares === null && debt === null && revenue === null && netProfit === null && ebit === null) return null;
 
   const netDebt = (debt !== null ? debt : 0) - (cash !== null ? cash : 0);
 
+  // Use net profit or ebit as rough FCF proxy if FCF not available
+  const fcfValue = fcf ?? (netProfit !== null ? netProfit : ebit);
+
   return {
-    fcf: fcf ?? '',
+    fcf: fcfValue ?? '',
     growth: '',
     years: 5,
     discount: '',

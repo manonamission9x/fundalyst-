@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { computeDCF, computeDCFSensitivity, validateDCFInputs, fmtNum } from '@/lib/calculations';
 import { useDCFStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
@@ -18,6 +18,7 @@ import {
   Disclaimer,
   NextLinks,
   DataQualityBar,
+  CalcTimestamp,
 } from '@/components/ui';
 import dynamic from 'next/dynamic';
 import { useGlobalImportFill, extractDCFInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
@@ -38,6 +39,18 @@ export default function DCFPage() {
     },
     extractDCFInputs,
   );
+
+  // Auto-demo on first visit: run DCF with defaults if no results exist
+  const autoDemoRef = useRef(false);
+  useEffect(() => {
+    if (autoDemoRef.current) return;
+    autoDemoRef.current = true;
+    if (!useDCFStore.getState().show && useDCFStore.getState().summary === null) {
+      // Small timeout to let the DOM settle for toast rendering
+      const timer = setTimeout(() => runDCF(), 400);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // Plain function — not useCallback — for maximum reliability
   function runDCF() {
@@ -285,8 +298,8 @@ function DCFResults({
 
       {/* ── Chart ── */}
       <Card label="Chart" style={{ marginTop: '1rem' }}>
-        <div style={{ padding: 20, height: 300 }}>
-          <DCFChart projected={summary.projected} tv={summary.tv} pvTv={summary.pvTv} />
+        <div className="chart-wrap">
+          <DCFChart projected={summary.projected} tv={summary.tv} pvTv={summary.pvTv} currentPrice={priceVal} />
         </div>
       </Card>
 
@@ -318,43 +331,37 @@ function DCFResults({
       {/* ── Sensitivity Analysis ── */}
       {sens.length > 0 && (
         <Card label="Sensitivity Analysis" style={{ marginTop: '1rem' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 12 }}>
-            Intrinsic value per share at varying terminal growth rates (rows) vs discount rates (columns)
+          <div className="card-body" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+            Intrinsic value per share at varying terminal growth rates (rows) vs discount rates (columns).<br />
+            <span style={{ color: 'var(--text-muted)' }}>Base assumption highlighted. Green = undervalued vs ₹{fmtNum(priceVal)}, Red = overvalued.</span>
           </div>
-          <div style={{ padding: 0, overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="sens-table">
               <thead>
                 <tr>
-                  <th style={{ padding: 8, textAlign: 'left', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                    Growth ↓ / Disc →
-                  </th>
+                  <th>Growth ↓ / Disc →</th>
                   {sens[0].cols.map((c) => (
-                    <th key={c.d} style={{ padding: 8, textAlign: 'right', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                      {c.d}%
-                    </th>
+                    <th key={c.d}>{c.d}%</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {sens.map((row) => (
                   <tr key={row.g}>
-                    <td style={{ padding: '6px 8px', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', fontSize: 11 }}>
-                      {row.g}%
-                    </td>
-                    {row.cols.map((c) => (
-                      <td
-                        key={c.d}
-                        style={{
-                          padding: '6px 8px',
-                          borderBottom: '1px solid var(--border)',
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 12,
-                          color: c.iv > priceVal ? 'var(--green)' : 'var(--red)',
-                        }}
-                      >
-                        {'₹' + fmtNum(Math.round(c.iv * 10) / 10)}
-                      </td>
-                    ))}
+                    <td>{row.g}%</td>
+                    {row.cols.map((c) => {
+                      // Heatmap: intensity based on distance from price
+                      const diff = c.iv - priceVal;
+                      const isBase = c.iv === sens.find(r => r.g === row.g)?.cols.find(co => co.d === c.d)?.iv;
+                      // Actually check if this is the base scenario (g=3%, d=10% when user has those values)
+                      const isBaseCell = Math.abs(row.g - 3) < 0.5 && c.d === Number(discount);
+                      const cls = diff > 0 ? 'sens-td-up' : diff < 0 ? 'sens-td-down' : '';
+                      return (
+                        <td key={c.d} className={`${cls}${isBaseCell ? ' sens-td-base' : ''}`}>
+                          {'₹' + fmtNum(Math.round(c.iv * 10) / 10)}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
@@ -363,6 +370,7 @@ function DCFResults({
         </Card>
       )}
 
+      <CalcTimestamp />
       <Disclaimer extra="Method: DCF with Gordon Growth terminal value" />
       <NextLinks
         links={[
