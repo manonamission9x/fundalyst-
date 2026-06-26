@@ -257,7 +257,13 @@ export default function FilingPage() {
             </button>
           </div>
 
-          <NextLinks links={[{ label: 'Plot trends', href: '/research/trends' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
+          <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--primary-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(91,110,245,0.15)' }}>
+          <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Next Steps</div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <a href="/research/trends" style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--primary)', textDecoration: 'none' }}>→ Plot trends over time</a>
+            <a href="/tools/dcf" style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--primary)', textDecoration: 'none' }}>→ Estimate intrinsic value</a>
+          </div>
+        </div>
           <CalcTimestamp />
           <Disclaimer extra="Pct change = ((B−A)/|A|)×100" />
         </ResultPanel>

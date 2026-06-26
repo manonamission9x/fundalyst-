@@ -101,7 +101,7 @@ export default function WCPage() {
             { l: 'Payables', key: 'payables' as const },
             { l: 'Cash & equivalents', key: 'cash' as const },
           ].map((f) => (
-            <Field key={f.key} label={f.l} value={inputs[f.key]} onChange={(v) => setInput(f.key, v)} />
+            <Field key={f.key} label={f.l} value={inputs[f.key]} onChange={(v) => setInput(f.key, v)} hint="In ₹ Cr" />
           ))}
         </FieldGrid>
         <Toolbar onClear={handleClear} onAction={analyze} actionLabel="Analyze" />

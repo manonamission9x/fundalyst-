@@ -52,7 +52,7 @@ function QuickCheckForm() {
         ].map((f, i) => (
           <div className="field-group" key={i}>
             <label className="field-label">{f.l}</label>
-            <input type="number" className="num-input" value={f.v} onChange={(e) => f.s(e.target.value)} placeholder="0" />
+            <input type="number" className="num-input" value={f.v} onChange={(e) => f.s(e.target.value)} placeholder="Value" />
             {f.h && <div className="field-hint">{f.h}</div>}
           </div>
         ))}

@@ -137,7 +137,7 @@ export default function DCFPage() {
             label="Free Cash Flow (₹ Cr)"
             value={inputs.fcf}
             onChange={(v) => { setInput('fcf', v); setErrors((e) => ({ ...e, fcf: '' })); }}
-            hint="TTM free cash flow to firm"
+            hint="Cash generated after expenses & investments (trailing 12 months)"
           />
           {errors.fcf && <div className="err-msg" style={{ gridColumn: '1 / -1', marginTop: -8 }}>{errors.fcf}</div>}
         </FieldGrid>
@@ -151,13 +151,13 @@ export default function DCFPage() {
             label="Growth Rate (%)"
             value={inputs.growth}
             onChange={(v) => setInput('growth', v)}
-            hint="Projected annual FCF growth"
+            hint="Expected yearly growth rate of this cash flow"
           />
           <Field
             label="Projection Years"
             value={inputs.years}
             onChange={(v) => { setInput('years', v); setErrors((e) => ({ ...e, years: '' })); }}
-            hint="Years of projected cash flows"
+            hint="How many years to project (typically 5–10)"
           />
         </FieldGrid>
         {errors.years && <div className="err-msg" style={{ padding: '0 20px 10px' }}>{errors.years}</div>}
@@ -171,13 +171,13 @@ export default function DCFPage() {
             label="WACC (%)"
             value={inputs.discount}
             onChange={(v) => { setInput('discount', v); setErrors((e) => ({ ...e, discount: '' })); }}
-            hint="Weighted avg cost of capital"
+            hint="Company's blended cost of debt and equity (typically 8–15%)"
           />
           <Field
             label="Terminal Growth (%)"
             value={inputs.terminal}
             onChange={(v) => { setInput('terminal', v); setErrors((e) => ({ ...e, terminal: '' })); }}
-            hint="Perpetual growth rate (must be less than WACC)"
+            hint="Long-term growth after projection years (must be below WACC)"
           />
         </FieldGrid>
         {errors.discount && <div className="err-msg" style={{ padding: '0 20px 10px' }}>{errors.discount}</div>}
@@ -192,19 +192,19 @@ export default function DCFPage() {
             label="Net Debt (₹ Cr)"
             value={inputs.netDebt}
             onChange={(v) => setInput('netDebt', v)}
-            hint="Total debt minus cash"
+            hint="Total debt minus cash & equivalents"
           />
           <Field
             label="Shares Outstanding (Cr)"
             value={inputs.shares}
             onChange={(v) => { setInput('shares', v); setErrors((e) => ({ ...e, shares: '' })); }}
-            hint="Fully diluted share count"
+            hint="Total shares including options and warrants"
           />
           <Field
             label="Current Price (₹)"
             value={inputs.price}
             onChange={(v) => setInput('price', v)}
-            hint="Market price per share"
+            hint="Current stock market price"
           />
         </FieldGrid>
         {errors.shares && <div className="err-msg" style={{ padding: '0 20px 10px' }}>{errors.shares}</div>}
