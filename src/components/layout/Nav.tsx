@@ -68,7 +68,7 @@ export default function Nav() {
         })}
         <div className="nav-right">
           {/* Global data status badge */}
-          {activeDataset && (
+          {activeDataset && activeDataset.facts.length > 0 && (
             <span
               className="nav-badge"
               title={`${activeDataset.companyName || 'Data'} — ${activeDataset.facts.length} facts, ${activeDataset.periods.length} periods`}
