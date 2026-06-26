@@ -1,39 +1,39 @@
 /* ── Fundalyst Design System v4.5 (Premium Refined Dark Fintech) ── */
 :root {
-  /* ── Color System ── */
-  --bg: #0A0B0F;
-  --bg-elevated: #141520;
-  --bg-surface: #1C1E2E;
-  --bg-hover: #22243A;
-  --bg-active: #282B45;
-  --bg-field: #181A28;
-  --border: #2A2D42;
-  --border-light: #22253A;
-  --border-strong: #363A52;
-  --border-focus: #4F6EF7;
+  /* ── Color System ── (Premium v5 — warm dark, high contrast, refined) */
+  --bg: #0B0C12;
+  --bg-elevated: #13151C;
+  --bg-surface: #1A1D28;
+  --bg-hover: #212433;
+  --bg-active: #272A3C;
+  --bg-field: #161822;
+  --border: #272B3E;
+  --border-light: #1C1F2E;
+  --border-strong: #31354B;
+  --border-focus: #5B6EF5;
 
-  --text: #F0EFEA;
-  --text-secondary: #C8C9D4;
-  --text-tertiary: #9597A8;
-  --text-muted: #63657A;
+  --text: #F1F0EC;
+  --text-secondary: #D1D2DC;
+  --text-tertiary: #9DA0B5;
+  --text-muted: #6B6F87;
 
   /* ── Brand ── */
-  --primary: #4F6EF7;
-  --primary-hover: #6B86FF;
-  --primary-subtle: rgba(79, 110, 247, 0.08);
-  --primary-subtle-hover: rgba(79, 110, 247, 0.15);
+  --primary: #5B6EF5;
+  --primary-hover: #7585FF;
+  --primary-subtle: rgba(91, 110, 245, 0.08);
+  --primary-subtle-hover: rgba(91, 110, 245, 0.15);
 
-  /* ── Semantic Colors ── */
-  --green: #2ECC71;
-  --green-subtle: rgba(46, 204, 113, 0.07);
-  --green-strong: #34D47E;
-  --red: #E5484D;
-  --red-subtle: rgba(229, 72, 77, 0.07);
-  --red-strong: #F05A60;
+  /* ── Semantic Colors (muted, professional) ── */
+  --green: #27AE60;
+  --green-subtle: rgba(39, 174, 96, 0.08);
+  --green-strong: #2DBB6A;
+  --red: #E53E3E;
+  --red-subtle: rgba(229, 62, 62, 0.08);
+  --red-strong: #F05A5A;
   --amber: #F0B429;
-  --amber-subtle: rgba(240, 180, 41, 0.07);
+  --amber-subtle: rgba(240, 180, 41, 0.08);
   --blue: #3498DB;
-  --blue-subtle: rgba(52, 152, 219, 0.07);
+  --blue-subtle: rgba(52, 152, 219, 0.08);
 
   /* ── Shadows ── */
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.4);
@@ -41,7 +41,7 @@
   --shadow-md: 0 4px 20px rgba(0,0,0,0.55);
   --shadow-lg: 0 8px 40px rgba(0,0,0,0.65);
   --shadow-xl: 0 16px 64px rgba(0,0,0,0.75);
-  --shadow-glow-primary: 0 0 20px rgba(79, 110, 247, 0.15);
+  --shadow-glow-primary: 0 0 20px rgba(91, 110, 245, 0.15);
 
   /* ── Border Radius ── */
   --radius-sm: 4px;
