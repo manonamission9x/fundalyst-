@@ -202,7 +202,9 @@ Interest Expense, 45, 52, 60`;
           )}
           {pdfValidation && !pdfValidation.valid && (
             <div className={`pdf-validation error`}>
-              <span className="pdf-validation-icon">✕</span>
+              <span className="pdf-validation-icon">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"><path d="M4 4l6 6M10 4l-6 6" /></svg>
+              </span>
               <div>{pdfValidation.error}</div>
             </div>
           )}
@@ -420,7 +422,8 @@ function ImportReview({
           <div className="card-body">
             {review.warnings.map((w, i) => (
               <div key={i} style={{ fontSize: 11, color: 'var(--amber)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
-                ⚠ {w}
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" style={{ marginRight: 4, verticalAlign: 'middle' }}><path d="M6 1L1 11h10L6 1z" /><path d="M6 5v2" /><circle cx="6" cy="9" r="0.5" fill="currentColor" stroke="none" /></svg>
+                {w}
               </div>
             ))}
           </div>

@@ -1019,6 +1019,7 @@ textarea.num-input { resize: vertical; min-height: 72px; line-height: 1.6; }
 .p-0 { padding: 0; }
 .p-3 { padding: var(--space-3); } .p-4 { padding: var(--space-4); }
 .p-5 { padding: var(--space-5); }
+.px-4 { padding-left: var(--space-4); padding-right: var(--space-4); }
 .px-5 { padding-left: var(--space-5); padding-right: var(--space-5); }
 .py-3 { padding-top: var(--space-3); padding-bottom: var(--space-3); }
 .gap-2 { gap: var(--space-2); } .gap-3 { gap: var(--space-3); }
@@ -1026,7 +1027,9 @@ textarea.num-input { resize: vertical; min-height: 72px; line-height: 1.6; }
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
 .flex-wrap { flex-wrap: wrap; }
+.flex-1 { flex: 1; }
 .items-center { align-items: center; }
+.items-start { align-items: flex-start; }
 .justify-center { justify-content: center; }
 .justify-between { justify-content: space-between; }
 .text-center { text-align: center; }
@@ -1035,7 +1038,14 @@ textarea.num-input { resize: vertical; min-height: 72px; line-height: 1.6; }
 .text-sm { font-size: var(--text-sm); }
 .text-muted { color: var(--text-muted); }
 .text-tertiary { color: var(--text-tertiary); }
+.text-secondary { color: var(--text-secondary); }
+.text-primary { color: var(--primary); }
+.text-green { color: var(--green); }
+.text-red { color: var(--red); }
+.text-amber { color: var(--amber); }
 .w-full { width: 100%; }
+.w-auto { width: auto; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .btn-secondary {
   background: transparent;

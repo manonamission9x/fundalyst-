@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { useImporterStore } from '@/store/importer-store';
 import { SectionTitle, Disclaimer } from '@/components/ui';
+import type { FundalystDataset, CanonicalFact } from '@/lib/importer/types';
 
 // ── Workspace step definitions ──
 const steps = [
@@ -96,7 +97,7 @@ export default function WorkspacePage() {
 }
 
 // ── Overview Panel ──
-function OverviewPanel({ hasData, companyName, datasets }: { hasData: boolean; companyName: string; datasets: any[] }) {
+function OverviewPanel({ hasData, companyName, datasets }: { hasData: boolean; companyName: string; datasets: FundalystDataset[] }) {
   const totalFacts = datasets.reduce((sum, d) => sum + d.facts.length, 0);
   return (
     <div>
@@ -221,7 +222,7 @@ function ImportPanel() {
 }
 
 // ── Data Panel ──
-function DataPanel({ datasets }: { datasets: any[] }) {
+function DataPanel({ datasets }: { datasets: FundalystDataset[] }) {
   if (datasets.length === 0) {
     return (
       <div>
@@ -273,7 +274,7 @@ function DataPanel({ datasets }: { datasets: any[] }) {
                       <tr><th>Metric</th><th>Value</th><th>Period</th></tr>
                     </thead>
                     <tbody>
-                      {ds.facts.slice(0, 30).map((f: any, j: number) => (
+      {ds.facts.slice(0, 30).map((f: CanonicalFact, j: number) => (
                         <tr key={j}>
                           <td>{f.metric || f.canonicalMetric || '—'}</td>
                           <td>{f.value !== undefined ? f.value : '—'}</td>

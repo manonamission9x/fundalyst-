@@ -54,7 +54,7 @@ export default function TrendsPage() {
   useEffect(() => {
     if (filingData && filingData.diffs && filingData.diffs.length > 0) {
       const headerLine = 'Metric, Earlier, Latest';
-      const dataLines = filingData.diffs.map((d: any) => `${d.label}, ${d.a ?? ''}, ${d.b ?? ''}`);
+      const dataLines = filingData.diffs.map((d: { label: string; a: number | null; b: number | null }) => `${d.label}, ${d.a ?? ''}, ${d.b ?? ''}`);
       setCsv([headerLine, ...dataLines].join('\n'));
     }
   }, [filingData, setCsv]);
