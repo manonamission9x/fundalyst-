@@ -36,6 +36,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>
+
+        {/* Premium Background Layers */}
+        <div className="bg-noise" aria-hidden="true" />
+        <div className="bg-curves" aria-hidden="true">
+          <svg viewBox="0 0 1200 800" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path className="bg-curve-path" d="M0,600 C200,400 300,700 600,500 C800,350 950,550 1200,450" />
+            <path className="bg-curve-path" d="M0,300 C150,450 400,200 600,350 C800,500 1000,250 1200,400" />
+            <path className="bg-curve-path" d="M0,700 C250,550 450,800 700,600 C900,450 1050,650 1200,550" />
+            <path className="bg-curve-path" d="M0,200 C300,350 500,150 750,250 C950,350 1100,150 1200,300" />
+          </svg>
+        </div>
+
+        {/* Mouse parallax for background depth */}
+        <script dangerouslySetInnerHTML={{
+          __html: "document.addEventListener('mousemove',function(e){var x=e.clientX/window.innerWidth*100,y=e.clientY/window.innerHeight*100;document.documentElement.style.setProperty('--glow-x-1',(20+x*0.15)+'%');document.documentElement.style.setProperty('--glow-y-1',(15+y*0.15)+'%');document.documentElement.style.setProperty('--glow-x-2',(70-x*0.1)+'%');document.documentElement.style.setProperty('--glow-y-2',(75-y*0.1)+'%');})"
+        }} />
+
         <ToastProvider>
           <Nav />
           <ErrorBoundary>
