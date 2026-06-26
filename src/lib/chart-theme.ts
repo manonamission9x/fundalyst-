@@ -7,7 +7,7 @@
 
 /** Chart color palette — muted, professional, colorblind-safe */
 export const CHART_COLORS = {
-  primary: '#4F6EF7',
+  primary: '#C4A882',
   primaryLight: '#6B86FF',
   green: '#2ECC71',
   greenLight: '#34D47E',

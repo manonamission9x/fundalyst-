@@ -1,39 +1,39 @@
-/* ── Fundalyst Design System v5 — Dark Institutional ── */
+/* ── Fundalyst Design System v5 — Warm Monochrome ── */
 :root {
-  /* ── Dark Palette — Bloomberg meets Batman ── */
-  --bg: #0A0B0F;
-  --bg-elevated: #141520;
-  --bg-surface: #1C1E2E;
-  --bg-hover: #22243A;
-  --bg-active: #2A2D42;
-  --bg-field: #181A28;
-  --border: #2A2D42;
-  --border-light: #22253A;
-  --border-strong: #363A52;
-  --border-focus: #4F6EF7;
+  /* ── Warm Charcoal Palette — Apple meets Bloomberg meets leather ── */
+  --bg: #141414;
+  --bg-elevated: #1E1E1E;
+  --bg-surface: #282828;
+  --bg-hover: #2A2A2A;
+  --bg-active: #333333;
+  --bg-field: #1A1A1A;
+  --border: #333333;
+  --border-light: #2A2A2A;
+  --border-strong: #444444;
+  --border-focus: #C4A882;
 
-  --text: #EDEDED;
-  --text-secondary: #B0B3C2;
-  --text-tertiary: #83869B;
-  --text-muted: #5C5F73;
+  --text: #E8E4DA;
+  --text-secondary: #B8B0A4;
+  --text-tertiary: #8A847C;
+  --text-muted: #6A6560;
 
-  /* ── Brand — Cool Indigo (no warmth, no gold) ── */
-  --primary: #4F6EF7;
-  --primary-hover: #6B86FF;
-  --primary-subtle: rgba(79, 110, 247, 0.08);
-  --primary-subtle-hover: rgba(79, 110, 247, 0.15);
+  /* ── Brand — Muted Rose Gold / Copper (warm, sophisticated, not gaudy) ── */
+  --primary: #C4A882;
+  --primary-hover: #D4BFA0;
+  --primary-subtle: rgba(196, 168, 130, 0.08);
+  --primary-subtle-hover: rgba(196, 168, 130, 0.15);
 
-  /* ── Semantic Colors ── */
-  --green: #2ECC71;
-  --green-subtle: rgba(46, 204, 113, 0.08);
-  --green-strong: #34D878;
-  --red: #E5484D;
-  --red-subtle: rgba(229, 72, 77, 0.08);
-  --red-strong: #F05A5E;
-  --amber: #D4A027;
-  --amber-subtle: rgba(212, 160, 39, 0.08);
-  --blue: #4F6EF7;
-  --blue-subtle: rgba(79, 110, 247, 0.08);
+  /* ── Semantic Colors — warm, muted, sophisticated ── */
+  --green: #5DAE7B;
+  --green-subtle: rgba(93, 174, 123, 0.08);
+  --green-strong: #6DBF8B;
+  --red: #D47A6A;
+  --red-subtle: rgba(212, 122, 106, 0.08);
+  --red-strong: #E08A7A;
+  --amber: #C49A5C;
+  --amber-subtle: rgba(196, 154, 92, 0.08);
+  --blue: #C4A882;
+  --blue-subtle: rgba(196, 168, 130, 0.08);
 
   /* ── Shadows — minimal, sharp ── */
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.5);
@@ -95,8 +95,8 @@ body::before {
   position: fixed; top: 0; left: 0;
   width: 100%; height: 100%;
   background-image:
-    linear-gradient(rgba(79,110,247,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(79,110,247,0.025) 1px, transparent 1px);
+    linear-gradient(rgba(196,168,130,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196,168,130,0.02) 1px, transparent 1px);
   background-size: 48px 48px;
   pointer-events: none;
   z-index: 0;
@@ -107,7 +107,7 @@ body::after {
   content: '';
   position: fixed; top: -25%; left: -25%;
   width: 150%; height: 150%;
-  background: radial-gradient(ellipse 50% 40% at 50% 30%, rgba(79,110,247,0.04) 0%, transparent 60%);
+  background: radial-gradient(ellipse 50% 40% at 50% 30%, rgba(196,168,130,0.03) 0%, transparent 60%);
   pointer-events: none;
   z-index: 0;
 }
@@ -157,7 +157,7 @@ body::after {
 /* ── Navigation ── */
 .nav {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(10, 11, 15, 0.96);
+  background: rgba(20, 20, 20, 0.96);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
@@ -562,7 +562,7 @@ textarea.num-input { resize: vertical; min-height: 72px; line-height: 1.6; }
 }
 .diff-table tr:last-child td { border-bottom: none; }
 .diff-table tbody tr:hover td { background: var(--bg-hover); }
-.diff-table tbody tr:nth-child(even) td { background: rgba(79,110,247,0.03); }
+.diff-table tbody tr:nth-child(even) td { background: rgba(196,168,130,0.025); }
 .diff-table tbody tr:nth-child(even):hover td { background: var(--bg-hover); }
 
 /* ── Number alignment ── */
