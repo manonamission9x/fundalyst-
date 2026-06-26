@@ -41,8 +41,8 @@ export default function Nav() {
       <div className="nav-inner">
         <Link href="/" className="nav-brand" aria-label="Fundalyst home">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-            <rect width="20" height="20" rx="4" fill="#4F6EF7" />
-            <path d="M5 14V6L10 10L15 6V14" stroke="rgba(255,255,255,0.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <rect width="20" height="20" rx="3" fill="#60626A" />
+            <path d="M5 14V6L10 10L15 6V14" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <span>Fundalyst</span>
         </Link>
