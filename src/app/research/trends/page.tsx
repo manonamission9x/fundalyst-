@@ -1,96 +1,79 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import { fmtNum } from '@/lib/calculations';
-import { useTrendsStore, useAnalysisStore } from '@/store';
+import { useAnalysisStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
 import { PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer, EmptyState, DataQualityBar, CalcTimestamp, TrustBadge } from '@/components/ui';
+import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
+import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import dynamic from 'next/dynamic';
 import { useGlobalImportFill, extractTrendsCSV, getDataSourceLabel } from '@/lib/importer/import-hooks';
 import { useActiveDataset, extractTrendData } from '@/store/financial-model-selectors';
+import { useModelData } from '@/store/use-model-data';
+import type { TrendRow } from '@/types/financial';
 
 const TrendsChart = dynamic(() => import('@/components/tools/trends/TrendsChart'), {
   ssr: false,
-  loading: () => <div className="skeleton" style={{ width: '100%', height: 250, borderRadius: 'var(--radius-md)' }} />,
+  loading: () => <div className="skeleton" style={{ width: '100%', height: 250 }} />,
 });
 
 export default function TrendsPage() {
   const showToast = useToast();
   const { filingData } = useAnalysisStore();
-  const { csv, headers, rows, setCsv, setHeaders, setRows, clear } = useTrendsStore();
+  const { dataSource, companyName } = useGlobalImportFill((vals) => {}, extractTrendsCSV);
+  const modelData = useModelData((ds) => extractTrendData(ds));
 
-  // Pre-fill from imported data via global data pipeline
-  const { dataSource, companyName } = useGlobalImportFill(
-    (vals) => { setCsv(vals); },
-    extractTrendsCSV
-  );
+  const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
+  const [sheetPeriods, setSheetPeriods] = useState<string[]>([]);
+  const [trendRows, setTrendRows] = useState<TrendRow[]>([]);
+  const [showResults, setShowResults] = useState(false);
+
+  const handleSheetChange = useCallback((newRows: SpreadsheetRow[], periods: string[]) => {
+    setSheetRows(newRows);
+    setSheetPeriods(periods);
+    // Build trend rows
+    const trendData: TrendRow[] = newRows.map((r) => ({
+      label: r.metric,
+      vals: r.values.map((v) => {
+        const n = parseFloat(v.replace(/,/g, ''));
+        return isNaN(n) ? 0 : n;
+      }),
+    }));
+    setTrendRows(trendData);
+    setShowResults(true);
+  }, []);
 
   async function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
       const text = await readFile(file);
-      setCsv(text);
-      parseWithText(text);
+      const lines = text.split('\n').filter(Boolean);
+      if (lines.length < 2) return;
+      const periods = lines[0].split(',').slice(1).map((s) => s.trim());
+      const dataRows = lines.slice(1).map((l) => {
+        const cols = l.split(',').map((s) => s.trim());
+        return { metric: cols[0], values: cols.slice(1) };
+      });
+      setSheetPeriods(periods);
+      setSheetRows(dataRows);
+      setTrendRows(dataRows.map((r) => ({ label: r.metric, vals: r.values.map((v) => parseFloat(v) || 0) })));
+      setShowResults(true);
+      showToast('Loaded data');
     } catch (err: unknown) {
       showToast('Error reading file: ' + (err instanceof Error ? err.message : 'unknown'));
     }
     e.target.value = '';
   }
 
-  function parseWithText(text: string) {
-    const lines = text.split('\n').filter(Boolean);
-    if (lines.length < 2) return;
-    setHeaders(lines[0].split(',').map((s) => s.trim()));
-    setRows(
-      lines.slice(1).map((l) => {
-        const cols = l.split(',').map((s) => s.trim());
-        return { label: cols[0], vals: cols.slice(1).map(Number) };
-      })
-    );
-  }
-
-  // When filingData changes, pre-fill CSV with filing diffs
-  useEffect(() => {
-    if (filingData && filingData.diffs && filingData.diffs.length > 0) {
-      const headerLine = 'Metric, Earlier, Latest';
-      const dataLines = filingData.diffs.map((d: { label: string; a: number | null; b: number | null }) => `${d.label}, ${d.a ?? ''}, ${d.b ?? ''}`);
-      setCsv([headerLine, ...dataLines].join('\n'));
-    }
-  }, [filingData, setCsv]);
-
-  // Pre-fill from canonical model when active dataset has data
-  const trendsActiveDataset = useActiveDataset();
-  useEffect(() => {
-    if (!trendsActiveDataset || trendsActiveDataset.facts.length < 3) return;
-    const existing = useTrendsStore.getState();
-    if (existing.rows.length > 0 || !existing.csv.includes('Period,')) return;
-
-    const { periods, metrics } = extractTrendData(trendsActiveDataset);
-    if (periods.length < 2 || Object.keys(metrics).length < 2) return;
-
-    setHeaders(periods);
-    const rows = Object.entries(metrics).map(([label, vals]) => ({
-      label,
-      vals: vals.map((v) => v ?? 0),
-    }));
-    setRows(rows);
-  }, [trendsActiveDataset]);
-
   function parse() {
-    parseWithText(csv);
-    const lines = csv.split('\n').filter(Boolean);
-    if (lines.length > 0) {
-      showToast('Loaded ' + (lines.length - 1) + ' metrics');
-      setTimeout(() => {
-        document.getElementById('trends-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 200);
-    }
+    // Already parsed via handleSheetChange
   }
 
   function handleClear() {
-    clear();
+    setSheetRows([]); setSheetPeriods([]); setTrendRows([]); setShowResults(false);
   }
 
   return (
@@ -100,86 +83,74 @@ export default function TrendsPage() {
         subtitle="Track revenue, profit, costs, debt, and other metrics across periods."
         answer="What this helps you answer: Which metrics are improving? Which are declining?"
       />
-      <DataQualityBar source={getDataSourceLabel(dataSource, companyName)} />
+      <DataQualityBar source={modelData.isLoaded ? `Model: ${modelData.companyName || 'Loaded'}` : 'Manual mode'} />
       <UploadBar onUpload={handleCsvFile} hint="CSV: Metric, Period1, Period2, Period3, ..." />
+
       <Card label="Data">
         <div className="card-body">
-          <textarea
-            id="trends-csv"
-            rows={6}
-            className="num-input"
-            style={{ width: '100%', lineHeight: 1.7, fontSize: 12, fontFamily: 'var(--font-mono)' }}
-            value={csv}
-            onChange={(e) => setCsv(e.target.value)}
-            aria-label="Trend data CSV input"
+          <ToolSpreadsheet
+            tool="trends"
+            multiColumn
+            initialPeriods={sheetPeriods.length >= 3 ? sheetPeriods : ['FY22', 'FY23', 'FY24', 'FY25', 'FY26']}
+            initialData={
+              sheetRows.length > 0
+                ? sheetRows
+                : [
+                    { metric: 'Revenue', values: ['1000', '1150', '1240', '1380', '1530'] },
+                    { metric: 'Net Profit', values: ['160', '155', '142', '130', '119'] },
+                    { metric: 'Total Assets', values: ['2000', '2200', '2450', '2700', '3000'] },
+                  ]
+            }
+            onDataChange={handleSheetChange}
+            hint="First row = period labels. Each row below = one metric. Values update the chart instantly."
           />
           <Toolbar onClear={handleClear} onAction={parse} actionLabel="Plot" />
         </div>
       </Card>
 
-      {rows.length > 0 && (
+      {showResults && trendRows.length > 0 && (
         <div id="trends-results">
-          <Card label="Data table" className="mt-6">
-            <div className="card-body">
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
-                {rows[0]?.label || 'Revenue'} Trend (₹ Cr)
-              </div>
-              <div style={{ position: 'relative', height: 250 }}>
-                <TrendsChart rows={rows} headers={headers} />
-              </div>
+          <Card label="Chart" className="mt-4">
+            <div className="chart-wrap">
+              <TrendsChart rows={trendRows} headers={['Metric', ...sheetPeriods]} />
             </div>
+          </Card>
+
+          <Card label="Data table" className="mt-4">
             <table className="diff-table">
               <thead>
                 <tr>
                   <th>Metric</th>
-                  {headers.slice(1).map((h, i) => <th key={i}>{h}</th>)}
+                  {sheetPeriods.map((h, i) => <th key={i}>{h}</th>)}
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, i) => (
+                {trendRows.map((r, i) => (
                   <tr key={i}>
                     <td><strong>{r.label}</strong></td>
-                    {r.vals.map((v, j) => (
-                      <td key={j}>{isNaN(v) ? '—' : fmtNum(v)}</td>
-                    ))}
+                    {r.vals.map((v, j) => <td key={j}>{isNaN(v) ? '—' : fmtNum(v)}</td>)}
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div className="card-body" style={{ textAlign: 'center' }}>
-              <button
-                className="btn-secondary"
-                onClick={() => {
-                  const hdrs = ['Metric', ...headers.slice(1)];
-                  const data = rows.map((r) => [r.label, ...r.vals.map((v) => (isNaN(v) ? '' : v))]);
-                  downloadCSV('trends.csv', [hdrs, ...data]);
-                }}
-              >
-                Download CSV
-              </button>
+            <div className="flex justify-center py-3">
+              <button className="btn-secondary btn-sm" onClick={() => {
+                const hdrs = ['Metric', ...sheetPeriods];
+                const data = trendRows.map((r) => [r.label, ...r.vals.map((v) => (isNaN(v) ? '' : v))]);
+                downloadCSV('trends.csv', [hdrs, ...data]);
+              }}>Download CSV</button>
             </div>
           </Card>
-          <NextLinks
-            links={[
-              { label: 'Growth rates', href: '/research/growth' },
-              { label: 'Estimate value', href: '/tools/dcf' },
-            ]}
-          />
+
+          <NextLinks links={[{ label: 'Growth rates', href: '/research/growth' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
           <CalcTimestamp />
-          <div className="flex gap-2 flex-wrap mt-2">
-            <TrustBadge label="Trend Analysis" variant="source" />
-            <TrustBadge label="₹ Indian Market" />
-          </div>
+          <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label="Trend Analysis" variant="source" /><TrustBadge label="₹ Indian Market" /></div>
           <Disclaimer />
         </div>
       )}
 
-      {!rows.length && (
-        <EmptyState
-          title="No trend data yet"
-          desc="Enter period labels as the first row and metrics below (CSV format: Metric, Period1, Period2...), then click Plot. Data can also be pre-filled from the Filing Comparison or Smart Import tools."
-          action={{ label: 'Import data', href: '/import' }}
-        />
+      {!showResults && (
+        <EmptyState title="No trend data yet" desc="Enter period labels as the first column headers and metrics below in the spreadsheet, then click Plot. Data can also be pre-filled from the Filing Comparison or Smart Import tools." action={{ label: 'Import data', href: '/import' }} />
       )}
     </div>
   );

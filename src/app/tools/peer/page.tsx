@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useState, useMemo } from 'react';
 import { fmtNum } from '@/lib/calculations';
 import { usePeerStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
@@ -17,10 +18,13 @@ import {
   CalcTimestamp,
   TrustBadge,
 } from '@/components/ui';
+import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
+import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import type { PeerRow } from '@/types/financial';
 
-const labels = ['Revenue', 'Profit', 'Assets', 'Debt'];
+const LABELS = ['Revenue', 'Profit', 'Assets', 'Debt'];
+const COL_LABELS = ['Revenue', 'Net Profit', 'Total Assets', 'Total Debt'];
 
 function best(rows: PeerRow[], ci: number): { value: number; isUnique: boolean } | null {
   const n = rows.map((r) => r.vals[ci]).filter((v) => !isNaN(v));
@@ -46,160 +50,179 @@ function findBestRow(rows: PeerRow[], ci: number, preferMax: boolean): PeerRow |
     : valid.reduce((a, b) => (a.vals[ci] < b.vals[ci] ? a : b));
 }
 
+/** Convert spreadsheet rows (metrics) + periods (companies) → PeerRow[] */
+function sheetToPeerRows(rows: SpreadsheetRow[], periods: string[]): PeerRow[] {
+  return periods.map((company, ci) => ({
+    name: company,
+    vals: rows.map((r) => {
+      const v = r.values[ci]?.trim();
+      return v ? parseFloat(v) || 0 : NaN;
+    }),
+  }));
+}
+
 export default function PeerPage() {
   const showToast = useToast();
-  const { csv, rows, setCsv, setRows, clear } = usePeerStore();
+  const { rows, clear: clearStore } = usePeerStore();
   const datasets = useGlobalDataStore((s) => s.datasets);
   const dsCount = datasets.length;
+
+  const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
+  const [sheetPeriods, setSheetPeriods] = useState<string[]>([]);
+  const [peerResults, setPeerResults] = useState<PeerRow[]>([]);
+  const [showResults, setShowResults] = useState(false);
 
   async function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
       const text = await readFile(file);
-      setCsv(text);
-      parseWithText(text);
+      const lines = text.split('\n').filter(Boolean);
+      const parsed = lines.map((l) => { const cols = l.split(',').map((s) => s.trim()); return { name: cols[0], vals: cols.slice(1).map(Number) }; });
+      setPeerResults(parsed);
+      setShowResults(true);
+
+      // Also populate spreadsheet
+      const companies = parsed.map((r) => r.name);
+      setSheetPeriods(companies);
+      setSheetRows(LABELS.map((label, li) => ({
+        metric: label,
+        values: companies.map((_, ci) => !isNaN(parsed[ci]?.vals[li]) ? String(parsed[ci].vals[li]) : ''),
+      })));
+      showToast('Loaded ' + lines.length + ' companies');
     } catch (err: unknown) {
       showToast('Error reading file: ' + (err instanceof Error ? err.message : 'unknown'));
     }
     e.target.value = '';
   }
 
-  function parseWithText(text: string) {
-    const lines = text.split('\n').filter(Boolean);
-    setRows(
-      lines.map((l) => {
-        const cols = l.split(',').map((s) => s.trim());
-        return { name: cols[0], vals: cols.slice(1).map(Number) };
-      })
-    );
-  }
+  const handleSheetChange = useCallback((newRows: SpreadsheetRow[], periods: string[]) => {
+    setSheetRows(newRows);
+    setSheetPeriods(periods);
+  }, []);
 
-  function parse() {
-    parseWithText(csv);
-    const lines = csv.split('\n').filter(Boolean);
-    if (lines.length > 0) {
-      showToast('Loaded ' + lines.length + ' companies');
-      setTimeout(() => {
-        document.getElementById('peer-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 200);
+  function runCompare() {
+    if (sheetPeriods.length < 2) {
+      showToast('Need at least 2 companies to compare.');
+      return;
     }
+    const parsed = sheetToPeerRows(sheetRows, sheetPeriods);
+    setPeerResults(parsed);
+    setShowResults(true);
+    showToast('Compared ' + sheetPeriods.length + ' companies');
   }
 
-  function handleClear() { clear(); }
+  function loadSample() {
+    const sample = `Tata Motors, 420000, 28500, 345000, 105000
+Reliance, 900000, 74500, 1620000, 280000
+HDFC Bank, 185000, 45200, 3650000, 85000
+Infosys, 156000, 28700, 172000, 24000`;
+    const lines = sample.split('\n').filter(Boolean);
+    const parsed = lines.map((l) => { const cols = l.split(',').map((s) => s.trim()); return { name: cols[0], vals: cols.slice(1).map(Number) }; });
+    const companies = parsed.map((r) => r.name);
+    setSheetPeriods(companies);
+    setSheetRows(LABELS.map((label, li) => ({
+      metric: label,
+      values: companies.map((_, ci) => String(parsed[ci].vals[li])),
+    })));
+    setPeerResults(parsed);
+    setShowResults(true);
+    showToast('Loaded 4 sample companies');
+  }
+
+  function handleClear() { clearStore(); setSheetRows([]); setSheetPeriods([]); setPeerResults([]); setShowResults(false); }
 
   // ── Insight helpers ──
-  const bestRevenue = findBestRow(rows, 0, true);
-  const bestProfit = findBestRow(rows, 1, true);
-  const lowestDebt = findBestRow(rows, 3, false);
-  const strongestOverall =
-    rows.length > 0
-      ? rows
-          .filter((r) => !isNaN(r.vals[0]) && !isNaN(r.vals[1]) && !isNaN(r.vals[3]))
-          .reduce((a, b) => {
-            const scoreA = a.vals[0] + a.vals[1] - a.vals[3];
-            const scoreB = b.vals[0] + b.vals[1] - b.vals[3];
-            return scoreA > scoreB ? a : b;
-          }, rows[0])
-      : null;
+  const bestRevenue = findBestRow(peerResults, 0, true);
+  const bestProfit = findBestRow(peerResults, 1, true);
+  const lowestDebt = findBestRow(peerResults, 3, false);
+  const strongestOverall = peerResults.length > 0
+    ? peerResults.filter((r) => !isNaN(r.vals[0]) && !isNaN(r.vals[1]) && !isNaN(r.vals[3]))
+        .reduce((a, b) => {
+          const scoreA = a.vals[0] + a.vals[1] - a.vals[3];
+          const scoreB = b.vals[0] + b.vals[1] - b.vals[3];
+          return scoreA > scoreB ? a : b;
+        }, peerResults[0])
+    : null;
 
   return (
     <div>
       <PageHeader
         title="Peer Comparison"
         subtitle="Compare companies side by side and instantly spot leaders and laggards — revenue, profit, assets, and debt."
-        answer="What this helps you answer: Which company is the strongest? Who is lagging?"
+        answer="Which company is the strongest? Who is lagging?"
       />
 
-      <DataQualityBar
-        source={dsCount > 0 ? `${dsCount} dataset(s) loaded` : 'Manual mode'}
-        metrics={dsCount}
-      />
+      <DataQualityBar source={dsCount > 0 ? `${dsCount} dataset(s) loaded` : 'Manual mode'} metrics={dsCount} />
 
       <UploadBar onUpload={handleCsvFile} hint="Company, Revenue, Profit, Assets, Debt" />
 
-      {/* ── Quick sample data + paste area ── */}
       <div className="flex items-center gap-2 mb-2">
-        <button
-          type="button"
-          className="btn-ghost btn-sm"
-          onClick={() => {
-            const sample = `Tata Motors, 420000, 28500, 345000, 105000
-Reliance, 900000, 74500, 1620000, 280000
-HDFC Bank, 185000, 45200, 3650000, 85000
-Infosys, 156000, 28700, 172000, 24000`;
-            setCsv(sample);
-            parseWithText(sample);
-            showToast('Loaded 4 sample companies');
-          }}
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3">
-            <path d="M2 6h8M6 2v8" />
-          </svg>
+        <button type="button" className="btn-ghost btn-sm" onClick={loadSample}>
           Load sample companies
         </button>
-        <span className="text-muted text-2xs">Or paste your own data below</span>
+        <span className="text-muted text-2xs">Or type company names as column headers</span>
       </div>
 
-      <Card label="Company data (Company, Revenue, Profit, Assets, Debt)">
+      <Card label="Peer Data">
         <div className="card-body">
-          <textarea
-            id="peer-csv"
-            rows={6}
-            className="num-input"
-            value={csv}
-            onChange={(e) => setCsv(e.target.value)}
-            aria-label="Company data CSV input"
+          <ToolSpreadsheet
+            tool="peer"
+            multiColumn
+            initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : ['Company A', 'Company B', 'Company C']}
+            initialData={
+              sheetRows.length > 0
+                ? sheetRows
+                : LABELS.map((label) => ({
+                    metric: label,
+                    values: ['', '', ''],
+                  }))
+            }
+            onDataChange={handleSheetChange}
+            hint="Each column = one company. Each row = one financial metric. Tab to navigate."
           />
-          <Toolbar onClear={handleClear} onAction={parse} actionLabel="Compare" />
+          <Toolbar onClear={handleClear} onAction={runCompare} actionLabel="Compare" />
         </div>
       </Card>
 
-      {rows.length > 0 && (
+      {showResults && peerResults.length > 0 && (
         <>
           <Card label="Results" className="mt-4">
             <table className="diff-table">
               <thead>
                 <tr>
                   <th>Company</th>
-                  {labels.map((l, i) => <th key={i}>{l}</th>)}
+                  {LABELS.map((l, i) => <th key={i}>{l}</th>)}
                   <th>Comparison</th>
                 </tr>
               </thead>
               <tbody>
                 {(() => {
-                  const maxPerCol = labels.map((_, j) => {
-                    const vals = rows.map(r => r.vals[j]).filter(v => !isNaN(v));
+                  const maxPerCol = LABELS.map((_, j) => {
+                    const vals = peerResults.map(r => r.vals[j]).filter(v => !isNaN(v));
                     return vals.length > 0 ? Math.max(...vals) : 1;
                   });
-                  return rows.map((r, i) => (
+                  return peerResults.map((r, i) => (
                     <tr key={i}>
                       <td><strong>{r.name}</strong></td>
                       {r.vals.map((v, j) => {
-                        const b = best(rows, j);
-                        const w = worst(rows, j);
+                        const b = best(peerResults, j);
+                        const w = worst(peerResults, j);
                         const isBest = b && v === b.value && b.isUnique;
                         const isWorst = w && v === w.value && w.isUnique;
-                        return (
-                          <td key={j} className={isBest ? 'good' : isWorst ? 'warn' : ''}>
-                            {isNaN(v) ? '—' : fmtNum(v)}
-                          </td>
-                        );
+                        return <td key={j} className={isBest ? 'good' : isWorst ? 'warn' : ''}>{isNaN(v) ? '—' : fmtNum(v)}</td>;
                       })}
                       <td className="change-mag-cell">
                         <div className="peer-bars">
                           {r.vals.map((v, j) => {
                             if (isNaN(v) || maxPerCol[j] <= 0) return null;
                             const pct = (v / maxPerCol[j]) * 100;
-                            const isBest = best(rows, j) && v === best(rows, j)!.value && best(rows, j)!.isUnique;
+                            const isBest = best(peerResults, j) && v === best(peerResults, j)!.value && best(peerResults, j)!.isUnique;
                             return (
                               <div key={j} className="peer-bar-row">
-                                <span className="peer-bar-label">{labels[j][0]}</span>
+                                <span className="peer-bar-label">{LABELS[j][0]}</span>
                                 <div className="change-bar-wrap">
-                                  <div
-                                    className={`change-bar ${isBest ? 'change-bar-up' : 'change-bar-down'}`}
-                                    style={{ width: `${Math.max(4, pct)}%` }}
-                                  />
+                                  <div className={`change-bar ${isBest ? 'change-bar-up' : 'change-bar-down'}`} style={{ width: `${Math.max(4, pct)}%` }} />
                                 </div>
                               </div>
                             );
@@ -212,75 +235,32 @@ Infosys, 156000, 28700, 172000, 24000`;
               </tbody>
             </table>
             <div className="flex justify-center py-3">
-              <button
-                className="btn-secondary btn-sm"
-                onClick={() => {
-                  const headers = ['Company', ...labels];
-                  const data = rows.map((r) => [r.name, ...r.vals.map((v) => (isNaN(v) ? '' : v))]);
-                  downloadCSV('peer_comparison.csv', [headers, ...data]);
-                }}
-              >
-                Download CSV
-              </button>
+              <button className="btn-secondary btn-sm" onClick={() => {
+                const hdrs = ['Company', ...LABELS];
+                const data = peerResults.map((r) => [r.name, ...r.vals.map((v) => (isNaN(v) ? '' : v))]);
+                downloadCSV('peer_comparison.csv', [hdrs, ...data]);
+              }}>Download CSV</button>
             </div>
           </Card>
 
-          {/* ── Insights ── */}
           <div className="flex flex-col gap-3 mt-4">
-            {bestRevenue && (
-              <InsightCard
-                type="positive"
-                title="Highest Revenue"
-                text={`${bestRevenue.name} leads with ${fmtNum(bestRevenue.vals[0])} in revenue.`}
-              />
-            )}
-            {bestProfit && (
-              <InsightCard
-                type="positive"
-                title="Highest Profit"
-                text={`${bestProfit.name} leads with ${fmtNum(bestProfit.vals[1])} in profit.`}
-              />
-            )}
-            {lowestDebt && (
-              <InsightCard
-                type="info"
-                title="Lowest Debt"
-                text={`${lowestDebt.name} carries the least debt at ${fmtNum(lowestDebt.vals[3])}.`}
-              />
-            )}
-            {strongestOverall && (
-              <InsightCard
-                type="positive"
-                title="Strongest Overall"
-                text={`${strongestOverall.name} ranks highest on a combined score of revenue + profit − debt.`}
-                formula="Score = Revenue + Profit − Debt"
-              />
-            )}
+            {bestRevenue && <InsightCard type="positive" title="Highest Revenue" text={`${bestRevenue.name} leads with ${fmtNum(bestRevenue.vals[0])} in revenue.`} />}
+            {bestProfit && <InsightCard type="positive" title="Highest Profit" text={`${bestProfit.name} leads with ${fmtNum(bestProfit.vals[1])} in profit.`} />}
+            {lowestDebt && <InsightCard type="info" title="Lowest Debt" text={`${lowestDebt.name} carries the least debt at ${fmtNum(lowestDebt.vals[3])}.`} />}
+            {strongestOverall && <InsightCard type="positive" title="Strongest Overall" text={`${strongestOverall.name} ranks highest on a combined score.`} formula="Score = Revenue + Profit − Debt" />}
           </div>
 
           <div className="mt-4">
-            <NextLinks
-              links={[
-                { label: 'Cash efficiency', href: '/tools/wc' },
-                { label: 'Estimate value', href: '/tools/dcf' },
-              ]}
-            />
+            <NextLinks links={[{ label: 'Cash efficiency', href: '/tools/wc' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
             <CalcTimestamp />
-            <div className="flex gap-2 flex-wrap mt-2">
-              <TrustBadge label="Peer Comparison" variant="source" />
-              <TrustBadge label="₹ Indian Market" />
-            </div>
+            <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label="Peer Comparison" variant="source" /><TrustBadge label="₹ Indian Market" /></div>
             <Disclaimer />
           </div>
         </>
       )}
 
-      {!rows.length && (
-        <EmptyState
-          title="No peer comparison data yet"
-          desc="Enter companies and their metrics above (Company, Revenue, Profit, Assets, Debt — one per line), then click Compare. Or load sample companies above to see how the tool works. Data can also be imported from a CSV file."
-          action={{ label: 'Import data', href: '/import' }}
-        />
+      {!showResults && (
+        <EmptyState title="No peer comparison data yet" desc="Type company names as column headers and enter financial data in the spreadsheet above, then click Compare. Or load sample companies to see how the tool works." action={{ label: 'Import data', href: '/import' }} />
       )}
     </div>
   );
