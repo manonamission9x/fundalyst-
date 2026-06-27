@@ -56,8 +56,8 @@ export function parseLines(text: string): LineItem[] {
 export function computeDiff(periodA: LineItem[], periodB: LineItem[]): DiffResult[] {
   const mapA: Record<string, number> = {};
   const mapB: Record<string, number> = {};
-  periodA.forEach((p) => (mapA[p.label.toLowerCase()] = parseFloat(p.value)));
-  periodB.forEach((p) => (mapB[p.label.toLowerCase()] = parseFloat(p.value)));
+  periodA.forEach((p) => { const n = parseFloat(p.value); if (Number.isFinite(n)) mapA[p.label.toLowerCase()] = n; });
+  periodB.forEach((p) => { const n = parseFloat(p.value); if (Number.isFinite(n)) mapB[p.label.toLowerCase()] = n; });
 
   const allLabels = [...new Set([...Object.keys(mapA), ...Object.keys(mapB)])];
   const diffs: DiffResult[] = [];
@@ -153,7 +153,7 @@ export function validateDCFInputs(
     errors.push({ field: 'growth', message: 'Growth rate must be less than WACC for meaningful valuation' });
 
   if (terminal === '' || terminal === null) errors.push({ field: 'terminal', message: 'Terminal growth rate is required' });
-  else if (terminalN > discountN && discountN > 0) errors.push({ field: 'terminal', message: 'Terminal growth must be less than WACC' });
+  else if (terminalN >= discountN && discountN > 0) errors.push({ field: 'terminal', message: 'Terminal growth must be less than WACC' });
 
   if (price === '' || price === null) errors.push({ field: 'price', message: 'Current price is required' });
   else if (priceN < 0) errors.push({ field: 'price', message: 'Price cannot be negative' });

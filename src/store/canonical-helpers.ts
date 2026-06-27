@@ -35,7 +35,8 @@ export function spreadsheetToDataset(
 ): FundalystDataset {
   const facts: CanonicalFact[] = [];
 
-  for (const row of rows) {
+  for (let ri = 0; ri < rows.length; ri++) {
+    const row = rows[ri];
     if (!row.metric || row.values.every((v) => !v.trim())) continue;
 
     const canonicalKey = labelToCanonicalKey(row.metric);
@@ -59,7 +60,7 @@ export function spreadsheetToDataset(
         currency: 'INR',
         unit: 'crores',
         confidence: 1.0,
-        sourceRow: pi,
+        sourceRow: ri,
         sourceColumn: pi,
       });
     }

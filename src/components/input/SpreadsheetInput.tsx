@@ -535,9 +535,8 @@ export default function SpreadsheetInput({
           </button>
           <button
             type="button"
-            className="btn-ghost btn-sm"
+            className="btn-ghost spreadsheet-browse-btn"
             onClick={() => setShowMetricBrowser(!showMetricBrowser)}
-            style={{ fontSize: 10 }}
           >
             Browse metrics
           </button>
@@ -549,62 +548,23 @@ export default function SpreadsheetInput({
 
       {/* Categorized metric browser popover */}
       {showMetricBrowser && (
-        <div
-          ref={metricBrowserRef}
-          style={{
-            position: 'absolute',
-            bottom: '100%',
-            left: 0,
-            right: 0,
-            zIndex: 60,
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-strong)',
-            borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
-            maxHeight: 280,
-            overflowY: 'auto',
-            boxShadow: '0 -4px 20px rgba(0,0,0,0.4)',
-          }}
-        >
+        <div ref={metricBrowserRef} className="metric-browser">
           {(['Income Statement', 'Balance Sheet', 'Cash Flow', 'Ratios'] as const).map((cat) => {
             const items = METRIC_LIBRARY.filter((m) => m.category === cat);
             if (items.length === 0) return null;
             return (
-              <div key={cat} style={{ padding: '4px 0' }}>
-                <div
-                  style={{
-                    fontSize: 9,
-                    fontFamily: 'IBM Plex Mono, monospace',
-                    color: 'var(--text-muted)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.07em',
-                    padding: '4px 12px',
-                    fontWeight: 600,
-                  }}
-                >
-                  {cat}
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, padding: '0 8px 4px' }}>
+              <div key={cat}>
+                <div className="metric-browser-cat">{cat}</div>
+                <div className="metric-browser-items">
                   {items.map((m) => (
                     <button
                       key={m.label}
                       type="button"
+                      className="metric-browser-item"
                       onClick={() => {
                         addRow(m.label);
                         setShowMetricBrowser(false);
                       }}
-                      style={{
-                        fontSize: 10,
-                        fontFamily: 'IBM Plex Mono, monospace',
-                        color: 'var(--text-secondary)',
-                        background: 'var(--bg-surface)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-sm)',
-                        padding: '2px 8px',
-                        cursor: 'pointer',
-                        transition: 'all var(--transition-fast)',
-                      }}
-                      onMouseEnter={(e) => { (e.target as HTMLElement).style.borderColor = 'var(--primary)'; (e.target as HTMLElement).style.color = 'var(--primary)'; }}
-                      onMouseLeave={(e) => { (e.target as HTMLElement).style.borderColor = 'var(--border)'; (e.target as HTMLElement).style.color = 'var(--text-secondary)'; }}
                     >
                       {m.label}
                     </button>

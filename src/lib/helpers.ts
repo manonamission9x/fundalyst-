@@ -2,8 +2,17 @@ import * as XLSX from 'xlsx';
 
 // ── CSV / Excel Download ──
 
+/** Properly quote a CSV cell value — wraps in quotes if it contains commas, quotes, or newlines */
+function csvCell(v: string | number): string {
+  const s = String(v);
+  if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
 export function downloadCSV(filename: string, rows: (string | number)[][]): void {
-  const csv = rows.map((r) => r.join(',')).join('\n');
+  const csv = rows.map((r) => r.map(csvCell).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -48,23 +57,8 @@ export function readFile(file: File): Promise<string> {
   });
 }
 
-// ── Validation ──
+// ── Financial Terms Dictionary (currently unused — kept for reference) ──
 
-export function safeNum(val: unknown): number {
-  const n = parseFloat(String(val));
-  return isNaN(n) ? 0 : n;
-}
-
-export function validateCSV(text: string, minCols: number): string | null {
-  if (!text || !text.trim()) return 'No data entered';
-  const lines = text.split('\n').filter(Boolean);
-  if (lines.length < 2) return 'Need at least 2 rows (header + data)';
-  const cols = lines[1].split(',').length;
-  if (cols < minCols) return `Need at least ${minCols} columns, found ${cols}`;
-  return null;
-}
-
-// ── Financial Terms Dictionary ──
 
 export const TERMS: Record<string, { label: string; desc: string }> = {
   dso: { label: 'DSO', desc: 'Days Sales Outstanding — average days to collect payment from customers. Lower is better.' },

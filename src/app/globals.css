@@ -700,6 +700,60 @@ tr:hover .spreadsheet-remove-btn {
   color: var(--text-muted);
   font-family: 'IBM Plex Mono', monospace;
 }
+
+/* ── Metric Browser ── */
+.metric-browser {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  max-height: 320px;
+  overflow-y: auto;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+}
+.metric-browser-cat {
+  font-size: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 6px 12px 3px;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  background: var(--bg-elevated);
+  z-index: 1;
+}
+.metric-browser-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 0 10px 6px;
+}
+.metric-browser-item {
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-height: 32px;
+}
+.metric-browser-item:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.spreadsheet-browse-btn {
+  font-size: 11px !important;
+  min-height: 32px;
+}
 @media (max-width: 640px) {
   .spreadsheet-corner { width: 100px; min-width: 80px; }
   .spreadsheet-corner-label { font-size: 9px; }
@@ -715,13 +769,22 @@ tr:hover .spreadsheet-remove-btn {
   .spreadsheet-remove-btn { font-size: 11px; padding: 2px; }
   /* Override pointer:coarse remove-btn opacity — always visible on touch */
   @media (pointer: coarse) { .spreadsheet-remove-btn { opacity: 0.6; } tr:hover .spreadsheet-remove-btn { opacity: 0.6; } }
+
+  /* ── Metric browser on mobile ── */
+  .metric-browser { max-height: 50vh; }
+  .metric-browser-cat { font-size: 9px; padding: 5px 10px 2px; }
+  .metric-browser-items { gap: 2px; padding: 0 8px 4px; }
+  .metric-browser-item { font-size: 10px; padding: 3px 8px; min-height: 36px; }
+  .spreadsheet-browse-btn { font-size: 10px !important; }
+  .spreadsheet-footer .spreadsheet-add-row-btn { font-size: 10px; padding: 3px 9px; }
 }
 @media (max-width: 420px) {
   .spreadsheet-corner { width: 100px; min-width: 80px; }
   .spreadsheet-header { width: 65px; min-width: 60px; }
-  .spreadsheet-cell { padding: 3px 4px; font-size: 10px; min-height: 20px; }
+  .spreadsheet-cell { padding: 4px 5px; font-size: 11px; min-height: 22px; }
   .spreadsheet-add-col { width: 20px; min-width: 20px; }
   .spreadsheet-footer { flex-direction: column; gap: 3px; }
+  .metric-browser-item { font-size: 10px; padding: 4px 7px; min-height: 38px; }
 }
 
 /* ── Expandable details ── */
@@ -927,7 +990,9 @@ details[open] .details-summary::before {
   .metric-cell { padding: 5px 8px; }
   .diff-table { font-size: 8px; }
   .diff-table th, .diff-table td { padding: 2px 3px; }
-  .card-body { padding: var(--space-2); }
+  .card-body { padding: var(--space-3); }
+  .card-header { padding: var(--space-1) var(--space-3); }
+  .card-actions { padding: var(--space-1) var(--space-3); }
   .insight-card { padding: 5px 7px; }
   .workspace-step { font-size: 10px; padding: 3px 5px; }
   .home-card { padding: var(--space-1) var(--space-2); }
