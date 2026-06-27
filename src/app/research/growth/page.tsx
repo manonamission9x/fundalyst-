@@ -15,6 +15,7 @@ import {
   EmptyState,
   InsightCard,
   DataQualityBar,
+  TrustBadge,
 } from '@/components/ui';
 import { useGlobalImportFill, extractYoYInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
 
@@ -231,6 +232,10 @@ export default function YoyPage() {
               ]}
             />
             <CalcTimestamp />
+            <div className="flex gap-2 flex-wrap mt-2">
+              <TrustBadge label="Growth Rate Analysis" variant="source" />
+              <TrustBadge label="₹ Indian Market" />
+            </div>
             <Disclaimer />
           </div>
         </div>
@@ -238,8 +243,9 @@ export default function YoyPage() {
 
       {!rows.length && (
         <EmptyState
-          title="Enter years and metrics above, then click Calculate growth."
-          desc="Format: Metric, Year1, Year2, Year3, ..."
+          title="No growth data yet"
+          desc="Enter year labels and metrics above (CSV format: Metric, Year1, Year2...), then click Calculate growth. The tool computes year-over-year percentage changes and identifies accelerating or declining metrics. Data can also be pre-filled from the Smart Import tool."
+          action={{ label: 'Import data', href: '/import' }}
         />
       )}
     </div>

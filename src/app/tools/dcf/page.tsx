@@ -19,13 +19,14 @@ import {
   NextLinks,
   DataQualityBar,
   CalcTimestamp,
+  TrustBadge,
 } from '@/components/ui';
 import dynamic from 'next/dynamic';
 import { useGlobalImportFill, extractDCFInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
 
 const DCFChart = dynamic(() => import('@/components/tools/dcf/DCFChart'), {
   ssr: false,
-  loading: () => <div className="skeleton" style={{ width: '100%', height: 300, borderRadius: 'var(--radius-md)' }} />,
+  loading: () => <div className="skeleton rounded-lg" style={{ width: '100%', height: 300 }} />,
 });
 
 export default function DCFPage() {
@@ -139,7 +140,7 @@ export default function DCFPage() {
             onChange={(v) => { setInput('fcf', v); setErrors((e) => ({ ...e, fcf: '' })); }}
             hint="Cash generated after expenses & investments (trailing 12 months)"
           />
-          {errors.fcf && <div className="err-msg" style={{ gridColumn: '1 / -1', marginTop: -8 }}>{errors.fcf}</div>}
+          {errors.fcf && <div className="err-msg mt-1 px-4">{errors.fcf}</div>}
         </FieldGrid>
       </Card>
 
@@ -160,7 +161,7 @@ export default function DCFPage() {
             hint="How many years to project (typically 5–10)"
           />
         </FieldGrid>
-        {errors.years && <div className="err-msg" style={{ padding: '0 20px 10px' }}>{errors.years}</div>}
+        {errors.years && <div className="err-msg px-4 py-2">{errors.years}</div>}
       </Card>
 
       {/* ── Discount Assumptions ── */}
@@ -180,8 +181,8 @@ export default function DCFPage() {
             hint="Long-term growth after projection years (must be below WACC)"
           />
         </FieldGrid>
-        {errors.discount && <div className="err-msg" style={{ padding: '0 20px 10px' }}>{errors.discount}</div>}
-        {errors.terminal && <div className="err-msg" style={{ padding: '0 20px 10px' }}>{errors.terminal}</div>}
+        {errors.discount && <div className="err-msg px-4 py-2">{errors.discount}</div>}
+        {errors.terminal && <div className="err-msg px-4 py-2">{errors.terminal}</div>}
       </Card>
 
       {/* ── Share Price Assumptions ── */}
@@ -207,7 +208,7 @@ export default function DCFPage() {
             hint="Current stock market price"
           />
         </FieldGrid>
-        {errors.shares && <div className="err-msg" style={{ padding: '0 20px 10px' }}>{errors.shares}</div>}
+        {errors.shares && <div className="err-msg px-4 py-2">{errors.shares}</div>}
       </Card>
 
       {/* ── Toolbar ── */}
@@ -235,7 +236,8 @@ export default function DCFPage() {
       {!show && (
         <EmptyState
           title="Adjust assumptions above, then click Calculate value."
-          desc="Defaults pre-filled. Adjust the values or enter your own to see how assumptions affect intrinsic value."
+          desc="Defaults pre-filled with sample assumptions. Adjust each value or enter real company data to see how assumptions affect intrinsic value."
+          action={{ label: 'Load from import', href: '/import' }}
         />
       )}
     </div>
@@ -275,6 +277,8 @@ function DCFResults({
     ? `Intrinsic value of ${formatted.iv} is above the current price of ${formatted.price}, suggesting the stock may be undervalued.`
     : `Intrinsic value of ${formatted.iv} is below the current price of ${formatted.price}, suggesting the stock may be overvalued.`;
 
+  const mosContext = summary.mos > 20 ? 'Healthy margin of safety' : summary.mos > 10 ? 'Moderate buffer' : 'Thin margin of safety';
+
   return (
     <ResultPanel label="Intrinsic Value Summary">
       <Card>
@@ -282,9 +286,9 @@ function DCFResults({
           metrics={[
             { label: 'Enterprise Value', value: formatted.ev },
             { label: 'Equity Value', value: formatted.eq },
-            { label: 'Intrinsic Value / Share', value: formatted.iv, cls: isUndervalued ? 'good' : 'warn' },
+            { label: 'Intrinsic Value / Share', value: formatted.iv, cls: isUndervalued ? 'good' : 'warn', context: isUndervalued ? 'Above current price' : 'Below current price', contextTrend: isUndervalued ? 'up' : 'down' },
             { label: 'Current Price', value: formatted.price },
-            { label: 'Margin of Safety', value: formatted.mos, cls: summary.mos > 20 ? 'good' : summary.mos > 0 ? 'neutral' : 'warn' },
+            { label: 'Margin of Safety', value: formatted.mos, cls: summary.mos > 20 ? 'good' : summary.mos > 0 ? 'neutral' : 'warn', context: mosContext, contextTrend: summary.mos > 0 ? 'up' : 'down' },
             { label: 'Verdict', value: isUndervalued ? 'Undervalued ✓' : 'Overvalued ✗', cls: isUndervalued ? 'good' : 'warn' },
           ]}
         />
@@ -331,11 +335,11 @@ function DCFResults({
       {/* ── Sensitivity Analysis ── */}
       {sens.length > 0 && (
         <Card label="Sensitivity Analysis" className="mt-4">
-          <div className="card-body" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+          <div className="card-body text-sm text-secondary">
             Intrinsic value per share at varying terminal growth rates (rows) vs discount rates (columns).<br />
-            <span style={{ color: 'var(--text-muted)' }}>Base assumption highlighted. Green = undervalued vs ₹{fmtNum(priceVal)}, Red = overvalued.</span>
+            <span className="text-muted">Base assumption highlighted. Green = undervalued vs ₹{fmtNum(priceVal)}, Red = overvalued.</span>
           </div>
-          <div style={{ overflowX: 'auto' }}>
+          <div className="overflow-x-auto">
             <table className="sens-table">
               <thead>
                 <tr>
@@ -368,6 +372,10 @@ function DCFResults({
       )}
 
       <CalcTimestamp />
+      <div className="flex gap-2 flex-wrap mt-2">
+        <TrustBadge label="DCF - Gordon Growth" variant="source" />
+        <TrustBadge label="₹ Indian Market" />
+      </div>
       <Disclaimer extra="Method: DCF with Gordon Growth terminal value" />
       <NextLinks
         links={[

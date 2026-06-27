@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
-import { Card, IconFiling, IconTrends, IconGrowth, IconDCF, IconCash, IconRatios, IconPeer, IconImport, IconQuickCheck } from '@/components/ui';
+import { Card, MetricGrid, IconFiling, IconTrends, IconGrowth, IconDCF, IconCash, IconRatios, IconPeer, IconImport, IconQuickCheck } from '@/components/ui';
 import { useGlobalDataStore } from '@/store/global-data-store';
 
 // ── Quick Company Check (inline tool) ──
@@ -29,19 +29,25 @@ function QuickCheckForm() {
     const da = (d / a) * 100;
     const pe = m > 0 && p > 0 ? m / p : null;
 
+    const clsNpm: 'good' | 'warn' | 'neutral' | '' = npm > 10 ? 'good' : npm > 3 ? 'neutral' : 'warn';
+    const clsRoe: 'good' | 'warn' | 'neutral' | '' = roe !== null ? (roe > 15 ? 'good' : roe > 5 ? 'neutral' : 'warn') : '';
+    const clsDe: 'good' | 'warn' | 'neutral' | '' = de_ratio !== null ? (de_ratio < 1 ? 'good' : de_ratio < 2 ? 'neutral' : 'warn') : '';
+    const clsDa: 'good' | 'warn' | 'neutral' | '' = da < 40 ? 'good' : da < 70 ? 'neutral' : 'warn';
+    const clsPe: 'good' | 'warn' | 'neutral' | '' = pe !== null ? (pe < 30 ? 'good' : pe < 50 ? 'neutral' : 'warn') : '';
+
     return {
-      npm: { v: npm.toFixed(1) + '%', cls: npm > 10 ? 'good' : npm > 3 ? 'neutral' : 'warn' as const },
-      roe: roe !== null ? { v: roe.toFixed(1) + '%', cls: roe > 15 ? 'good' : roe > 5 ? 'neutral' : 'warn' as const } : null,
-      de: de_ratio !== null ? { v: de_ratio.toFixed(2), cls: de_ratio < 1 ? 'good' : de_ratio < 2 ? 'neutral' : 'warn' as const } : null,
-      da: { v: da.toFixed(1) + '%', cls: da < 40 ? 'good' : da < 70 ? 'neutral' : 'warn' as const },
-      pe: pe !== null ? { v: pe.toFixed(1), cls: pe < 30 ? 'good' : pe < 50 ? 'neutral' : 'warn' as const } : null,
+      npm: { v: npm.toFixed(1) + '%', cls: clsNpm },
+      roe: roe !== null ? { v: roe.toFixed(1) + '%', cls: clsRoe } : null,
+      de: de_ratio !== null ? { v: de_ratio.toFixed(2), cls: clsDe } : null,
+      da: { v: da.toFixed(1) + '%', cls: clsDa },
+      pe: pe !== null ? { v: pe.toFixed(1), cls: clsPe } : null,
       equityNote: !equity && a > 0 && d >= 0 ? ' (Assets − Debt)' : '',
     };
   }, [rev, profit, debt, assets, equity, mcap]);
 
   return (
     <div>
-      <div className="field-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+      <div className="field-grid">
         {[
           { l: 'Revenue (₹ Cr)', v: rev, s: setRev },
           { l: 'Net Profit', v: profit, s: setProfit },
@@ -59,42 +65,72 @@ function QuickCheckForm() {
       </div>
 
       {result && (
-        <div className="metric-grid" style={{ marginTop: 16 }}>
-          <div className={`metric-cell ${result.npm.cls}`}>
-            <div className="metric-label">Net Profit Margin</div>
-            <div className="metric-value">{result.npm.v}</div>
-            <div className="metric-sub">Profit ÷ Revenue</div>
-          </div>
-          <div className={`metric-cell ${result.roe?.cls || ''}`}>
-            <div className="metric-label">ROE</div>
-            <div className="metric-value">{result.roe?.v || '—'}</div>
-            <div className="metric-sub">Return on equity{result.equityNote}</div>
-          </div>
-          <div className={`metric-cell ${result.de?.cls || ''}`}>
-            <div className="metric-label">Debt/Equity</div>
-            <div className="metric-value">{result.de?.v || '—'}</div>
-            <div className="metric-sub">Leverage ratio{result.equityNote}</div>
-          </div>
-          <div className={`metric-cell ${result.da.cls}`}>
-            <div className="metric-label">Debt/Assets</div>
-            <div className="metric-value">{result.da.v}</div>
-            <div className="metric-sub">Debt burden</div>
-          </div>
-          <div className={`metric-cell ${result.pe?.cls || ''}`}>
-            <div className="metric-label">P/E Ratio</div>
-            <div className="metric-value">{result.pe?.v || '—'}</div>
-            <div className="metric-sub">Price ÷ Earnings</div>
-          </div>
-        </div>
+        <MetricGrid metrics={[
+          {
+            label: 'Net Profit Margin',
+            value: result.npm.v,
+            cls: result.npm.cls,
+            sub: 'Profit ÷ Revenue',
+            context: result.npm.cls === 'good' ? 'Above 10% — healthy margins' :
+                     result.npm.cls === 'neutral' ? '3–10% — average range' :
+                     'Below 3% — needs improvement',
+            contextTrend: result.npm.cls === 'good' ? 'up' :
+                          result.npm.cls === 'warn' ? 'down' : 'flat',
+          },
+          {
+            label: 'ROE',
+            value: result.roe?.v || '—',
+            cls: result.roe?.cls || '',
+            sub: 'Return on equity' + result.equityNote,
+            context: result.roe?.cls === 'good' ? 'Above 15% — strong returns' :
+                     result.roe?.cls === 'neutral' ? '5–15% — moderate' :
+                     result.roe?.cls === 'warn' ? 'Below 5% — weak returns' : undefined,
+            contextTrend: result.roe?.cls === 'good' ? 'up' :
+                          result.roe?.cls === 'warn' ? 'down' : 'flat',
+          },
+          {
+            label: 'Debt/Equity',
+            value: result.de?.v || '—',
+            cls: result.de?.cls || '',
+            sub: 'Leverage ratio' + result.equityNote,
+            context: result.de?.cls === 'good' ? 'Below 1.0 — low leverage' :
+                     result.de?.cls === 'neutral' ? '1.0–2.0 — moderate' :
+                     result.de?.cls === 'warn' ? 'Above 2.0 — high leverage' : undefined,
+            contextTrend: result.de?.cls === 'good' ? 'down' :
+                          result.de?.cls === 'warn' ? 'up' : 'flat',
+          },
+          {
+            label: 'Debt/Assets',
+            value: result.da.v,
+            cls: result.da.cls,
+            sub: 'Debt burden',
+            context: result.da.cls === 'good' ? 'Below 40% — low debt burden' :
+                     result.da.cls === 'neutral' ? '40–70% — moderate' :
+                     'Above 70% — high debt burden',
+            contextTrend: result.da.cls === 'good' ? 'down' :
+                          result.da.cls === 'warn' ? 'up' : 'flat',
+          },
+          {
+            label: 'P/E Ratio',
+            value: result.pe?.v || '—',
+            cls: result.pe?.cls || '',
+            sub: 'Price ÷ Earnings',
+            context: result.pe?.cls === 'good' ? 'Below 30 — reasonable' :
+                     result.pe?.cls === 'neutral' ? '30–50 — elevated' :
+                     result.pe?.cls === 'warn' ? 'Above 50 — premium' : undefined,
+            contextTrend: result.pe?.cls === 'good' ? 'flat' :
+                          result.pe?.cls === 'warn' ? 'flat' : 'flat',
+          },
+        ]} />
       )}
 
       {!result && rev && (
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 12, textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
+        <p className="text-muted text-sm text-center mt-3 font-mono">
           Enter revenue and assets at minimum to see ratios
         </p>
       )}
 
-      <div style={{ marginTop: 12, textAlign: 'center', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+      <div className="mt-3 text-center font-mono text-muted" style={{ fontSize: 10 }}>
         Results update instantly as you type. For full analysis, use the tools above.
       </div>
     </div>
@@ -188,11 +224,11 @@ export default function HomePage() {
       ))}
 
       {/* ── Quick Company Check ── */}
-      <section className="home-section" style={{ marginTop: 'var(--space-10)' }}>
+      <section className="home-section mt-8">
         <div className="section-title">Quick Company Check</div>
         <Card>
           <div className="card-body">
-            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '0 0 14px', fontFamily: 'var(--font-mono)', lineHeight: 1.5 }}>
+            <p className="text-sm text-tertiary font-mono leading-normal mb-3">
               Enter 5 numbers to get an instant health overview. No file upload needed.
             </p>
             <QuickCheckForm />

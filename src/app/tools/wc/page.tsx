@@ -19,6 +19,7 @@ import {
   Disclaimer,
   DataQualityBar,
   CalcTimestamp,
+  TrustBadge,
 } from '@/components/ui';
 import { useGlobalImportFill, extractWCInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
 
@@ -249,14 +250,19 @@ export default function WCPage() {
             ]}
           />
           <CalcTimestamp />
+          <div className="flex gap-2 flex-wrap mt-2">
+            <TrustBadge label="Cash Conversion Cycle" variant="source" />
+            <TrustBadge label="₹ Indian Market" />
+          </div>
           <Disclaimer extra="CCC = DSO + DIO − DPO" />
         </div>
       )}
 
       {!res && (
         <EmptyState
-          title="Enter revenue, COGS, and balance sheet figures above, then click Analyze."
-          desc="Or upload a CSV with: Revenue, COGS, Receivables, Inventory, Payables, Cash"
+          title="No cash efficiency data yet"
+          desc="Enter revenue, COGS, and balance sheet figures above, then click Analyze. The tool calculates DSO, DIO, DPO, and the Cash Conversion Cycle. You can also upload a CSV or pre-fill from the Smart Import tool."
+          action={{ label: 'Import data', href: '/import' }}
         />
       )}
     </div>

@@ -5,7 +5,7 @@ import { fmtNum } from '@/lib/calculations';
 import { useTrendsStore, useAnalysisStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
-import { PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer, EmptyState, DataQualityBar, CalcTimestamp } from '@/components/ui';
+import { PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer, EmptyState, DataQualityBar, CalcTimestamp, TrustBadge } from '@/components/ui';
 import dynamic from 'next/dynamic';
 import { useGlobalImportFill, extractTrendsCSV, getDataSourceLabel } from '@/lib/importer/import-hooks';
 
@@ -147,14 +147,19 @@ export default function TrendsPage() {
             ]}
           />
           <CalcTimestamp />
+          <div className="flex gap-2 flex-wrap mt-2">
+            <TrustBadge label="Trend Analysis" variant="source" />
+            <TrustBadge label="₹ Indian Market" />
+          </div>
           <Disclaimer />
         </div>
       )}
 
       {!rows.length && (
         <EmptyState
-          title="Enter period labels as the first row and metrics below, then click Plot."
-          desc="Format: Metric, Period1, Period2, Period3, ..."
+          title="No trend data yet"
+          desc="Enter period labels as the first row and metrics below (CSV format: Metric, Period1, Period2...), then click Plot. Data can also be pre-filled from the Filing Comparison or Smart Import tools."
+          action={{ label: 'Import data', href: '/import' }}
         />
       )}
     </div>

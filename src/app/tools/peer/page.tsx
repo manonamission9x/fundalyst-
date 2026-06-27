@@ -15,6 +15,7 @@ import {
   NextLinks,
   DataQualityBar,
   CalcTimestamp,
+  TrustBadge,
 } from '@/components/ui';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import type { PeerRow } from '@/types/financial';
@@ -278,6 +279,10 @@ Infosys, 156000, 28700, 172000, 24000`;
                 ]}
               />
               <CalcTimestamp />
+              <div className="flex gap-2 flex-wrap mt-2">
+                <TrustBadge label="Peer Comparison" variant="source" />
+                <TrustBadge label="₹ Indian Market" />
+              </div>
               <Disclaimer />
             </div>
           </>
@@ -286,8 +291,9 @@ Infosys, 156000, 28700, 172000, 24000`;
         {/* ── Empty state ── */}
         {!rows.length && (
           <EmptyState
-            title="Enter companies and metrics above, then click Compare."
-            desc="Format: Company Name, Revenue, Profit, Assets, Debt — one per line."
+            title="No peer comparison data yet"
+            desc="Enter companies and their metrics above (Company, Revenue, Profit, Assets, Debt — one per line), then click Compare. Or load sample companies above to see how the tool works. Data can also be imported from a CSV file."
+            action={{ label: 'Import data', href: '/import' }}
           />
         )}
     </div>

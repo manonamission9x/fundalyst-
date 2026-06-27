@@ -8,7 +8,7 @@ import { useToast } from '@/components/shared/ToastProvider';
 import {
   PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer,
   EmptyState, InsightCard, WarningCard, SectionTitle, ResultPanel,
-  DataQualityBar, CalcTimestamp,
+  DataQualityBar, CalcTimestamp, TrustBadge,
 } from '@/components/ui';
 import { useGlobalImportFill, getDataSourceLabel, extractFilingInputs } from '@/lib/importer/import-hooks';
 
@@ -302,14 +302,19 @@ export default function FilingPage() {
             { label: 'Estimate intrinsic value', href: '/tools/dcf' },
           ]} />
           <CalcTimestamp />
+          <div className="flex gap-2 flex-wrap mt-2">
+            <TrustBadge label="Filing Comparison" variant="source" />
+            <TrustBadge label="₹ Indian Market" />
+          </div>
           <Disclaimer extra="Pct change = ((B−A)/|A|)×100" />
         </ResultPanel>
       )}
 
       {!showResults && (
         <EmptyState
-          title="Paste line items for two periods above, then click Compare."
-          desc="Enter each metric on its own line as 'Label: value'. The tool compares both periods and highlights what changed — revenue growth, margin compression, debt increases."
+          title="No comparison data yet"
+          desc="Enter line items for two reporting periods above (Label: value per line), then click Compare. The tool will highlight revenue growth, margin compression, and debt changes. Data can also be pre-filled from the Smart Import tool."
+          action={{ label: 'Import data', href: '/import' }}
         />
       )}
     </div>

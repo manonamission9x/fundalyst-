@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { useImporterStore } from '@/store/importer-store';
-import { SectionTitle, Disclaimer } from '@/components/ui';
+import { SectionTitle, Disclaimer, Card, EmptyState, TrustBadge } from '@/components/ui';
 import type { FundalystDataset, CanonicalFact } from '@/lib/importer/types';
 
 // ── Workspace step definitions ──
@@ -145,6 +145,10 @@ function OverviewPanel({ hasData, companyName, datasets }: { hasData: boolean; c
           <Link href="/tools/ratios" className="workspace-quick-link">Financial Ratios →</Link>
           <Link href="/tools/peer" className="workspace-quick-link">Peer Comparison →</Link>
         </div>
+        <div className="flex gap-2 flex-wrap mt-3">
+          <TrustBadge label="Fundalyst Research" variant="source" />
+          {hasData && <TrustBadge label="Data Loaded" variant="good" />}
+        </div>
       </div>
     </div>
   );
@@ -227,14 +231,13 @@ function DataPanel({ datasets }: { datasets: FundalystDataset[] }) {
     return (
       <div>
         <SectionTitle>Financial Data</SectionTitle>
-        <div className="workspace-card" style={{ marginTop: 'var(--space-4)', textAlign: 'center', padding: 'var(--space-8)' }}>
-          <div style={{ fontSize: 'var(--text-base)', color: 'var(--text-tertiary)', marginBottom: 8 }}>
-            No data imported yet
-          </div>
-          <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-            Use the Import step to upload financial data.
-          </div>
-        </div>
+        <Card className="mt-4">
+          <EmptyState
+            title="No financial data imported yet"
+            desc="Use the Import step to upload a CSV, Excel, or PDF file. Once data is extracted, it appears here with all metrics and periods for review before running analysis tools."
+            action={{ label: 'Import data', href: '/import' }}
+          />
+        </Card>
       </div>
     );
   }
@@ -307,6 +310,10 @@ function FilingPanel() {
           <span style={{ marginLeft: 12, fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
             Opens the full filing tool
           </span>
+          <div className="flex gap-2 flex-wrap mt-2">
+            <TrustBadge label="Filing Comparison" variant="source" />
+            <TrustBadge label="YoY Change" variant="good" />
+          </div>
         </div>
       </div>
     </div>
@@ -327,6 +334,10 @@ function DCFPanel() {
           <span style={{ marginLeft: 12, fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
             Full DCF model with sensitivity analysis
           </span>
+          <div className="flex gap-2 flex-wrap mt-2">
+            <TrustBadge label="DCF - Gordon Growth" variant="source" />
+            <TrustBadge label="₹ Indian Market" />
+          </div>
         </div>
       </div>
     </div>
@@ -347,6 +358,10 @@ function RatiosPanel() {
           <span style={{ marginLeft: 12, fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
             Liquidity, leverage, profitability & efficiency
           </span>
+          <div className="flex gap-2 flex-wrap mt-2">
+            <TrustBadge label="Ratio Analysis" variant="source" />
+            <TrustBadge label="₹ Indian Market" />
+          </div>
         </div>
       </div>
     </div>

@@ -20,6 +20,7 @@ import {
   Disclaimer,
   EmptyState,
   DataQualityBar,
+  TrustBadge,
 } from '@/components/ui';
 import { useGlobalImportFill, extractRatiosInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
 import type { RatioResult } from '@/types/financial';
@@ -273,14 +274,19 @@ export default function RatiosPage() {
             { label: 'Estimate value', href: '/tools/dcf' },
           ]} />
           <CalcTimestamp />
+          <div className="flex gap-2 flex-wrap mt-2">
+            <TrustBadge label="Ratio Analysis" variant="source" />
+            <TrustBadge label="₹ Indian Market" />
+          </div>
           <Disclaimer />
         </div>
       )}
 
       {!res && (
         <EmptyState
-          title="Enter 6 key numbers to see 5 essential ratios."
-          desc="Revenue, Net Profit, EBIT, Total Assets, Equity, and Debt — that's all you need."
+          title="No ratio data yet"
+          desc="Enter 6 key numbers above (Revenue, Net Profit, EBIT, Total Assets, Equity, Debt) and click Calculate. The tool unlocks Net Profit Margin, ROE, Debt/Equity, Debt/Assets, and Asset Turnover. Data can also be pre-filled from the Smart Import tool."
+          action={{ label: 'Import data', href: '/import' }}
         />
       )}
     </div>

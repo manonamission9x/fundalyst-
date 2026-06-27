@@ -348,9 +348,17 @@ export function fmtNum(n: number | null | undefined): string {
   return n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 }
 
-/** Format percentage */
+/** Format percentage with sign */
 export function fmtPct(n: number | null | undefined): string {
   if (n === null || n === undefined) return '—';
   const sign = n > 0 ? '+' : '';
   return sign + n.toFixed(1) + '%';
+}
+
+/** Format a directional change with trend arrow for visual display */
+export function fmtChangeTrend(n: number | null | undefined): { text: string; dir: 'up' | 'down' | 'flat' } {
+  if (n === null || n === undefined) return { text: '—', dir: 'flat' };
+  const sign = n > 0 ? '▲' : n < 0 ? '▼' : '→';
+  const dir = n > 0.1 ? 'up' : n < -0.1 ? 'down' : 'flat';
+  return { text: `${sign} ${Math.abs(n).toFixed(1)}%`, dir };
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { PageHeader, Card, Disclaimer, DataQualityBar } from '@/components/ui';
+import { PageHeader, Card, Disclaimer, DataQualityBar, TrustBadge } from '@/components/ui';
 import { useImporterStore } from '@/store/importer-store';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { canonicalDisplayName } from '@/lib/importer/metric-aliases';
@@ -384,6 +384,10 @@ function ImportReview({
             metrics={mappedCount}
             missing={unknownCount}
           />
+          <div className="flex gap-2 flex-wrap mt-2">
+            <TrustBadge label="Smart Import" variant="source" />
+            {pctMapped >= 80 && <TrustBadge label="High Mapping Quality" variant="good" />}
+          </div>
 
           {/* Extraction quality summary */}
           <div style={{
@@ -584,6 +588,10 @@ function ImportResult({
             periods={`${periods.length} periods`}
             metrics={groupedByMetric.size}
           />
+          <div className="flex gap-2 flex-wrap mt-2">
+            <TrustBadge label="Smart Import" variant="source" />
+            <TrustBadge label="Data Ready for Analysis" variant="good" />
+          </div>
           {/* Global data status */}
           <div style={{
             marginTop: 12, padding: '10px 14px',

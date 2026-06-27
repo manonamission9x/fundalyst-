@@ -364,9 +364,9 @@ export function Toolbar({ onClear, onAction, actionLabel, hint, isLoading }: Too
       {onAction && (
         <button
           type="button"
-          className="btn-primary"
+          className="btn-primary ml-auto"
           disabled={isLoading}
-          style={{ marginLeft: 'auto', opacity: isLoading ? 0.6 : 1, cursor: isLoading ? 'not-allowed' : 'pointer' }}
+          style={isLoading ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
           onClick={onAction}
         >
           {isLoading ? (
@@ -378,6 +378,43 @@ export function Toolbar({ onClear, onAction, actionLabel, hint, isLoading }: Too
             <>{actionLabel} <IconArrowRight /></>
           )}
         </button>
+      )}
+    </div>
+  );
+}
+
+// ── TrustBadge ──
+interface TrustBadgeProps {
+  label: string;
+  variant?: 'good' | 'source';
+  icon?: React.ReactNode;
+}
+export function TrustBadge({ label, variant, icon }: TrustBadgeProps) {
+  return (
+    <span className={`trust-badge${variant ? ' ' + variant : ''}`}>
+      {icon}{label}
+    </span>
+  );
+}
+
+// ── StatRow (Bloomberg-style compact data row) ──
+interface StatRowProps {
+  label: string;
+  value: string;
+  sub?: string;
+  trend?: 'up' | 'down' | 'flat';
+  cls?: string;
+}
+export function StatRow({ label, value, sub, trend, cls }: StatRowProps) {
+  return (
+    <div className="stat-row">
+      <span className="stat-label">{label}</span>
+      <span className={`stat-value${cls ? ' ' + cls : ''}`}>{value}</span>
+      {sub && <span className="stat-sub">{sub}</span>}
+      {trend && (
+        <span className={`stat-context trend-${trend}-context`}>
+          {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→'}
+        </span>
       )}
     </div>
   );
@@ -415,14 +452,20 @@ export function Disclaimer({ extra }: { extra?: string }) {
 interface EmptyStateProps {
   title: string;
   desc: string;
-  icon?: string;
+  action?: { label: string; href: string };
+  icon?: React.ReactNode;
 }
-export function EmptyState({ title, desc }: EmptyStateProps) {
+export function EmptyState({ title, desc, action }: EmptyStateProps) {
   return (
-    <Card style={{ marginTop: '1.5rem' }}>
+    <Card className="mt-4">
       <div className="empty-state">
         <div className="empty-state-title">{title}</div>
         <div className="empty-state-desc">{desc}</div>
+        {action && (
+          <Link href={action.href} className="empty-state-action">
+            {action.label} →
+          </Link>
+        )}
       </div>
     </Card>
   );
@@ -436,6 +479,8 @@ interface Metric {
   cls?: 'good' | 'warn' | 'neutral' | '';
   trend?: 'up' | 'down' | 'flat';
   bar?: number;
+  context?: string;       // "5-yr trend: +14.8%"
+  contextTrend?: 'up' | 'down' | 'flat';  // trend direction for context
 }
 export function MetricGrid({ metrics }: { metrics: Metric[] }) {
   return (
@@ -454,6 +499,11 @@ export function MetricGrid({ metrics }: { metrics: Metric[] }) {
             {m.value}
           </div>
           {m.sub && <div className="metric-sub">{m.sub}</div>}
+          {m.context && (
+            <div className={`stat-context ${m.contextTrend === 'up' ? 'trend-up-context' : m.contextTrend === 'down' ? 'trend-down-context' : ''}`}>
+              {m.contextTrend === 'up' && '▲ '}{m.contextTrend === 'down' && '▼ '}{m.context}
+            </div>
+          )}
           {m.bar !== undefined && (
             <div className="metric-bar">
               <div className="metric-bar-fill" style={{ width: `${Math.max(2, m.bar * 100)}%` }} />
@@ -553,9 +603,9 @@ interface FormulaDisclosureProps {
 }
 export function FormulaDisclosure({ formula, label }: FormulaDisclosureProps) {
   return (
-    <div className="insight-formula" style={{ padding: '8px 0' }}>
-      {label && <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>{label}: </span>}
-      <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>{formula}</code>
+    <div className="py-1 text-mono text-sm" style={{ color: 'var(--text-muted)' }}>
+      {label && <span className="font-medium mr-1">{label}:</span>}
+      <span style={{ color: 'var(--text-tertiary)' }}>{formula}</span>
     </div>
   );
 }
@@ -584,7 +634,7 @@ interface ResultPanelProps {
 }
 export function ResultPanel({ children, label, id }: ResultPanelProps) {
   return (
-    <div id={id} style={{ marginTop: '1.5rem' }}>
+    <div id={id} className="mt-4">
       {label && <SectionTitle>{label}</SectionTitle>}
       {children}
     </div>
