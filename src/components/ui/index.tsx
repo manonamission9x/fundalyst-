@@ -397,6 +397,27 @@ export function TrustBadge({ label, variant, icon }: TrustBadgeProps) {
   );
 }
 
+// ── ConfidenceBadge ──
+interface ConfidenceBadgeProps {
+  confidence: number; // 0-1
+  size?: 'sm' | 'xs';
+}
+export function ConfidenceBadge({ confidence, size = 'sm' }: ConfidenceBadgeProps) {
+  const pct = Math.round(confidence * 100);
+  const variant = confidence >= 0.9 ? 'high' : confidence >= 0.7 ? 'medium' : 'low';
+  const dotClass = variant === 'high' ? 'good' : variant === 'medium' ? '' : 'warn';
+  const fontSize = size === 'xs' ? '8px' : '9px';
+  return (
+    <span
+      className={`confidence-badge ${dotClass}`}
+      style={{ fontSize }}
+      title={`Confidence: ${pct}%`}
+    >
+      {pct}%
+    </span>
+  );
+}
+
 // ── StatRow (Bloomberg-style compact data row) ──
 interface StatRowProps {
   label: string;

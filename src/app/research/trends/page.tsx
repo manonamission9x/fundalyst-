@@ -8,6 +8,7 @@ import { downloadCSV, readFile } from '@/lib/helpers';
 import { PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer, EmptyState, DataQualityBar, CalcTimestamp, TrustBadge } from '@/components/ui';
 import dynamic from 'next/dynamic';
 import { useGlobalImportFill, extractTrendsCSV, getDataSourceLabel } from '@/lib/importer/import-hooks';
+import { useActiveDataset, extractTrendData } from '@/store/financial-model-selectors';
 
 const TrendsChart = dynamic(() => import('@/components/tools/trends/TrendsChart'), {
   ssr: false,
@@ -58,6 +59,24 @@ export default function TrendsPage() {
       setCsv([headerLine, ...dataLines].join('\n'));
     }
   }, [filingData, setCsv]);
+
+  // Pre-fill from canonical model when active dataset has data
+  const trendsActiveDataset = useActiveDataset();
+  useEffect(() => {
+    if (!trendsActiveDataset || trendsActiveDataset.facts.length < 3) return;
+    const existing = useTrendsStore.getState();
+    if (existing.rows.length > 0 || !existing.csv.includes('Period,')) return;
+
+    const { periods, metrics } = extractTrendData(trendsActiveDataset);
+    if (periods.length < 2 || Object.keys(metrics).length < 2) return;
+
+    setHeaders(periods);
+    const rows = Object.entries(metrics).map(([label, vals]) => ({
+      label,
+      vals: vals.map((v) => v ?? 0),
+    }));
+    setRows(rows);
+  }, [trendsActiveDataset]);
 
   function parse() {
     parseWithText(csv);

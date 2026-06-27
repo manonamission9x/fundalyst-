@@ -1,9 +1,11 @@
 'use client';
 
+import { useEffect } from 'react';
 import { computeRatios } from '@/lib/calculations';
 import { useRatiosStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
+import { useActiveDataset, extractRatiosFromModel } from '@/store/financial-model-selectors';
 import {
   PageHeader,
   Card,
@@ -23,7 +25,7 @@ import {
   TrustBadge,
 } from '@/components/ui';
 import { useGlobalImportFill, extractRatiosInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
-import type { RatioResult } from '@/types/financial';
+import type { RatioInputs, RatioResult } from '@/types/financial';
 
 // ── Essential fields only ──
 const fields = [
@@ -129,6 +131,21 @@ export default function RatiosPage() {
     },
     extractRatiosInputs
   );
+
+  // ── Pre-fill from canonical model when available ──
+  const ratiosActiveDataset = useActiveDataset();
+  useEffect(() => {
+    if (!ratiosActiveDataset || ratiosActiveDataset.facts.length < 3) return;
+    const modelInputs = extractRatiosFromModel(ratiosActiveDataset);
+    Object.entries(modelInputs).forEach(([key, val]) => {
+      if (val !== null) {
+        const current = useRatiosStore.getState().data[key as keyof RatioInputs];
+        if (current === null) {
+          setField(key as keyof RatioInputs, val);
+        }
+      }
+    });
+  }, [ratiosActiveDataset]);
 
   async function handleCsv(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];

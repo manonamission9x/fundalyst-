@@ -465,6 +465,28 @@ textarea.num-input { resize: vertical; min-height: 72px; line-height: 1.6; }
 .empty-state-action { display: inline-flex; align-items: center; gap: 5px; font-size: var(--text-sm); color: var(--primary); text-decoration: none; padding: 6px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-md); transition: all var(--transition-fast); }
 .empty-state-action:hover { border-color: var(--primary); color: var(--primary-hover); }
 
+/* ── Confidence Badge ── */
+.confidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--text-muted);
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.confidence-badge.good {
+  color: var(--green);
+  border-color: rgba(61, 160, 109, 0.2);
+}
+.confidence-badge.warn {
+  color: var(--amber);
+  border-color: rgba(176, 140, 64, 0.2);
+}
+
 /* ── Spreadsheet Input ── */
 .spreadsheet-wrap {
   border: 1px solid var(--border);

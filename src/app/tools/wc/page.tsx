@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { computeWC, fmtNum } from '@/lib/calculations';
 import { readFile } from '@/lib/helpers';
 import { useWCStore } from '@/store';
@@ -22,6 +23,7 @@ import {
   TrustBadge,
 } from '@/components/ui';
 import { useGlobalImportFill, extractWCInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
+import { useActiveDataset, extractWCFromModel } from '@/store/financial-model-selectors';
 
 export default function WCPage() {
   const showToast = useToast();
@@ -33,6 +35,20 @@ export default function WCPage() {
     },
     extractWCInputs
   );
+
+  // ── Pre-fill from canonical model when available ──
+  const wcActiveDataset = useActiveDataset();
+  useEffect(() => {
+    if (!wcActiveDataset || wcActiveDataset.facts.length < 3) return;
+    const modelInputs = extractWCFromModel(wcActiveDataset);
+    const wcKeys = ['revenue', 'cogs', 'receivables', 'inventory', 'payables', 'cash'] as const;
+    for (const key of wcKeys) {
+      const val = modelInputs[key];
+      if (val !== null && useWCStore.getState().inputs[key] === '') {
+        setInput(key, val);
+      }
+    }
+  }, [wcActiveDataset]);
 
   async function handleCsv(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
