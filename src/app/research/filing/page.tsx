@@ -23,6 +23,7 @@ export default function FilingPage() {
     setDiffs, setFlags, setShowResults, clear,
   } = useFilingStore();
   const { setFiling } = useAnalysisStore();
+  const [clearVersion, setClearVersion] = useState(0);
   const [loading, setLoading] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -78,14 +79,14 @@ export default function FilingPage() {
 
     // Priority 2: demo data (first visit)
     if (sheetRows.length === 0) {
-      setSheetPeriods(['FY23', 'FY24']);
+      setSheetPeriods(['Q1', 'Q2', 'Q3', 'Q4']);
       setSheetRows([
-        { metric: 'Revenue', values: ['8420', '9540'] },
-        { metric: 'Gross Profit', values: ['3360', '3910'] },
-        { metric: 'EBITDA', values: ['1850', '2150'] },
-        { metric: 'Net Profit', values: ['760', '920'] },
-        { metric: 'Total Debt', values: ['2100', '1850'] },
-        { metric: 'Cash & Equivalents', values: ['450', '680'] },
+        { metric: 'Revenue', values: ['1000', '1150', '1240', '1380'] },
+        { metric: 'Gross Profit', values: ['400', '470', '500', '550'] },
+        { metric: 'EBITDA', values: ['220', '250', '270', '300'] },
+        { metric: 'Net Profit', values: ['90', '105', '115', '130'] },
+        { metric: 'Total Debt', values: ['250', '230', '200', '180'] },
+        { metric: 'Cash & Equivalents', values: ['50', '80', '100', '140'] },
       ]);
     }
   }, [activeDataset]);
@@ -153,9 +154,10 @@ export default function FilingPage() {
   }
 
   function handleClear() {
+    setClearVersion(v => v + 1);
     clear();
     setSheetRows([]);
-    setSheetPeriods(['FY23', 'FY24']);
+    setSheetPeriods(['Q1', 'Q2', 'Q3', 'Q4']);
   }
 
   function handleExportCSV() {
@@ -253,8 +255,9 @@ export default function FilingPage() {
       <Card>
         <div className="card-body p-2">
           <SpreadsheetInput
-            initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : ['FY23', 'FY24']}
+            initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : ['Q1', 'Q2', 'Q3', 'Q4']}
             initialData={sheetRows.length > 0 ? sheetRows : undefined}
+            resetKey={clearVersion}
             onDataChange={(rows, periods) => {
               setSheetRows(rows);
               setSheetPeriods(periods);

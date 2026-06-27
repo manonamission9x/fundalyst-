@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { METRIC_LABELS } from './metric-library';
+import { METRIC_LABELS, METRIC_LIBRARY } from './metric-library';
+import type { MetricEntry } from './metric-library';
 
 /**
  * SpreadsheetInput — A keyboard-first, paste-aware financial data entry grid.
@@ -25,13 +26,16 @@ interface SpreadsheetInputProps {
   initialData?: SpreadsheetRow[];
   onDataChange?: (rows: SpreadsheetRow[], periods: string[]) => void;
   className?: string;
+  /** Increment to force re-mount (used by parent Clear buttons) */
+  resetKey?: number;
 }
 
 export default function SpreadsheetInput({
-  initialPeriods = ['FY23', 'FY24'],
+  initialPeriods = ['Q1', 'Q2', 'Q3', 'Q4'],
   initialData,
   onDataChange,
   className = '',
+  resetKey,
 }: SpreadsheetInputProps) {
   // Headers row (period labels) — data[0] = period labels starting at col 1
   const [periods, setPeriods] = useState<string[]>(initialPeriods);
@@ -53,6 +57,9 @@ export default function SpreadsheetInput({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestionFilter, setSuggestionFilter] = useState('');
   const suggestionRef = useRef<HTMLDivElement>(null);
+  // Metric browser (categorized, always visible on click)
+  const [showMetricBrowser, setShowMetricBrowser] = useState(false);
+  const metricBrowserRef = useRef<HTMLDivElement>(null);
 
   // Refs for cells
   const cellRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -348,11 +355,14 @@ export default function SpreadsheetInput({
     [activeRow, updateCell],
   );
 
-  // Close suggestions on click outside
+  // Close suggestions and metric browser on click outside
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (suggestionRef.current && !suggestionRef.current.contains(e.target as Node)) {
         setShowSuggestions(false);
+      }
+      if (metricBrowserRef.current && !metricBrowserRef.current.contains(e.target as Node)) {
+        setShowMetricBrowser(false);
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -365,7 +375,7 @@ export default function SpreadsheetInput({
   }, [rows, periods, notifyChange]);
 
   return (
-    <div className={`spreadsheet-wrap${className ? ' ' + className : ''}`}>
+    <div className={`spreadsheet-wrap${className ? ' ' + className : ''}`} key={resetKey}>
       <table className="spreadsheet-grid">
         <thead>
           <tr>
@@ -493,19 +503,98 @@ export default function SpreadsheetInput({
         </tbody>
       </table>
 
-      {/* Add row button */}
+      {/* Add row button & metric browser */}
       <div className="spreadsheet-footer">
-        <button
-          type="button"
-          className="spreadsheet-add-row-btn"
-          onClick={() => addRow('')}
-        >
-          + Add metric
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="spreadsheet-add-row-btn"
+            onClick={() => addRow('')}
+          >
+            + Add metric
+          </button>
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={() => setShowMetricBrowser(!showMetricBrowser)}
+            style={{ fontSize: 10 }}
+          >
+            Browse metrics
+          </button>
+        </div>
         <span className="spreadsheet-hint">
-          Tab to navigate · Paste from Excel · Type metric names
+          Tab to navigate · Paste from Excel
         </span>
       </div>
+
+      {/* Categorized metric browser popover */}
+      {showMetricBrowser && (
+        <div
+          ref={metricBrowserRef}
+          style={{
+            position: 'absolute',
+            bottom: '100%',
+            left: 0,
+            right: 0,
+            zIndex: 60,
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
+            maxHeight: 280,
+            overflowY: 'auto',
+            boxShadow: '0 -4px 20px rgba(0,0,0,0.4)',
+          }}
+        >
+          {(['Income Statement', 'Balance Sheet', 'Cash Flow', 'Ratios'] as const).map((cat) => {
+            const items = METRIC_LIBRARY.filter((m) => m.category === cat);
+            if (items.length === 0) return null;
+            return (
+              <div key={cat} style={{ padding: '4px 0' }}>
+                <div
+                  style={{
+                    fontSize: 9,
+                    fontFamily: 'IBM Plex Mono, monospace',
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.07em',
+                    padding: '4px 12px',
+                    fontWeight: 600,
+                  }}
+                >
+                  {cat}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, padding: '0 8px 4px' }}>
+                  {items.map((m) => (
+                    <button
+                      key={m.label}
+                      type="button"
+                      onClick={() => {
+                        addRow(m.label);
+                        setShowMetricBrowser(false);
+                      }}
+                      style={{
+                        fontSize: 10,
+                        fontFamily: 'IBM Plex Mono, monospace',
+                        color: 'var(--text-secondary)',
+                        background: 'var(--bg-surface)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '2px 8px',
+                        cursor: 'pointer',
+                        transition: 'all var(--transition-fast)',
+                      }}
+                      onMouseEnter={(e) => { (e.target as HTMLElement).style.borderColor = 'var(--primary)'; (e.target as HTMLElement).style.color = 'var(--primary)'; }}
+                      onMouseLeave={(e) => { (e.target as HTMLElement).style.borderColor = 'var(--border)'; (e.target as HTMLElement).style.color = 'var(--text-secondary)'; }}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

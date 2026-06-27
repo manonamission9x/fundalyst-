@@ -25,6 +25,7 @@ export default function TrendsPage() {
   const { dataSource, companyName } = useGlobalImportFill((vals) => {}, extractTrendsCSV);
   const modelData = useModelData((ds) => extractTrendData(ds));
 
+  const [clearVersion, setClearVersion] = useState(0);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
   const [sheetPeriods, setSheetPeriods] = useState<string[]>([]);
   const [trendRows, setTrendRows] = useState<TrendRow[]>([]);
@@ -73,6 +74,7 @@ export default function TrendsPage() {
   }
 
   function handleClear() {
+    setClearVersion(v => v + 1);
     setSheetRows([]); setSheetPeriods([]); setTrendRows([]); setShowResults(false);
   }
 
@@ -92,6 +94,7 @@ export default function TrendsPage() {
             tool="trends"
             multiColumn
             initialPeriods={sheetPeriods.length >= 3 ? sheetPeriods : ['FY22', 'FY23', 'FY24', 'FY25', 'FY26']}
+            resetKey={clearVersion}
             initialData={
               sheetRows.length > 0
                 ? sheetRows

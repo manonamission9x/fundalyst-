@@ -494,6 +494,7 @@ textarea.num-input { resize: vertical; min-height: 72px; line-height: 1.6; }
   overflow: hidden;
   background: var(--bg-elevated);
   box-shadow: var(--shadow-card);
+  position: relative;
 }
 .spreadsheet-grid {
   width: 100%;

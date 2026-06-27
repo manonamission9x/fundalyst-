@@ -56,6 +56,7 @@ function rowsToDCFInputs(rows: SpreadsheetRow[]): Record<string, number | ''> {
 export default function DCFPage() {
   const showToast = useToast();
   const { show, summary, sens, setShow, setSummary, setSens } = useDCFStore();
+  const [clearVersion, setClearVersion] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
 
@@ -156,6 +157,7 @@ export default function DCFPage() {
   }
 
   const handleClear = useCallback(() => {
+    setClearVersion(v => v + 1);
     setSheetRows([]);
     setShow(false);
     setSummary(null);
@@ -188,6 +190,7 @@ export default function DCFPage() {
           <ToolSpreadsheet
             tool="dcf"
             initialData={sheetRows.length > 0 ? sheetRows : undefined}
+            resetKey={clearVersion}
             singleColumnLabel="Value"
             onDataChange={(rows) => setSheetRows(rows)}
             hint="Type or paste values. Tab to navigate between rows."

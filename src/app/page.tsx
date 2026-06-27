@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
-import { Card, MetricGrid, IconFiling, IconTrends, IconGrowth, IconDCF, IconCash, IconRatios, IconPeer, IconImport, IconQuickCheck } from '@/components/ui';
+import { Card, MetricGrid } from '@/components/ui';
+import { FileText, TrendingUp, BarChart3, Calculator, DollarSign, PieChart, Users, Upload, Search } from 'lucide-react';
 import { useGlobalDataStore } from '@/store/global-data-store';
 
 // ── Quick Company Check (inline tool) ──
@@ -141,18 +142,18 @@ const tools = [
   {
     section: 'Research',
     items: [
-      {href: '/research/filing', label: 'Filing Comparison', icon: <IconFiling />, desc: 'Compare two periods line by line. Spot changes in revenue, margins, debt, and promoter holding.' },
-      { href: '/research/trends', label: 'Trend Charts', icon: <IconTrends />, desc: 'Plot revenue, profit, and costs over 3+ years. Spot inflection points at a glance.' },
-      { href: '/research/growth', label: 'Growth Rates', icon: <IconGrowth />, desc: 'Year-over-year growth for every line item. Automatically color-coded for direction.' },
+      {href: '/research/filing', label: 'Filing Comparison', icon: <FileText size={16} />, desc: 'Compare two periods line by line. Spot changes in revenue, margins, debt, and promoter holding.' },
+      { href: '/research/trends', label: 'Trend Charts', icon: <TrendingUp size={16} />, desc: 'Plot revenue, profit, and costs over 3+ years. Spot inflection points at a glance.' },
+      { href: '/research/growth', label: 'Growth Rates', icon: <BarChart3 size={16} />, desc: 'Year-over-year growth for every line item. Automatically color-coded for direction.' },
     ],
   },
   {
     section: 'Valuation & Analysis',
     items: [
-      { href: '/tools/dcf', label: 'DCF Valuation', icon: <IconDCF />, desc: 'Estimate intrinsic value per share with sensitivity tables. Adjust assumptions in real time.' },
-      { href: '/tools/wc', label: 'Cash Efficiency', icon: <IconCash />, desc: 'DSO, DIO, DPO, and the Cash Conversion Cycle. See where cash is trapped.' },
-      { href: '/tools/ratios', label: 'Financial Ratios', icon: <IconRatios />, desc: 'Liquidity, leverage, profitability, and efficiency — 9 ratios, one click.' },
-      { href: '/tools/peer', label: 'Peer Comparison', icon: <IconPeer />, desc: 'Compare up to 10 companies side-by-side. Leaders and laggards highlighted instantly.' },
+      { href: '/tools/dcf', label: 'DCF Valuation', icon: <Calculator size={16} />, desc: 'Estimate intrinsic value per share with sensitivity tables. Adjust assumptions in real time.' },
+      { href: '/tools/wc', label: 'Cash Efficiency', icon: <DollarSign size={16} />, desc: 'DSO, DIO, DPO, and the Cash Conversion Cycle. See where cash is trapped.' },
+      { href: '/tools/ratios', label: 'Financial Ratios', icon: <PieChart size={16} />, desc: 'Liquidity, leverage, profitability, and efficiency — 9 ratios, one click.' },
+      { href: '/tools/peer', label: 'Peer Comparison', icon: <Users size={16} />, desc: 'Compare up to 10 companies side-by-side. Leaders and laggards highlighted instantly.' },
     ],
   },
 ];

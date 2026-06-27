@@ -103,6 +103,7 @@ function rowsToRatioData(rows: SpreadsheetRow[]): RatioInputs {
 export default function RatiosPage() {
   const showToast = useToast();
   const { res, setRes, clear: clearStore } = useRatiosStore();
+  const [clearVersion, setClearVersion] = useState(0);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
   const [showResults, setShowResults] = useState(false);
 
@@ -134,6 +135,7 @@ export default function RatiosPage() {
   }
 
   const handleClear = useCallback(() => {
+    setClearVersion(v => v + 1);
     clearStore();
     setSheetRows([]);
     setShowResults(false);
@@ -157,6 +159,7 @@ export default function RatiosPage() {
             tool="ratios"
             singleColumnLabel="₹ Cr"
             initialData={sheetRows.length > 0 ? sheetRows : undefined}
+            resetKey={clearVersion}
             onDataChange={(rows) => setSheetRows(rows)}
             hint="Enter values in ₹ Cr. These 6 fields unlock: Net Profit Margin, ROE, Debt/Equity, Debt/Assets, Asset Turnover."
           />

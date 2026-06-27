@@ -26,6 +26,7 @@ import { extractTrendData } from '@/store/financial-model-selectors';
 export default function YoyPage() {
   const showToast = useToast();
   const { years, csv, rows, setYears, setCsv, setRows, clear: clearStore } = useYoyStore();
+  const [clearVersion, setClearVersion] = useState(0);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
 
   const dataInfo = useGlobalImportFill(
@@ -90,7 +91,7 @@ export default function YoyPage() {
     }
   }
 
-  function handleClear() { clearStore(); setSheetRows([]); }
+  function handleClear() { setClearVersion(v => v + 1); clearStore(); setSheetRows([]); }
 
   const yearList = years.split(',').map((s) => s.trim()).filter(Boolean);
   const colLabels = rows.length > 0
@@ -128,6 +129,7 @@ export default function YoyPage() {
             tool="growth"
             multiColumn
             initialData={sheetRows.length > 0 ? sheetRows : undefined}
+            resetKey={clearVersion}
             initialPeriods={yearList.length >= 3 ? yearList : ['FY22', 'FY23', 'FY24']}
             onDataChange={handleDataChange}
             hint="Add rows for each metric. Tab to navigate between cells."

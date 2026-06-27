@@ -44,6 +44,7 @@ function rowsToWCInputs(rows: SpreadsheetRow[]) {
 export default function WCPage() {
   const showToast = useToast();
   const { res, setRes, clear: clearStore } = useWCStore();
+  const [clearVersion, setClearVersion] = useState(0);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
   const [showResults, setShowResults] = useState(false);
 
@@ -75,6 +76,7 @@ export default function WCPage() {
   }
 
   const handleClear = useCallback(() => {
+    setClearVersion(v => v + 1);
     clearStore();
     setSheetRows([]);
     setShowResults(false);
@@ -97,8 +99,9 @@ export default function WCPage() {
         <div className="card-body">
           <ToolSpreadsheet
             tool="wc"
-            singleColumnLabel="₹ Cr"
+            singleColumnLabel="₹ Crores"
             initialData={sheetRows.length > 0 ? sheetRows : undefined}
+            resetKey={clearVersion}
             onDataChange={(rows) => setSheetRows(rows)}
             hint="Enter annual values in ₹ Cr. Tab to navigate."
           />

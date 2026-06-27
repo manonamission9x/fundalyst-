@@ -3,34 +3,18 @@
 import SpreadsheetInput from './SpreadsheetInput';
 import type { SpreadsheetRow } from './SpreadsheetInput';
 
-/**
- * ToolSpreadsheet — a pre-configured SpreadsheetInput for each financial tool.
- *
- * Every tool (DCF, WC, Ratios, Growth, Peer) uses this instead of
- * raw Field components or textareas. This guarantees one unified
- * input experience across the entire application.
- *
- * Each tool defines:
- *  - tool: unique key for localStorage and metric presets
- *  - label: display name
- *  - columnLabel: the single-column header (e.g. "Current Period", "FY24")
- *  - defaultMetrics: initial rows shown when no data exists yet
- */
-
 interface ToolSpreadsheetProps {
   tool: 'dcf' | 'wc' | 'ratios' | 'growth' | 'peer' | 'filing' | 'trends';
   onDataChange: (rows: SpreadsheetRow[], periods: string[]) => void;
   initialPeriods?: string[];
   initialData?: SpreadsheetRow[];
-  /** If true, shows label instead of period name in the single column */
   singleColumnLabel?: string;
-  /** Hint text shown below the grid */
   hint?: string;
-  /** Columns for peer/growth (company names, year labels) */
   multiColumn?: boolean;
+  /** Increment to force re-mount (used by parent Clear buttons) */
+  resetKey?: number;
 }
 
-/** Default metrics that each tool needs to function */
 const TOOL_DEFAULTS: Record<string, SpreadsheetRow[]> = {
   dcf: [
     { metric: 'Free Cash Flow', values: [''] },
@@ -73,11 +57,11 @@ export default function ToolSpreadsheet({
   singleColumnLabel,
   hint,
   multiColumn,
+  resetKey,
 }: ToolSpreadsheetProps) {
   const defaults = TOOL_DEFAULTS[tool];
   const periods = initialPeriods || [singleColumnLabel || 'Value'];
 
-  // If no initialData but defaults exist, use defaults
   const spreadsheetData = initialData && initialData.length > 0
     ? initialData
     : defaults || undefined;
@@ -85,10 +69,11 @@ export default function ToolSpreadsheet({
   return (
     <div>
       <SpreadsheetInput
+        key={resetKey}
         initialPeriods={periods}
         initialData={spreadsheetData}
         onDataChange={onDataChange}
-        className={tool === 'growth' || multiColumn ? '' : ''}
+        resetKey={resetKey}
       />
       {hint && (
         <div className="flex justify-between items-center mt-2 px-1">

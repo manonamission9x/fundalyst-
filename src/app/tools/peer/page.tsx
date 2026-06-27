@@ -67,6 +67,7 @@ export default function PeerPage() {
   const datasets = useGlobalDataStore((s) => s.datasets);
   const dsCount = datasets.length;
 
+  const [clearVersion, setClearVersion] = useState(0);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
   const [sheetPeriods, setSheetPeriods] = useState<string[]>([]);
   const [peerResults, setPeerResults] = useState<PeerRow[]>([]);
@@ -130,7 +131,7 @@ Infosys, 156000, 28700, 172000, 24000`;
     showToast('Loaded 4 sample companies');
   }
 
-  function handleClear() { clearStore(); setSheetRows([]); setSheetPeriods([]); setPeerResults([]); setShowResults(false); }
+  function handleClear() { setClearVersion(v => v + 1); clearStore(); setSheetRows([]); setSheetPeriods([]); setPeerResults([]); setShowResults(false); }
 
   // ── Insight helpers ──
   const bestRevenue = findBestRow(peerResults, 0, true);
@@ -170,6 +171,7 @@ Infosys, 156000, 28700, 172000, 24000`;
             tool="peer"
             multiColumn
             initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : ['Company A', 'Company B', 'Company C']}
+            resetKey={clearVersion}
             initialData={
               sheetRows.length > 0
                 ? sheetRows
