@@ -302,6 +302,9 @@ textarea.num-input { resize: vertical; min-height: 72px; line-height: 1.6; }
 .about-card-text { font-size: var(--text-sm); color: var(--text-tertiary); line-height: 1.6; }
 .about-methodology-list { margin: 0; padding-left: var(--space-4); }
 .about-methodology-list li { margin-bottom: var(--space-2); }
+.about-cta-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 24px; font-size: var(--text-sm); font-weight: 500; color: var(--text); border: 1px solid var(--border-strong); border-radius: var(--radius-md); text-decoration: none; transition: all var(--transition); }
+.about-cta-btn:hover { border-color: var(--primary); color: var(--primary-hover); }
+.about-cta-btn svg { width: 16px; height: 16px; }
 
 .result-panel { margin-top: var(--space-4); }
 

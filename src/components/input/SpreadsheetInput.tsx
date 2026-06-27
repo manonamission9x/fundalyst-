@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { METRIC_LIBRARY, METRIC_LABELS } from './metric-library';
+import { METRIC_LABELS } from './metric-library';
 
 /**
  * SpreadsheetInput — A keyboard-first, paste-aware financial data entry grid.

@@ -125,9 +125,9 @@ export default function AboutPage() {
 
       {/* CTA */}
       <div className="mt-6 text-center">
-        <Link href="/import" className="btn-primary" style={{ padding: '11px 24px', display: 'inline-flex', textDecoration: 'none', fontSize: 13 }}>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M7 2v10M2 7l5-5 5 5" /><path d="M2 12v1h10v-1" />
+        <Link href="/import" className="about-cta-btn">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M8 2v10M3 7l5-5 5 5" /><path d="M2 13v1h12v-1" />
           </svg>
           Start analyzing
         </Link>
