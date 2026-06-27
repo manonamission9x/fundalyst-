@@ -4,24 +4,24 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { useImporterStore } from '@/store/importer-store';
-import { SectionTitle, Disclaimer, Card, EmptyState, TrustBadge } from '@/components/ui';
+import { SectionTitle, Disclaimer, Card, TrustBadge } from '@/components/ui';
 import type { FundalystDataset, CanonicalFact } from '@/lib/importer/types';
 
 // ── Workspace step definitions ──
 const steps = [
-  { id: 'overview', label: 'Company Overview',
+  { id: 'overview', label: 'Overview',
     icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="7" cy="7" r="6" /><path d="M7 4v3l2 2" /></svg> },
-  { id: 'import', label: 'Import Data',
+  { id: 'import', label: 'Import',
     icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M7 2v8M3 6l4-4 4 4" /><path d="M2 11v1h10v-1" /></svg> },
   { id: 'data', label: 'Financial Data',
     icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="10" height="8" rx="1" /><path d="M5 7h4M5 9h2" /></svg> },
-  { id: 'filing', label: 'Filing Comparison',
+  { id: 'filing', label: 'Filing',
     icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2h5l3 3v7a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" /><path d="M8 2v3h3" /><path d="M5 7l2 2 3-3" /></svg> },
-  { id: 'dcf', label: 'DCF Valuation',
+  { id: 'dcf', label: 'DCF',
     icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12l4-5 3 2 5-6" /><circle cx="11.5" cy="3.5" r="1.5" fill="currentColor" stroke="none" /></svg> },
-  { id: 'ratios', label: 'Ratios & Metrics',
+  { id: 'ratios', label: 'Ratios',
     icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12V5l3 2 3-5 3 7 2-3" /><circle cx="13" cy="3" r="1" fill="currentColor" stroke="none" /></svg> },
-  { id: 'thesis', label: 'Investment Thesis',
+  { id: 'thesis', label: 'Thesis',
     icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v10M10 2v10M2 4h10M2 10h10" /><path d="M7 2v10" /><path d="M2 7h10" /></svg> },
 ] as const;
 
@@ -67,7 +67,7 @@ export default function WorkspacePage() {
       <div className="workspace-body">
         {/* ── Sidebar ── */}
         <nav className="workspace-sidebar" aria-label="Research steps">
-          <div className="workspace-sidebar-label">Research Steps</div>
+          <div className="workspace-sidebar-label">Steps</div>
           {steps.map((step) => (
             <button
               key={step.id}
@@ -99,14 +99,21 @@ export default function WorkspacePage() {
 // ── Overview Panel ──
 function OverviewPanel({ hasData, companyName, datasets }: { hasData: boolean; companyName: string; datasets: FundalystDataset[] }) {
   const totalFacts = datasets.reduce((sum, d) => sum + d.facts.length, 0);
+  const stepItems = [
+    { num: '01', label: 'Import', desc: 'Upload CSV, Excel, or PDF with financial statements.', action: '/import', cta: 'Import data' },
+    { num: '02', label: 'Review', desc: 'Check extracted metrics and periods. Correct any issues.', action: '', cta: '' },
+    { num: '03', label: 'Analyze', desc: 'Use Filing, DCF, Ratios, and other tools to evaluate.', action: '/research/filing', cta: 'Start analysis' },
+    { num: '04', label: 'Conclude', desc: 'Write your investment thesis based on the evidence.', action: '', cta: '' },
+  ];
+
   return (
     <div>
       <SectionTitle>Company Overview</SectionTitle>
-      <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      <div className="flex flex-col gap-4 mt-4">
         {/* Status card */}
         <div className="workspace-card">
           <div className="workspace-card-header">Research Status</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)', padding: 'var(--space-4)' }}>
+          <div className="grid grid-cols-3 gap-4 p-4">
             <div>
               <div className="ws-metric-label">Company</div>
               <div className="ws-metric-value">{companyName}</div>
@@ -116,36 +123,41 @@ function OverviewPanel({ hasData, companyName, datasets }: { hasData: boolean; c
               <div className="ws-metric-value">{datasets.length}</div>
             </div>
             <div>
-              <div className="ws-metric-label">Metrics Loaded</div>
+              <div className="ws-metric-label">Metrics</div>
               <div className="ws-metric-value">{totalFacts}</div>
             </div>
           </div>
         </div>
 
-        {/* Getting started */}
-        {!hasData && (
-          <div className="workspace-card">
-            <div className="workspace-card-header">Getting Started</div>
-            <div style={{ padding: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
-              <p style={{ margin: '0 0 12px' }}>Welcome to the Research Workspace. Here&apos;s your workflow:</p>
-              <ol style={{ margin: 0, paddingLeft: 20 }}>
-                <li style={{ marginBottom: 8 }}><strong>Import Data</strong> — Upload a CSV, Excel, or PDF file with financial data.</li>
-                <li style={{ marginBottom: 8 }}><strong>Review Data</strong> — Check what was extracted and correct any issues.</li>
-                <li style={{ marginBottom: 8 }}><strong>Run Analysis</strong> — Use Filing, DCF, Ratios, and other tools.</li>
-                <li style={{ marginBottom: 8 }}><strong>Build Thesis</strong> — Write your investment thesis based on the analysis.</li>
-              </ol>
+        {/* Workflow steps */}
+        <div className="workflow-steps">
+          {stepItems.map((s, i) => (
+            <div key={i} className="workflow-step">
+              <div className="workflow-step-num">{s.num}</div>
+              <div className="workflow-step-title">{s.label}</div>
+              <div className="workflow-step-desc">{s.desc}</div>
+              {s.cta && (
+                <Link
+                  href={s.action}
+                  className="inline-flex items-center gap-1 mt-2 text-2xs text-primary font-mono"
+                  style={{ textDecoration: 'none' }}
+                >
+                  {s.cta} →
+                </Link>
+              )}
             </div>
-          </div>
-        )}
+          ))}
+        </div>
 
         {/* Quick links */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-3)' }}>
+        <div className="grid grid-cols-2 gap-3">
           <Link href="/tools/dcf" className="workspace-quick-link">DCF Valuation →</Link>
           <Link href="/research/filing" className="workspace-quick-link">Filing Comparison →</Link>
           <Link href="/tools/ratios" className="workspace-quick-link">Financial Ratios →</Link>
           <Link href="/tools/peer" className="workspace-quick-link">Peer Comparison →</Link>
         </div>
-        <div className="flex gap-2 flex-wrap mt-3">
+
+        <div className="flex gap-2 flex-wrap mt-2">
           <TrustBadge label="Fundalyst Research" variant="source" />
           {hasData && <TrustBadge label="Data Loaded" variant="good" />}
         </div>
@@ -169,23 +181,21 @@ function ImportPanel() {
   return (
     <div>
       <SectionTitle>Import Data</SectionTitle>
-      <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      <div className="flex flex-col gap-4 mt-4">
         <div className="workspace-card">
           <div className="workspace-card-header">Upload Financial File</div>
-          <div style={{ padding: 'var(--space-4)', textAlign: 'center' }}>
+          <div className="p-4 text-center">
             <label className="workspace-upload-area">
               <div className="workspace-upload-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M12 2v14M6 10l6-6 6 6" /><path d="M2 18v4h20v-4" />
                 </svg>
               </div>
-              <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+              <div className="text-sm font-semibold text-center mb-1" style={{ color: 'var(--text)' }}>
                 Choose a file or drag it here
               </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                CSV · XLSX · PDF · Screenshot
-              </div>
-              <span className="upload-label" style={{ marginTop: 12 }}>
+              <div className="text-xs text-muted">CSV · XLSX · PDF · Screenshot</div>
+              <span className="upload-label mt-3">
                 Select file
                 <input type="file" accept=".csv,.tsv,.txt,.xlsx,.xls,.pdf,.png,.jpg,.jpeg" style={{ display: 'none' }} onChange={handleFile} />
               </span>
@@ -196,23 +206,21 @@ function ImportPanel() {
         {isImporting && (
           <div className="workspace-card">
             <div className="workspace-card-header">Importing...</div>
-            <div style={{ padding: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>
-              Processing file...
-            </div>
+            <div className="p-4 text-sm text-tertiary">Processing file...</div>
           </div>
         )}
 
         {error && (
           <div className="workspace-card" style={{ borderColor: 'var(--red)' }}>
             <div className="workspace-card-header" style={{ color: 'var(--red)' }}>Import Error</div>
-            <div style={{ padding: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--red)' }}>{error}</div>
+            <div className="p-4 text-sm" style={{ color: 'var(--red)' }}>{error}</div>
           </div>
         )}
 
         {lastDataset && (
-          <div className="workspace-card" style={{ borderColor: 'rgba(39,174,96,0.3)' }}>
+          <div className="workspace-card" style={{ borderColor: 'rgba(61,160,109,0.3)' }}>
             <div className="workspace-card-header" style={{ color: 'var(--green)' }}>Imported Successfully</div>
-            <div style={{ padding: 'var(--space-4)' }}>
+            <div className="p-4">
               <div className="ws-metric-label">Company</div>
               <div className="ws-metric-value" style={{ marginBottom: 8 }}>{lastDataset.companyName || 'Unknown'}</div>
               <div className="ws-metric-label">Metrics</div>
@@ -232,11 +240,13 @@ function DataPanel({ datasets }: { datasets: FundalystDataset[] }) {
       <div>
         <SectionTitle>Financial Data</SectionTitle>
         <Card className="mt-4">
-          <EmptyState
-            title="No financial data imported yet"
-            desc="Use the Import step to upload a CSV, Excel, or PDF file. Once data is extracted, it appears here with all metrics and periods for review before running analysis tools."
-            action={{ label: 'Import data', href: '/import' }}
-          />
+          <div className="empty-state">
+            <div className="empty-state-title">No financial data imported yet</div>
+            <div className="empty-state-desc">
+              Use the Import step to upload a CSV, Excel, or PDF file. Once data is extracted, it appears here with all metrics and periods for review before running analysis tools.
+            </div>
+            <Link href="/import" className="empty-state-action">Import data →</Link>
+          </div>
         </Card>
       </div>
     );
@@ -245,39 +255,23 @@ function DataPanel({ datasets }: { datasets: FundalystDataset[] }) {
   return (
     <div>
       <SectionTitle>Financial Data</SectionTitle>
-      <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      <div className="flex flex-col gap-4 mt-4">
         {datasets.map((ds, i) => (
           <div key={ds.id || i} className="workspace-card">
             <div className="workspace-card-header">{ds.companyName || `Dataset ${i + 1}`}</div>
-            <div style={{ padding: 'var(--space-4)' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
-                <div>
-                  <div className="ws-metric-label">Periods</div>
-                  <div className="ws-metric-value">{ds.periods?.length || 0}</div>
-                </div>
-                <div>
-                  <div className="ws-metric-label">Facts</div>
-                  <div className="ws-metric-value">{ds.facts.length}</div>
-                </div>
-                <div>
-                  <div className="ws-metric-label">Source</div>
-                  <div className="ws-metric-value" style={{ fontSize: 'var(--text-xs)' }}>{ds.sourceType || 'Upload'}</div>
-                </div>
-                <div>
-                  <div className="ws-metric-label">Confidence</div>
-                  <div className="ws-metric-value" style={{ fontSize: 'var(--text-xs)' }}>
-                    {ds.confidence ? Math.round(ds.confidence * 100) + '%' : '—'}
-                  </div>
-                </div>
+            <div className="p-4">
+              <div className="grid grid-cols-4 gap-4 mb-4">
+                <div><div className="ws-metric-label">Periods</div><div className="ws-metric-value">{ds.periods?.length || 0}</div></div>
+                <div><div className="ws-metric-label">Facts</div><div className="ws-metric-value">{ds.facts.length}</div></div>
+                <div><div className="ws-metric-label">Source</div><div className="ws-metric-value text-xs">{ds.sourceType || 'Upload'}</div></div>
+                <div><div className="ws-metric-label">Confidence</div><div className="ws-metric-value text-xs">{ds.confidence ? Math.round(ds.confidence * 100) + '%' : '—'}</div></div>
               </div>
               {ds.facts.length > 0 && (
-                <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                <div className="max-h-48 overflow-y-auto">
                   <table className="diff-table">
-                    <thead>
-                      <tr><th>Metric</th><th>Value</th><th>Period</th></tr>
-                    </thead>
+                    <thead><tr><th>Metric</th><th>Value</th><th>Period</th></tr></thead>
                     <tbody>
-      {ds.facts.slice(0, 30).map((f: CanonicalFact, j: number) => (
+                      {ds.facts.slice(0, 30).map((f: CanonicalFact, j: number) => (
                         <tr key={j}>
                           <td>{f.metric || f.canonicalMetric || '—'}</td>
                           <td>{f.value !== undefined ? f.value : '—'}</td>
@@ -301,16 +295,16 @@ function FilingPanel() {
   return (
     <div>
       <SectionTitle>Filing Comparison</SectionTitle>
-      <div className="workspace-card" style={{ marginTop: 'var(--space-4)' }}>
-        <div className="workspace-card-header">Period Comparison</div>
-        <div style={{ padding: 'var(--space-4)' }}>
-          <Link href="/research/filing" className="btn-primary" style={{ textDecoration: 'none', fontSize: 12 }}>
+      <div className="workspace-card mt-4">
+        <div className="workspace-card-header">Period-over-Period Analysis</div>
+        <div className="p-4 flex flex-col gap-3">
+          <p className="text-sm text-tertiary leading-normal" style={{ margin: 0 }}>
+            Compare two reporting periods side by side. The tool highlights revenue growth, margin compression, debt changes, and risk flags automatically.
+          </p>
+          <Link href="/research/filing" className="workspace-quick-link">
             Open Filing Comparison →
           </Link>
-          <span style={{ marginLeft: 12, fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            Opens the full filing tool
-          </span>
-          <div className="flex gap-2 flex-wrap mt-2">
+          <div className="flex gap-2 flex-wrap">
             <TrustBadge label="Filing Comparison" variant="source" />
             <TrustBadge label="YoY Change" variant="good" />
           </div>
@@ -325,16 +319,16 @@ function DCFPanel() {
   return (
     <div>
       <SectionTitle>DCF Valuation</SectionTitle>
-      <div className="workspace-card" style={{ marginTop: 'var(--space-4)' }}>
-        <div className="workspace-card-header">Valuation Model</div>
-        <div style={{ padding: 'var(--space-4)' }}>
-          <Link href="/tools/dcf" className="btn-primary" style={{ textDecoration: 'none', fontSize: 12 }}>
+      <div className="workspace-card mt-4">
+        <div className="workspace-card-header">Intrinsic Value Estimation</div>
+        <div className="p-4 flex flex-col gap-3">
+          <p className="text-sm text-tertiary leading-normal" style={{ margin: 0 }}>
+            Estimate intrinsic value per share using projected free cash flows. Includes sensitivity analysis across terminal growth and discount rates.
+          </p>
+          <Link href="/tools/dcf" className="workspace-quick-link">
             Open DCF Valuation →
           </Link>
-          <span style={{ marginLeft: 12, fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            Full DCF model with sensitivity analysis
-          </span>
-          <div className="flex gap-2 flex-wrap mt-2">
+          <div className="flex gap-2 flex-wrap">
             <TrustBadge label="DCF - Gordon Growth" variant="source" />
             <TrustBadge label="₹ Indian Market" />
           </div>
@@ -349,16 +343,16 @@ function RatiosPanel() {
   return (
     <div>
       <SectionTitle>Ratios & Metrics</SectionTitle>
-      <div className="workspace-card" style={{ marginTop: 'var(--space-4)' }}>
-        <div className="workspace-card-header">Financial Ratios</div>
-        <div style={{ padding: 'var(--space-4)' }}>
-          <Link href="/tools/ratios" className="btn-primary" style={{ textDecoration: 'none', fontSize: 12 }}>
+      <div className="workspace-card mt-4">
+        <div className="workspace-card-header">Financial Health Check</div>
+        <div className="p-4 flex flex-col gap-3">
+          <p className="text-sm text-tertiary leading-normal" style={{ margin: 0 }}>
+            Calculate 5 key ratios from just 6 numbers: Net Profit Margin, ROE, Debt/Equity, Debt/Assets, and Asset Turnover.
+          </p>
+          <Link href="/tools/ratios" className="workspace-quick-link">
             Open Financial Ratios →
           </Link>
-          <span style={{ marginLeft: 12, fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            Liquidity, leverage, profitability & efficiency
-          </span>
-          <div className="flex gap-2 flex-wrap mt-2">
+          <div className="flex gap-2 flex-wrap">
             <TrustBadge label="Ratio Analysis" variant="source" />
             <TrustBadge label="₹ Indian Market" />
           </div>
@@ -376,7 +370,6 @@ function ThesisPanel() {
 
   function handleSave() {
     localStorage.setItem('fundalyst-thesis', JSON.stringify({ notes, verdict, updatedAt: new Date().toISOString() }));
-    alert('Thesis saved!');
   }
 
   function handleLoad() {
@@ -390,20 +383,19 @@ function ThesisPanel() {
   return (
     <div>
       <SectionTitle>Investment Thesis</SectionTitle>
-      <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      <div className="flex flex-col gap-4 mt-4">
         <div className="workspace-card">
           <div className="workspace-card-header">Your Assessment</div>
-          <div style={{ padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div className="p-4 flex flex-col gap-4">
             {/* Verdict selector */}
             <div>
-              <div className="ws-metric-label" style={{ marginBottom: 8 }}>Overall Verdict</div>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div className="ws-metric-label mb-2">Overall Verdict</div>
+              <div className="flex gap-2">
                 {(['positive', 'neutral', 'negative'] as const).map((v) => (
                   <button
                     key={v}
                     type="button"
                     className={verdict === v ? 'btn-primary' : 'btn-ghost'}
-                    style={{ fontSize: 12, padding: '6px 16px' }}
                     onClick={() => setVerdict(v)}
                   >
                     {v === 'positive' ? '✓ Bullish' : v === 'neutral' ? '→ Neutral' : '✗ Bearish'}
@@ -414,7 +406,7 @@ function ThesisPanel() {
 
             {/* Thesis notes */}
             <div>
-              <div className="ws-metric-label" style={{ marginBottom: 8 }}>Research Notes</div>
+              <div className="ws-metric-label mb-2">Research Notes</div>
               <textarea
                 className="num-input"
                 rows={8}
@@ -422,27 +414,23 @@ function ThesisPanel() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Write your investment thesis here...&#10;&#10;Consider:&#10;- Business quality and competitive advantages&#10;- Financial health and trends&#10;- Growth prospects&#10;- Valuation (is it fairly priced?)&#10;- Key risks and mitigants&#10;- Your decision and rationale"
                 aria-label="Investment thesis notes"
-                style={{ lineHeight: 1.7, fontFamily: 'var(--font-mono)', fontSize: 'var(--text-sm)' }}
               />
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button type="button" className="btn-primary" onClick={handleSave} style={{ fontSize: 12 }}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M2 2h10v10H2z" /><path d="M9 2v5H5V2" fill="currentColor" /><path d="M4 10h6" />
-                </svg>
+            <div className="flex gap-2">
+              <button type="button" className="btn-primary btn-sm" onClick={handleSave}>
                 Save Thesis
               </button>
               {saved && (
-                <button type="button" className="btn-secondary" onClick={handleLoad} style={{ fontSize: 12 }}>
+                <button type="button" className="btn-secondary btn-sm" onClick={handleLoad}>
                   Load saved
                 </button>
               )}
             </div>
 
             {saved && (
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              <div className="text-xs text-muted font-mono">
                 Previous thesis found — click &quot;Load saved&quot; to restore
               </div>
             )}
@@ -452,25 +440,19 @@ function ThesisPanel() {
         {/* Quick checklist */}
         <div className="workspace-card">
           <div className="workspace-card-header">Investment Checklist</div>
-          <div style={{ padding: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', lineHeight: 1.8 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input type="checkbox" /> Business has a durable competitive advantage
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input type="checkbox" /> Revenue is growing consistently
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input type="checkbox" /> Profit margins are stable or improving
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input type="checkbox" /> Debt levels are manageable
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input type="checkbox" /> Stock is undervalued or fairly priced
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input type="checkbox" /> Key risks are identified and acceptable
-            </label>
+          <div className="p-4 text-sm text-tertiary">
+            {[
+              'Business has a durable competitive advantage',
+              'Revenue is growing consistently',
+              'Profit margins are stable or improving',
+              'Debt levels are manageable',
+              'Stock is undervalued or fairly priced',
+              'Key risks are identified and acceptable',
+            ].map((item, i) => (
+              <label key={i} className="flex items-center gap-2 cursor-pointer py-1">
+                <input type="checkbox" /> {item}
+              </label>
+            ))}
           </div>
         </div>
       </div>

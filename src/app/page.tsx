@@ -181,9 +181,6 @@ export default function HomePage() {
 
           <div className="home-cta-row">
             <Link href="/import" className="home-cta-primary">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M8 2v10M3 7l5-5 5 5" /><path d="M2 13v1h12v-1" />
-              </svg>
               Upload financial data
             </Link>
             <Link href="/tools/dcf" className="home-cta-secondary">

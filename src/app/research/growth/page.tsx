@@ -23,7 +23,6 @@ export default function YoyPage() {
   const showToast = useToast();
   const { years, csv, rows, setYears, setCsv, setRows, clear } = useYoyStore();
 
-  // Pre-fill from imported data
   const dataInfo = useGlobalImportFill(
     (vals) => {
       setYears(vals.years);
@@ -70,11 +69,8 @@ export default function YoyPage() {
     }
   }
 
-  function handleClear() {
-    clear();
-  }
+  function handleClear() { clear(); }
 
-  // Compute column labels from the years the user entered (not hardcoded FY2→FY3)
   const yearList = years.split(',').map((s) => s.trim()).filter(Boolean);
   const colLabels = rows.length > 0
     ? rows[0].growth.slice(1).map((_, i) => {
@@ -85,7 +81,6 @@ export default function YoyPage() {
       })
     : [];
 
-  // Compute insights from the data
   const fastestGrowing =
     rows.length > 0
       ? rows
@@ -128,14 +123,13 @@ export default function YoyPage() {
       <DataQualityBar source={getDataSourceLabel(dataInfo.dataSource, dataInfo.companyName)} />
       <UploadBar onUpload={handleCsvFile} hint="CSV: Metric, Year1, Year2, Year3, ..." />
 
-      <Card label="Data" style={{ marginTop: '1.5rem' }}>
+      <Card label="Data" className="mt-4">
         <div className="card-body">
-          <div style={{ marginBottom: 8 }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Years:</span>
+          <div className="field-group mb-2">
+            <span className="field-label">Years:</span>
             <input
               type="text"
-              className="period-label-input"
-              style={{ width: '100%', marginTop: 4 }}
+              className="num-input"
               value={years}
               onChange={(e) => setYears(e.target.value)}
             />
@@ -144,7 +138,6 @@ export default function YoyPage() {
             id="growth-csv"
             rows={6}
             className="num-input"
-            style={{ width: '100%', lineHeight: 1.7, fontSize: 12, fontFamily: 'var(--font-mono)' }}
             value={csv}
             onChange={(e) => setCsv(e.target.value)}
             aria-label="Growth data CSV input"
@@ -155,59 +148,57 @@ export default function YoyPage() {
 
       {rows.length > 0 && (
         <div id="growth-results">
-          <Card label="Growth rates (YoY %)" style={{ marginTop: '1.5rem' }}>
-            <div className="card-body">
-              <table className="diff-table">
-                <thead>
-                  <tr>
-                    <th>Metric</th>
-                    {colLabels.map((cl, i) => <th key={i}>{cl}</th>)}
+          <Card label="Growth rates (YoY %)" className="mt-4">
+            <table className="diff-table">
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  {colLabels.map((cl, i) => <th key={i}>{cl}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={i}>
+                    <td><strong>{r.label}</strong></td>
+                    {r.growth.slice(1).map((g, j) => (
+                      <td
+                        key={j}
+                        style={{
+                          color:
+                            g !== null && g > 0
+                              ? 'var(--green)'
+                              : g !== null && g < 0
+                                ? 'var(--red)'
+                                : 'var(--text)',
+                        }}
+                      >
+                        {g !== null ? (g > 0 ? '+' : '') + g.toFixed(1) + '%' : '—'}
+                      </td>
+                    ))}
                   </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r, i) => (
-                    <tr key={i}>
-                      <td><strong>{r.label}</strong></td>
-                      {r.growth.slice(1).map((g, j) => (
-                        <td
-                          key={j}
-                          style={{
-                            color:
-                              g !== null && g > 0
-                                ? 'var(--green)'
-                                : g !== null && g < 0
-                                  ? 'var(--red)'
-                                  : 'var(--text)',
-                          }}
-                        >
-                          {g !== null ? (g > 0 ? '+' : '') + g.toFixed(1) + '%' : '—'}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div style={{ textAlign: 'center', marginTop: 12 }}>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    const hdrs = ['Metric', ...colLabels];
-                    const data = rows.map((r) => [
-                      r.label,
-                      ...r.growth.slice(1).map((g) =>
-                        g !== null ? (g > 0 ? '+' : '') + g.toFixed(1) + '%' : ''
-                      ),
-                    ]);
-                    downloadCSV('yoy_growth.csv', [hdrs, ...data]);
-                  }}
-                >
-                  Download CSV
-                </button>
-              </div>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex justify-center py-3">
+              <button
+                className="btn-secondary btn-sm"
+                onClick={() => {
+                  const hdrs = ['Metric', ...colLabels];
+                  const data = rows.map((r) => [
+                    r.label,
+                    ...r.growth.slice(1).map((g) =>
+                      g !== null ? (g > 0 ? '+' : '') + g.toFixed(1) + '%' : ''
+                    ),
+                  ]);
+                  downloadCSV('yoy_growth.csv', [hdrs, ...data]);
+                }}
+              >
+                Download CSV
+              </button>
             </div>
           </Card>
 
-          <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div className="flex flex-col gap-3 mt-4">
             {fastestGrowing && fastestGrowing.avg > -Infinity && (
               <InsightCard
                 type="positive"
@@ -224,7 +215,7 @@ export default function YoyPage() {
             )}
           </div>
 
-          <div style={{ marginTop: '1.5rem' }}>
+          <div className="mt-4">
             <NextLinks
               links={[
                 { label: 'Trend charts', href: '/research/trends' },

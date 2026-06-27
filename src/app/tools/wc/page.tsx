@@ -88,9 +88,7 @@ export default function WCPage() {
     }, 200);
   }
 
-  function handleClear() {
-    clear();
-  }
+  function handleClear() { clear(); }
 
   return (
     <div>
@@ -103,7 +101,6 @@ export default function WCPage() {
       <DataQualityBar
         source={getDataSourceLabel(dataInfo.dataSource, dataInfo.companyName)}
         periods={dataInfo.companyName ? `Company: ${dataInfo.companyName}` : undefined}
-        metrics={dataInfo.dataSource !== 'none' ? undefined : undefined}
       />
 
       <UploadBar onUpload={handleCsv} hint="CSV: Revenue, COGS, Receivables, Inventory, Payables, Cash" />
@@ -125,9 +122,9 @@ export default function WCPage() {
       </Card>
 
       {res && (
-          <div id="wc-results">
-            <Card label="Cash Conversion Metrics">
-              <MetricGrid
+        <div id="wc-results">
+          <Card label="Cash Conversion Metrics">
+            <MetricGrid
               metrics={[
                 {
                   label: 'DSO',
@@ -157,7 +154,7 @@ export default function WCPage() {
             />
           </Card>
 
-          <Card className="mt-6">
+          <Card className="mt-4">
             {res.dso !== null && res.dso > 90 && (
               <WarningCard
                 level="danger"

@@ -280,11 +280,11 @@ export default function FilingPage() {
               <div className="card-body">
                 <div className="flex items-center justify-between mb-2">
                   <span className="stat-label">Executive Summary</span>
-                  <span className={`trust-badge${execSummary.flagCount > 0 ? (flags.some(f => f.level === 'danger') ? '' : '') : ' good'}`}>
+                  <span className={`trust-badge${execSummary.flagCount > 0 ? '' : ' good'}`}>
                     {execSummary.health}
                   </span>
                 </div>
-                <div className="stat-value" style={{ fontSize: 'var(--text-lg)' }}>
+                <div className="stat-value text-lg">
                   {execSummary.summary}
                 </div>
               </div>
@@ -354,7 +354,7 @@ export default function FilingPage() {
           {/* 5. Full Data Table (expandable) */}
           <details className="mb-4">
             <summary className="details-summary">
-              <span className="section-title" style={{ cursor: 'pointer' }}>
+              <span className="section-title">
                 Full line-by-line comparison — click to expand
               </span>
             </summary>

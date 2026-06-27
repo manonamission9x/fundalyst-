@@ -27,7 +27,7 @@ import { useGlobalImportFill, extractDCFInputs, getDataSourceLabel } from '@/lib
 
 const DCFChart = dynamic(() => import('@/components/tools/dcf/DCFChart'), {
   ssr: false,
-  loading: () => <div className="skeleton rounded-lg" style={{ width: '100%', height: 300 }} />,
+  loading: () => <div className="skeleton" style={{ width: '100%', height: 300 }} />,
 });
 
 export default function DCFPage() {
@@ -65,15 +65,12 @@ export default function DCFPage() {
     if (autoDemoRef.current) return;
     autoDemoRef.current = true;
     if (!useDCFStore.getState().show && useDCFStore.getState().summary === null) {
-      // Small timeout to let the DOM settle for toast rendering
       const timer = setTimeout(() => runDCF(), 400);
       return () => clearTimeout(timer);
     }
   }, []);
 
-  // Plain function — not useCallback — for maximum reliability
   function runDCF() {
-    // Read from store at click time to avoid stale renders
     const s = useDCFStore.getState().inputs;
     const fcf = s.fcf;
     const growth = s.growth;
@@ -84,7 +81,6 @@ export default function DCFPage() {
     const shares = s.shares;
     const price = s.price;
 
-    // Validate all inputs
     const validationErrors = validateDCFInputs(fcf, growth, years, discount, terminal, netDebt, shares, price);
     const errorMap: Record<string, string> = {};
     for (const e of validationErrors) {
@@ -99,7 +95,6 @@ export default function DCFPage() {
       return;
     }
 
-    // Compute
     const r = computeDCF(
       Number(fcf), Number(growth), Number(years),
       Number(discount), Number(terminal), Number(netDebt),
@@ -111,14 +106,12 @@ export default function DCFPage() {
       return;
     }
 
-    // Sensitivity table
     const sensResult = computeDCFSensitivity(
       Number(fcf), Number(growth), Number(years),
       [1, 2, 3, 4, 5], [8, 10, 12, 14, 16],
       Number(netDebt), Number(shares), Number(price),
     );
 
-    // Set results using hook setters
     setShow(true);
     setSummary(r);
     setSens(sensResult);
@@ -148,96 +141,96 @@ export default function DCFPage() {
         metrics={useMemo(() => Object.values(inputs).filter((v) => v !== '' && v !== null && v !== 0).length, [inputs])}
       />
 
-      {/* ── Cash Flow Assumptions ── */}
-      <SectionTitle>Cash Flow Assumptions</SectionTitle>
+      {/* ── Consolidated Input Card — single card, visual sections ── */}
       <Card>
-        <FieldGrid>
-          <Field
-            label="Free Cash Flow (₹ Cr)"
-            value={inputs.fcf}
-            onChange={(v) => { setInput('fcf', v); setErrors((e) => ({ ...e, fcf: '' })); }}
-            hint="Cash generated after expenses & investments (trailing 12 months)"
-          />
-          {errors.fcf && <div className="err-msg mt-1 px-4">{errors.fcf}</div>}
-        </FieldGrid>
-      </Card>
+        {/* Cash Flow */}
+        <div className="card-body" style={{ borderBottom: '1px solid var(--border-light)' }}>
+          <SectionTitle>Cash Flow Assumptions</SectionTitle>
+          <FieldGrid>
+            <Field
+              label="Free Cash Flow (₹ Cr)"
+              value={inputs.fcf}
+              onChange={(v) => { setInput('fcf', v); setErrors((e) => ({ ...e, fcf: '' })); }}
+              hint="Cash generated after expenses & investments (trailing 12 months)"
+            />
+          </FieldGrid>
+          {errors.fcf && <div className="err-msg mt-1">{errors.fcf}</div>}
+        </div>
 
-      {/* ── Growth Assumptions ── */}
-      <SectionTitle>Growth Assumptions</SectionTitle>
-      <Card>
-        <FieldGrid>
-          <Field
-            label="Growth Rate (%)"
-            value={inputs.growth}
-            onChange={(v) => setInput('growth', v)}
-            hint="Expected yearly growth rate of this cash flow"
-          />
-          <Field
-            label="Projection Years"
-            value={inputs.years}
-            onChange={(v) => { setInput('years', v); setErrors((e) => ({ ...e, years: '' })); }}
-            hint="How many years to project (typically 5–10)"
-          />
-        </FieldGrid>
-        {errors.years && <div className="err-msg px-4 py-2">{errors.years}</div>}
-      </Card>
+        {/* Growth */}
+        <div className="card-body" style={{ borderBottom: '1px solid var(--border-light)' }}>
+          <SectionTitle>Growth Assumptions</SectionTitle>
+          <FieldGrid>
+            <Field
+              label="Growth Rate (%)"
+              value={inputs.growth}
+              onChange={(v) => setInput('growth', v)}
+              hint="Expected yearly growth rate of this cash flow"
+            />
+            <Field
+              label="Projection Years"
+              value={inputs.years}
+              onChange={(v) => { setInput('years', v); setErrors((e) => ({ ...e, years: '' })); }}
+              hint="How many years to project (typically 5–10)"
+            />
+          </FieldGrid>
+          {errors.years && <div className="err-msg mt-1">{errors.years}</div>}
+        </div>
 
-      {/* ── Discount Assumptions ── */}
-      <SectionTitle>Discount Assumptions</SectionTitle>
-      <Card>
-        <FieldGrid>
-          <Field
-            label="WACC (%)"
-            value={inputs.discount}
-            onChange={(v) => { setInput('discount', v); setErrors((e) => ({ ...e, discount: '' })); }}
-            hint="Company's blended cost of debt and equity (typically 8–15%)"
-          />
-          <Field
-            label="Terminal Growth (%)"
-            value={inputs.terminal}
-            onChange={(v) => { setInput('terminal', v); setErrors((e) => ({ ...e, terminal: '' })); }}
-            hint="Long-term growth after projection years (must be below WACC)"
-          />
-        </FieldGrid>
-        {errors.discount && <div className="err-msg px-4 py-2">{errors.discount}</div>}
-        {errors.terminal && <div className="err-msg px-4 py-2">{errors.terminal}</div>}
-      </Card>
+        {/* Discount */}
+        <div className="card-body" style={{ borderBottom: '1px solid var(--border-light)' }}>
+          <SectionTitle>Discount Assumptions</SectionTitle>
+          <FieldGrid>
+            <Field
+              label="WACC (%)"
+              value={inputs.discount}
+              onChange={(v) => { setInput('discount', v); setErrors((e) => ({ ...e, discount: '' })); }}
+              hint="Company's blended cost of debt and equity (typically 8–15%)"
+            />
+            <Field
+              label="Terminal Growth (%)"
+              value={inputs.terminal}
+              onChange={(v) => { setInput('terminal', v); setErrors((e) => ({ ...e, terminal: '' })); }}
+              hint="Long-term growth after projection years (must be below WACC)"
+            />
+          </FieldGrid>
+          {errors.discount && <div className="err-msg mt-1">{errors.discount}</div>}
+          {errors.terminal && <div className="err-msg mt-1">{errors.terminal}</div>}
+        </div>
 
-      {/* ── Share Price Assumptions ── */}
-      <SectionTitle>Share Price Assumptions</SectionTitle>
-      <Card>
-        <FieldGrid>
-          <Field
-            label="Net Debt (₹ Cr)"
-            value={inputs.netDebt}
-            onChange={(v) => setInput('netDebt', v)}
-            hint="Total debt minus cash & equivalents"
-          />
-          <Field
-            label="Shares Outstanding (Cr)"
-            value={inputs.shares}
-            onChange={(v) => { setInput('shares', v); setErrors((e) => ({ ...e, shares: '' })); }}
-            hint="Total shares including options and warrants"
-          />
-          <Field
-            label="Current Price (₹)"
-            value={inputs.price}
-            onChange={(v) => setInput('price', v)}
-            hint="Current stock market price"
-          />
-        </FieldGrid>
-        {errors.shares && <div className="err-msg px-4 py-2">{errors.shares}</div>}
-      </Card>
+        {/* Share Price */}
+        <div className="card-body">
+          <SectionTitle>Share Price Assumptions</SectionTitle>
+          <FieldGrid>
+            <Field
+              label="Net Debt (₹ Cr)"
+              value={inputs.netDebt}
+              onChange={(v) => setInput('netDebt', v)}
+              hint="Total debt minus cash & equivalents"
+            />
+            <Field
+              label="Shares Outstanding (Cr)"
+              value={inputs.shares}
+              onChange={(v) => { setInput('shares', v); setErrors((e) => ({ ...e, shares: '' })); }}
+              hint="Total shares including options and warrants"
+            />
+            <Field
+              label="Current Price (₹)"
+              value={inputs.price}
+              onChange={(v) => setInput('price', v)}
+              hint="Current stock market price"
+            />
+          </FieldGrid>
+          {errors.shares && <div className="err-msg mt-1">{errors.shares}</div>}
+        </div>
 
-      {/* ── Toolbar ── */}
-      <div className="mt-6">
         <Toolbar
           onClear={handleClear}
           onAction={runDCF}
           actionLabel="Calculate value"
           hint="Defaults pre-filled — adjust as needed"
         />
-      </div>
+      </Card>
 
       {/* ── Results ── */}
       {show && summary && (
@@ -250,7 +243,6 @@ export default function DCFPage() {
         />
       )}
 
-      {/* ── Empty state ── */}
       {!show && (
         <EmptyState
           title="Adjust assumptions above, then click Calculate value."
@@ -262,7 +254,7 @@ export default function DCFPage() {
   );
 }
 
-// ── Extracted results component (only renders when results change) ──
+// ── Extracted results component ──
 
 function DCFResults({
   summary,
@@ -282,7 +274,6 @@ function DCFResults({
   const verdictType = isUndervalued ? 'positive' as const : 'warning' as const;
   const verdictTitle = isUndervalued ? 'Undervalued' : 'Overvalued';
 
-  // Memoize formatted values (these are expensive string ops)
   const formatted = useMemo(() => ({
     iv: '₹' + fmtNum(Math.round(iv * 100) / 100),
     ev: '₹' + fmtNum(Math.round(summary.ev)),
@@ -353,9 +344,11 @@ function DCFResults({
       {/* ── Sensitivity Analysis ── */}
       {sens.length > 0 && (
         <Card label="Sensitivity Analysis" className="mt-4">
-          <div className="card-body text-sm text-secondary">
-            Intrinsic value per share at varying terminal growth rates (rows) vs discount rates (columns).<br />
-            <span className="text-muted">Base assumption highlighted. Green = undervalued vs ₹{fmtNum(priceVal)}, Red = overvalued.</span>
+          <div className="card-body">
+            <p className="text-sm text-secondary" style={{ margin: 0, marginBottom: 'var(--space-2)' }}>
+              Intrinsic value per share at varying terminal growth rates (rows) vs discount rates (columns).<br />
+              <span className="text-muted">Base assumption highlighted. Green = undervalued vs ₹{fmtNum(priceVal)}, Red = overvalued.</span>
+            </p>
           </div>
           <div className="overflow-x-auto">
             <table className="sens-table">

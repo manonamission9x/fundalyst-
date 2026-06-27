@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, Cell,
 } from 'recharts';
 import type { ProjectedYear } from '@/types/financial';
@@ -32,8 +32,8 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
     <ResponsiveContainer width="100%" height={300}>
       <BarChart
         data={data}
-        barCategoryGap="32%"
-        margin={{ top: 12, right: 12, left: 0, bottom: 0 }}
+        barCategoryGap="28%"
+        margin={{ top: 16, right: 16, left: 8, bottom: 4 }}
       >
         <CartesianGrid {...chartGrid} vertical={false} />
         <XAxis
@@ -58,7 +58,7 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
             strokeDasharray="6 3"
             strokeWidth={1.5}
             label={{
-              value: 'Mkt Price: ' + fmtINR(currentPrice),
+              value: 'Mkt: ' + fmtINR(currentPrice),
               fill: CHART_COLORS.red,
               fontSize: 10,
               fontFamily: 'IBM Plex Mono, monospace',
@@ -75,47 +75,34 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
           ]}
           labelFormatter={(label: any) => `Period: ${label}`}
         />
-        <Legend
-          wrapperStyle={{
-            fontSize: 11,
-            fontFamily: 'IBM Plex Sans, sans-serif',
-            color: CHART_COLORS.textSecondary,
-            paddingTop: 8,
-          }}
-          iconType="rect"
-          iconSize={10}
-          formatter={(value: string) => (value === 'fcf' ? 'Projected FCF' : 'Present Value')}
-        />
 
         <Bar
           dataKey="fcf"
           name="fcf"
-          radius={[4, 4, 0, 0]}
-          maxBarSize={44}
-          animationDuration={800}
-          animationEasing="ease-out"
+          radius={[3, 3, 0, 0]}
+          maxBarSize={40}
+          isAnimationActive={false}
         >
           {data.map((entry, index) => (
             <Cell
               key={index}
               fill={entry.isTerminal ? CHART_COLORS.amber : CHART_COLORS.primary}
-              fillOpacity={entry.isTerminal ? 0.7 : 0.9}
+              fillOpacity={entry.isTerminal ? 0.65 : 0.85}
             />
           ))}
         </Bar>
         <Bar
           dataKey="pv"
           name="pv"
-          radius={[4, 4, 0, 0]}
-          maxBarSize={44}
-          animationDuration={800}
-          animationEasing="ease-out"
+          radius={[3, 3, 0, 0]}
+          maxBarSize={40}
+          isAnimationActive={false}
         >
           {data.map((entry, index) => (
             <Cell
               key={index}
               fill={entry.isTerminal ? CHART_COLORS.amberLight : CHART_COLORS.green}
-              fillOpacity={entry.isTerminal ? 0.5 : 0.8}
+              fillOpacity={entry.isTerminal ? 0.45 : 0.75}
             />
           ))}
         </Bar>

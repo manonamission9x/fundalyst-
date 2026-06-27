@@ -1,32 +1,31 @@
 /**
  * Premium chart configuration for Fundalyst.
- * Defines consistent colors, tooltip styles, axis styles,
- * and helper functions for all Recharts visualizations.
- * Styled to feel comparable to Bloomberg / TradingView.
+ * Colors aligned with Design System v2 — warm monochrome + cool indigo accent.
+ * Styled to feel comparable to Bloomberg / Financial Times.
  */
 
-/** Chart color palette — muted, professional, colorblind-safe */
+/** Chart color palette — mapped to CSS custom properties for consistency */
 export const CHART_COLORS = {
-  primary: '#7B8DA0',
+  primary: '#7BA1D0',
   primaryLight: '#6B86FF',
-  green: '#2ECC71',
-  greenLight: '#34D47E',
-  red: '#E5484D',
-  redLight: '#F05A60',
-  amber: '#F0B429',
-  amberLight: '#F5C344',
-  purple: '#8B5CF6',
-  teal: '#14B8A6',
-  pink: '#EC4899',
-  orange: '#F97316',
-  blue: '#3498DB',
-  muted: '#63657A',
-  grid: '#2A2D42',
-  text: '#F0EFEA',
-  textSecondary: '#C8C9D4',
-  textMuted: '#63657A',
-  tooltipBg: '#1C1E2E',
-  tooltipBorder: '#2A2D42',
+  green: '#3DA06D',
+  greenLight: '#4AB07D',
+  red: '#CC5A5A',
+  redLight: '#D86A6A',
+  amber: '#B08C40',
+  amberLight: '#C4A050',
+  purple: '#8B7EC8',
+  teal: '#3A9B9B',
+  pink: '#C87EA0',
+  orange: '#C88A50',
+  blue: '#5A8CC8',
+  muted: '#6A6C72',
+  grid: '#2E2E32',
+  text: '#EEEEF2',
+  textSecondary: '#B0B2B8',
+  textMuted: '#6A6C72',
+  tooltipBg: '#1B1B1E',
+  tooltipBorder: '#2E2E32',
 };
 
 /** Ordered series colors for multi-line charts */
@@ -37,15 +36,15 @@ export const SERIES_COLORS = [
   CHART_COLORS.red,
   CHART_COLORS.purple,
   CHART_COLORS.teal,
-  CHART_COLORS.pink,
+  CHART_COLORS.blue,
   CHART_COLORS.orange,
 ];
 
-/** Base chart grid style — subtle dashed lines */
+/** Base chart grid style — subtle solid lines */
 export const chartGrid = {
   stroke: CHART_COLORS.grid,
-  strokeDasharray: '3 3',
-  strokeOpacity: 0.5,
+  strokeDasharray: '2 3',
+  strokeOpacity: 0.4,
 };
 
 /** X/Y axis tick style — compact mono */
@@ -60,24 +59,24 @@ export const tooltipStyle = {
   contentStyle: {
     background: CHART_COLORS.tooltipBg,
     border: `1px solid ${CHART_COLORS.tooltipBorder}`,
-    borderRadius: 6,
+    borderRadius: 4,
     fontSize: 12,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-    padding: '10px 14px',
+    boxShadow: 'none',
+    padding: '8px 12px',
   },
   labelStyle: {
     color: CHART_COLORS.text,
     fontWeight: 600,
     fontSize: 12,
     fontFamily: 'IBM Plex Sans, sans-serif',
-    marginBottom: 4,
+    marginBottom: 3,
     letterSpacing: '0.01em',
   },
   itemStyle: {
     color: CHART_COLORS.textSecondary,
     fontSize: 11,
     fontFamily: 'IBM Plex Mono, monospace',
-    padding: '2px 0',
+    padding: '1px 0',
   },
 };
 
@@ -85,7 +84,8 @@ export const tooltipStyle = {
 export function fmtINR(v: number): string {
   if (v >= 1e7) return '₹' + (v / 1e7).toFixed(1) + 'Cr';
   if (v >= 1e5) return '₹' + (v / 1e5).toFixed(1) + 'L';
-  return '₹' + v.toLocaleString('en-IN');
+  if (v >= 1000) return '₹' + (v / 1000).toFixed(1) + 'K';
+  return '₹' + v.toFixed(0);
 }
 
 /** Format a percentage */

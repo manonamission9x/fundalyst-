@@ -27,7 +27,6 @@ import {
 import { useGlobalImportFill, extractRatiosInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
 import type { RatioInputs, RatioResult } from '@/types/financial';
 
-// ── Essential fields only ──
 const fields = [
   { k: 'revenue' as const, l: 'Revenue' },
   { k: 'netProfit' as const, l: 'Net profit' },
@@ -39,7 +38,6 @@ const fields = [
 
 const keys = fields.map((f) => f.k);
 
-// ── Unlocked ratios (available with just 6 fields) ──
 const unlockedFormulas: Record<string, string> = {
   'Net Profit Margin': 'Net Profit ÷ Revenue',
   'ROE': 'Net Profit ÷ Total Equity',
@@ -48,7 +46,6 @@ const unlockedFormulas: Record<string, string> = {
   'Asset Turnover': 'Revenue ÷ Total Assets',
 };
 
-// ── Locked ratios (need more data) ──
 const lockedRatios = [
   { label: 'Current Ratio', formula: 'Current Assets ÷ Current Liabilities', hint: 'Add current assets & liabilities' },
   { label: 'Quick Ratio', formula: '(Current Assets − Inventory) ÷ Current Liabilities', hint: 'Add current assets, inventory & liabilities' },
@@ -132,7 +129,6 @@ export default function RatiosPage() {
     extractRatiosInputs
   );
 
-  // ── Pre-fill from canonical model when available ──
   const ratiosActiveDataset = useActiveDataset();
   useEffect(() => {
     if (!ratiosActiveDataset || ratiosActiveDataset.facts.length < 3) return;
@@ -168,10 +164,6 @@ export default function RatiosPage() {
   function analyze() {
     setRes(computeRatios(data));
     showToast('Ratios calculated');
-    setTimeout(() => {
-      const el = document.querySelector('[class*="SectionTitle"]');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 200);
   }
 
   function handleClear() { clear(); }
@@ -193,7 +185,6 @@ export default function RatiosPage() {
         hint="CSV: Revenue, Net Profit, EBIT, Total Assets, Total Equity, Total Debt"
       />
 
-      {/* ── Essential inputs ── */}
       <Card label="Required (6 fields)">
         <FieldGrid>
           {fields.map((f) => (
@@ -205,7 +196,7 @@ export default function RatiosPage() {
             />
           ))}
         </FieldGrid>
-        <div style={{ padding: '0 20px 10px', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+        <div className="px-4 pb-3 text-mono text-xs text-muted">
           These 6 fields unlock: Net Profit Margin · ROE · Debt/Equity · Debt/Assets · Asset Turnover
         </div>
         <Toolbar
@@ -216,11 +207,10 @@ export default function RatiosPage() {
         />
       </Card>
 
-      {/* ── Results ── */}
       {grouped.map(({ section, ratios }) => (
-        <div key={section} style={{ marginTop: '2rem' }}>
+        <div key={section} className="mt-6">
           <SectionTitle>{section}</SectionTitle>
-          <Card style={{ marginTop: '0.75rem' }}>
+          <Card className="mt-3">
             <MetricGrid
               metrics={ratios.map((r) => ({
                 label: r.label,
@@ -229,7 +219,7 @@ export default function RatiosPage() {
               }))}
             />
           </Card>
-          <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div className="flex flex-col gap-2 mt-3">
             {ratios.map((r, i) => {
               const insight = insightFor(r);
               return (
@@ -242,7 +232,7 @@ export default function RatiosPage() {
               );
             })}
           </div>
-          <div style={{ marginTop: '0.5rem', paddingLeft: '0.25rem' }}>
+          <div className="mt-2 pl-1">
             {ratios.map((r, i) => (
               <FormulaDisclosure
                 key={i}
@@ -254,49 +244,49 @@ export default function RatiosPage() {
         </div>
       ))}
 
-      {/* ── Locked ratio placeholders ── */}
       {res && (
-        <Card label="More ratios (add data to unlock)" style={{ marginTop: '1.5rem' }}>
-          <div className="card-body">
-            {lockedRatios.map((l, i) => (
-              <div key={i} style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '8px 0', borderBottom: i < lockedRatios.length - 1 ? '1px solid var(--border-light)' : 'none',
-                fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)',
-              }}>
-                <span>{l.label}: <span style={{ color: 'var(--text-tertiary)' }}>{l.formula}</span></span>
-                <span style={{ fontSize: 10, color: 'var(--border-strong)' }}>{l.hint}</span>
-              </div>
-            ))}
+        <>
+          <Card label="More ratios (add data to unlock)" className="mt-4">
+            <div className="card-body">
+              {lockedRatios.map((l, i) => (
+                <div
+                  key={i}
+                  className="flex justify-between items-center py-2"
+                  style={{ borderBottom: i < lockedRatios.length - 1 ? '1px solid var(--border-light)' : 'none' }}
+                >
+                  <span className="text-mono text-xs text-muted">
+                    {l.label}: <span className="text-tertiary">{l.formula}</span>
+                  </span>
+                  <span className="text-2xs text-muted" style={{ color: 'var(--border-strong)' }}>
+                    {l.hint}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <div className="flex justify-center mt-4">
+            <button className="btn-secondary btn-sm" onClick={() =>
+              downloadCSV('ratios.csv', [
+                ['Section', 'Metric', 'Value'],
+                ...res.map((r) => [r.section, r.label, r.value]),
+              ])
+            }>Download CSV</button>
           </div>
-        </Card>
-      )}
 
-      {/* ── Download ── */}
-      {res && (
-        <div className="mt-6 text-center">
-          <button className="btn btn-secondary" onClick={() =>
-            downloadCSV('ratios.csv', [
-              ['Section', 'Metric', 'Value'],
-              ...res.map((r) => [r.section, r.label, r.value]),
-            ])
-          }>Download CSV</button>
-        </div>
-      )}
-
-      {res && (
-        <div className="mt-6">
+          <div className="mt-4">
             <NextLinks links={[
-            { label: 'Cash efficiency', href: '/tools/wc' },
-            { label: 'Estimate value', href: '/tools/dcf' },
-          ]} />
-          <CalcTimestamp />
-          <div className="flex gap-2 flex-wrap mt-2">
-            <TrustBadge label="Ratio Analysis" variant="source" />
-            <TrustBadge label="₹ Indian Market" />
+              { label: 'Cash efficiency', href: '/tools/wc' },
+              { label: 'Estimate value', href: '/tools/dcf' },
+            ]} />
+            <CalcTimestamp />
+            <div className="flex gap-2 flex-wrap mt-2">
+              <TrustBadge label="Ratio Analysis" variant="source" />
+              <TrustBadge label="₹ Indian Market" />
+            </div>
+            <Disclaimer />
           </div>
-          <Disclaimer />
-        </div>
+        </>
       )}
 
       {!res && (
