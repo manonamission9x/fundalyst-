@@ -100,9 +100,11 @@ export default function FilingPage() {
     }
   }, [activeDataset]);
 
-  // ── Auto-demo compare ──
+  // ── Auto-demo compare — only if there are actual values, not empty rows ──
   useEffect(() => {
-    if (autoDemoRef.current && sheetRows.length >= 3 && !showResults) {
+    if (autoDemoRef.current && !showResults && sheetRows.length >= 3) {
+      const hasValues = sheetRows.some(r => r.values.some(v => v.trim()));
+      if (!hasValues) return;
       const timer = setTimeout(() => runCompare(sheetRows, sheetPeriods), 600);
       return () => clearTimeout(timer);
     }
@@ -298,9 +300,9 @@ export default function FilingPage() {
       <Card>
         <div className="card-body p-2">
           <SpreadsheetInput
+            key={clearVersion}
             initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : ['Q1', 'Q2', 'Q3', 'Q4']}
             initialData={sheetRows.length > 0 ? sheetRows : undefined}
-            resetKey={clearVersion}
             onDataChange={(rows, periods) => {
               setSheetRows(rows);
               setSheetPeriods(periods);
