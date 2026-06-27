@@ -1,5 +1,16 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { PageHeader, Card, Disclaimer } from '@/components/ui';
+
+export const metadata: Metadata = {
+  title: 'About — Fundalyst',
+  description:
+    'A browser-based financial analysis tool for Indian markets. DCF valuation, ratio analysis, filing comparison, peer benchmarking — all client-side, no server uploads.',
+  openGraph: {
+    title: 'Fundalyst — Financial Analysis for Indian Markets',
+    description: 'Upload financial statements, compare periods, analyze ratios, build DCF valuations — all in your browser, no server uploads.',
+  },
+};
 
 const aboutCards = [
   {
@@ -87,9 +98,9 @@ export default function AboutPage() {
       </div>
 
       {/* Methodology */}
-      <Card label="Methodology" style={{ marginTop: '1.5rem' }}>
-        <div style={{ padding: '14px 20px', fontSize: 11, lineHeight: 1.7, color: 'var(--text-tertiary)' }}>
-          <ul style={{ margin: 0, paddingLeft: 16 }}>
+      <Card label="Methodology" className="mt-4">
+        <div className="card-body text-sm text-tertiary leading-normal">
+          <ul className="about-methodology-list">
             <li><strong>DCF Valuation:</strong> Two-stage model. Stage 1 projects FCF for user-defined years at the user-set growth rate. Stage 2 uses Gordon Growth Model for terminal value. Discount rate = WACC.</li>
             <li><strong>Working Capital:</strong> DSO = (Receivables / Revenue) × 365. DIO = (Inventory / COGS) × 365. DPO = (Payables / COGS) × 365. CCC = DSO + DIO − DPO.</li>
             <li><strong>Financial Ratios:</strong> Current Ratio, Quick Ratio, Debt/Equity, Debt/Assets, Interest Coverage, Gross Margin, Net Profit Margin, ROE, Asset Turnover.</li>
@@ -101,9 +112,9 @@ export default function AboutPage() {
       </Card>
 
       {/* Contact & Support */}
-      <Card label="Support" style={{ marginTop: '1rem' }}>
-        <div style={{ padding: '14px 20px', fontSize: 11, lineHeight: 1.7, color: 'var(--text-tertiary)' }}>
-          <p style={{ margin: 0 }}>
+      <Card label="Support" className="mt-3">
+        <div className="card-body text-sm text-tertiary leading-normal">
+          <p className="p-0">
             Fundalyst is an open-source, client-side-only financial analysis tool.
             No user data is collected, stored, or transmitted.
             If you encounter issues, clear your browser data and reload — all state is in localStorage.
@@ -113,7 +124,7 @@ export default function AboutPage() {
       </Card>
 
       {/* CTA */}
-      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+      <div className="mt-6 text-center">
         <Link href="/import" className="btn-primary" style={{ padding: '11px 24px', display: 'inline-flex', textDecoration: 'none', fontSize: 13 }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M7 2v10M2 7l5-5 5 5" /><path d="M2 12v1h10v-1" />
