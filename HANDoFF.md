@@ -392,4 +392,4 @@ Fundalyst is a **production-ready financial analysis tool** for Indian retail in
 
 **Stage:** Ready for public launch.
 **Target:** Indispensable research tool for Indian retail value investors.
-**North star:** "Bloomberg Terminal for Indian retail investors — in the browser, no server, no cost."
+**North star:** "Bloomberg Terminal for Indian retail investors — in the browser, no server, at cost."

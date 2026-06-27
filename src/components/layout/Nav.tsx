@@ -61,7 +61,7 @@ export default function Nav() {
                 aria-selected={isActive(item.href)}
               >
                 {item.icon}
-                {item.label}
+                <span>{item.label}</span>
               </Link>
             </React.Fragment>
           );
