@@ -106,10 +106,10 @@ body::before {
 
 /* ── Nav ── */
 .nav { position: sticky; top: 0; z-index: 100; background: rgba(13,13,15,0.98); border-bottom: 1px solid var(--border); }
-.nav-inner { max-width: var(--content-max); margin: 0 auto; display: flex; align-items: stretch; padding: 0 var(--space-5); gap: 0; min-height: 0; }
-.nav-brand { font-size: 13px; font-weight: 500; color: var(--text-secondary); padding: 9px 0; margin-right: var(--space-4); flex-shrink: 0; display: flex; align-items: center; gap: 7px; text-decoration: none; }
+.nav-inner { max-width: var(--content-max); margin: 0 auto; display: flex; align-items: center; padding: 0 var(--space-5); gap: 0; }
+.nav-brand { font-size: 13px; font-weight: 500; color: var(--text-secondary); padding: 8px 0; margin-right: var(--space-4); flex-shrink: 0; display: flex; align-items: center; gap: 7px; text-decoration: none; }
 .nav-brand:hover { color: var(--text); }
-.nav-tab { font-size: 13px; font-weight: 500; color: var(--text-tertiary); padding: 10px 14px; cursor: pointer; border: none; background: none; transition: color var(--transition), background var(--transition-fast); white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; position: relative; min-height: 44px; }
+.nav-tab { font-size: 13px; font-weight: 500; color: var(--text-tertiary); padding: 8px 12px; cursor: pointer; border: none; background: none; transition: color var(--transition), background var(--transition-fast); white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; position: relative; }
 .nav-tab svg { flex-shrink: 0; }
 .nav-tab:hover { color: var(--text-secondary); background: var(--primary-subtle); }
 .nav-tab.active { color: var(--primary); font-weight: 600; background: rgba(79,110,247,0.04); }
@@ -123,7 +123,7 @@ body::before {
   background: var(--primary);
   border-radius: 1px 1px 0 0;
 }
-.nav-cta { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 5px 10px; min-height: 44px; cursor: pointer; text-decoration: none; transition: all var(--transition); background: transparent; }
+.nav-cta { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 4px 9px; cursor: pointer; text-decoration: none; transition: all var(--transition); background: transparent; }
 .nav-cta:hover { border-color: var(--border-strong); color: var(--text-secondary); }
 .nav-cta svg { width: 12px; height: 12px; flex-shrink: 0; }
 .nav-sep { width: 1px; height: 14px; background: var(--border); flex-shrink: 0; margin: 0 4px; align-self: center; }
@@ -769,15 +769,15 @@ details[open] .details-summary::before {
   /* ── Nav: minimal footprint ── */
   .nav-inner { padding: 0 var(--space-1); overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .nav-tab { padding: 6px 5px; font-size: 11px; gap: 2px; }
-  .nav-tab svg { width: 12px; height: 12px; flex-shrink: 0; }
+  .nav-tab svg { width: 12px; height: 12px; }
   .nav-tab span:not(.nav-brand) { display: none; }
   .nav-tab.active span { display: inline; }
   /* Hide brand text, show only logo */
-  .nav-brand { font-size: 0; gap: 4px; margin-right: var(--space-1); flex-shrink: 0; min-height: unset; }
+  .nav-brand { font-size: 0; gap: 4px; margin-right: var(--space-1); }
   .nav-brand span { display: none; }
-  .nav-brand svg { width: 12px; height: 12px; flex-shrink: 0; }
+  .nav-brand svg { width: 12px; height: 12px; }
   /* Import button: icon only */
-  .nav-cta { font-size: 0; padding: 3px 5px; gap: 0; min-height: unset; min-width: unset; }
+  .nav-cta { font-size: 0; padding: 3px 5px; gap: 0; }
   .nav-cta span { display: none; }
   .nav-cta svg { width: 11px; height: 11px; }
   /* Hide secondary elements */
@@ -933,6 +933,10 @@ details[open] .details-summary::before {
 @media print { .nav, #toast, .skip-link { display: none; } body { background: #fff; color: #000; } .card { border: 1px solid #ccc; background: #fff; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
 @media (pointer: coarse) {
+  .nav-tab, .nav-cta, button, .btn, .home-card, .upload-label, .import-dropzone,
+  .workspace-step, .workspace-cta, .workspace-quick-link, .empty-state-action,
+  .nav-clear, .spreadsheet-add-btn, .spreadsheet-remove-btn, .details-summary { min-height: 44px; min-width: 44px; }
+  .nav-tab { padding: 10px 12px; }
   .num-input, .period-label-input, .spreadsheet-header-input, .spreadsheet-cell { min-height: 44px; font-size: 16px; }
 }
 
@@ -976,9 +980,6 @@ input:focus, textarea:focus, select:focus, [contenteditable]:focus,
 }
 @media (min-width: 1024px) {
   .card-body { padding: var(--space-3) var(--space-4); }
-  .nav-tab { min-height: unset; }
-  button, .btn { min-height: unset; }
-  .nav-cta { min-height: unset; }
 }
 
 /* ── Remove hover effects on touch devices (desktop-only hover) ── */
