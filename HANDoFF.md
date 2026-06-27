@@ -1,6 +1,6 @@
 # FUNDALYST — PRODUCTION HANDOFF
 
-**Last updated:** August 2026
+**Last updated:** June 2026
 **Framework:** Next.js 16 + TypeScript + Zustand + Recharts + Vitest
 **Fonts:** Inter (UI) · IBM Plex Mono (data)
 **Build:** `npm run build` → zero errors, 14 static routes
@@ -54,7 +54,7 @@ src/
 ├── app/                              # App Router pages
 │   ├── layout.tsx                    # Root layout (Inter + IBM Plex Mono via next/font)
 │   ├── loading.tsx                   # Global loading skeleton
-│   ├── globals.css                   # Design System v2 (~820 lines)
+│   ├── globals.css                   # Design System v2 (~1060 lines)
 │   ├── page.tsx                      # Home: tool grid + Quick Company Check
 │   ├── about/page.tsx                # Static about page (Server Component)
 │   ├── import/page.tsx               # Smart Import: CSV/XLSX/PDF/OCR/Screenshot
@@ -285,12 +285,16 @@ All tools pre-fill from model automatically
 
 ## MOBILE
 
-- **Nav:** Icons-only at <640px (labels hidden, active tab shows label)
-- **Spreadsheet:** 80px metric column, 55px period columns on <420px phones
-- **Touch targets:** 44px min for all interactive elements (pointer:coarse)
-- **Cards:** Padding reduced 50% at 640px, 75% at 420px
-- **Tables:** Horizontal scroll on overflow, 9px font at 420px
-- **Metrics:** Single column at 640px, 15px values at 420px
+- **Nav:** Icons-only at <640px (labels hidden, active tab shows label). Scroll-padding for active tab visibility. `env(safe-area-inset-bottom)` on page and sticky-actions.
+- **Spreadsheet:** 80px metric column, 55px period columns at <420px phones. Minimum 11px font at 420px. Remove row buttons always visible on touch devices.
+- **Metric Browser:** Class-based popover (replaced 178 inline styles). Sticky category headers, 50vh max-height, 36px+ touch targets. Categories: Income Statement, Balance Sheet, Cash Flow, Ratios.
+- **Touch targets:** 44px min for all interactive elements (pointer:coarse). Remove buttons on spreadsheet: always visible at 0.6 opacity on touch.
+- **Cards:** Padding 12px at 420px (was 8px). Card headers/actions also increased.
+- **Tables:** Horizontal scroll on overflow, 9px font at 420px. First column truncated with ellipsis on 420px.
+- **Metrics:** Single column at 640px, 15px values at 420px.
+- **Import page:** Format labels wrap on mobile. PDF validation messages compact. PDF progress bar capped at 160px.
+- **DCF sensitivity table:** Compact 8px font at 420px.
+- **Landscape mobile:** Tables and spreadsheet auto-scroll with momentum touch.
 
 ---
 
@@ -298,7 +302,7 @@ All tools pre-fill from model automatically
 
 | Issue | Severity | Notes |
 |---|---|---|
-| ~178 inline `style={{}}` | Low | Most are dynamic (bar widths, spinner animations) — not migratable to classes |
+| ~90 inline `style={{}}` | Low | Most are dynamic (bar widths, spinner animations, chart dimensions) — not migratable to classes |
 | 17 `: any` type annotations | Low | All in pdfjs/tesseract/recharts dynamic imports |
 | No component/E2E tests | Medium | Manual testing only. Add Playwright/Cypress before monetization |
 | No ESLint CI | Low | Would catch unused imports |
@@ -326,11 +330,16 @@ Before monetizing, these need to be built:
 ## CRITICAL PITFALLS
 
 1. **Never use `read_file()` + `write_file()` in execute_code** — read_file returns line-number-prefixed content. Use `patch()` or `sed`.
-2. **DCF growth must be < WACC** — defaults 8% < 10%. If changed, validation blocks auto-execute.
+2. **DCF growth must be < WACC** — defaults 8% < 10%. Validation now uses `>=` (was `>`) so terminal == WACC is correctly caught before computeDCF runs.
 3. **DCF store has no persist** — Ephemeral per session. Don't add persist without partialize filtering.
 4. **Nav logo + favicon use #4F6EF7** — If accent color changes, update both `Nav.tsx` and `layout.tsx`.
 5. **Spreadsheet cell refs** — `contentEditable` cells use `window.getSelection()` for cursor position (not DOM `selectionStart`).
 6. **getPeriods preserves insertion order** — Periods appear in the order they were first encountered in the facts array, not sorted alphabetically.
+7. **canonical-helpers sourceRow/sourceColumn** — sourceRow now correctly tracks the row index (was erroneously set to period index). Keep this pattern if adding new converters.
+8. **downloadCSV now properly quotes cells** — Values containing commas, quotes, or newlines are wrapped in `"..."` with internal `"` → `""`. Do not revert to plain `.join(',')`.
+9. **Metric browser uses CSS classes, not inline styles** — The popover migrated from ~178 inline styles to `.metric-browser-*` classes. Any new popover/modal must follow this pattern.
+10. **SpreadsheetInput has no IME/composition handling** — Chinese/Japanese/Korean IME input may flicker suggestions. No CJK support currently.
+11. **ContentEditable value cells lack inputMode on mobile** — No numeric keyboard on mobile for financial figure entry. Fix with `<input inputMode="decimal">` if mobile data entry volume grows.
 
 ---
 
