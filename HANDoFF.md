@@ -1,336 +1,296 @@
-# FUNDALYST-NEXT — COMPLETE AI-TO-AI HANDOFF
+# FUNDALYST — PRODUCTION HANDOFF
 
-Last updated: July 2026 (v8 — Inter + Restrained Accent, full mobile optimization)
-Total source files: ~55
-Total lines: ~15,200
-Framework: Next.js 16 + TypeScript + Zustand + Recharts + Vitest
-Font: Inter (UI) + IBM Plex Mono (data)
-Project location: `C:\Users\kingo\Desktop\fundalyst-next`
+**Last updated:** August 2026
+**Framework:** Next.js 16 + TypeScript + Zustand + Recharts + Vitest
+**Fonts:** Inter (UI) · IBM Plex Mono (data)
+**Build:** `npm run build` → zero errors, 14 static routes
+**Tests:** 29 passing (Vitest, ~300ms)
+**Location:** `C:\Users\kingo\Desktop\fundalyst-next`
+**GitHub:** `github.com/manonamission9x/fundalyst-`
+**Deploy:** GitHub → Vercel (manual upload)
 
 ---
 
-## PROJECT OVERVIEW
+## PRODUCT IDENTITY
 
-Fundalyst is a browser-based financial analysis tool for Indian retail and value investors. Users upload/enter financial statement data, compare periods, compute ratios, run DCF valuations, benchmark peers, and build investment theses. Entirely client-side — no server uploads. Indian market focus (₹, lakhs/crores).
+Fundalyst is a browser-based financial analysis tool for Indian retail and value investors. Entirely client-side — no accounts, no server uploads, no data collection.
 
-**Current status:** Production-ready. All routes compile, production build serves with zero errors. Full import pipeline (CSV, XLSX, PDF, screenshot OCR). DCF engine with Gordon Growth + sensitivity heatmap. Research Workspace with 7-step sidebar. Investment Thesis with save/load. Quick Company Check. **29 unit tests** covering all financial calculations.
+**Monetization strategy:** The architecture is designed to support a freemium model. The client-side computation engine is the free tier. Paid tiers add: PDF import (server-side OCR), XBRL import (SEC/BSE/NSE filing parsing), data persistence across devices (sync), API access to company datasets, and team/workspace sharing.
 
-**Design direction:** Dark institutional theme — Bloomberg seriousness with Inter font precision. 95% neutral grayscale with a restrained muted slate accent (#7B8DA0) used only for wayfinding (active nav, hover states, links). No brand color, no filled buttons, no decorative elements. Color reserved for financial data (green/red).
+**North star:** "Bloomberg Terminal for Indian retail investors — in the browser, no accounts, instant."
 
-**User:** Surya. Fundalyst founder. GitHub: manonamission9x. Deploys via GitHub → Vercel (manual file upload). Values: accuracy > trust > design.
+**User:** Surya (Hyderabad). Fundalyst founder. Deploys via GitHub → Vercel. Values: accuracy > trust > design > UX. Impatient with incomplete work.
 
-**GitHub repo:** `https://github.com/manonamission9x/fundalyst-`
+---
 
-**Critical lesson:** Never use `read_file()` + `write_file()` in `execute_code` — `read_file` returns content with line-number prefixes (`1|content`) that corrupt the file. Always use `patch()` or terminal `sed` for modifications.
+## ARCHITECTURE
+
+```
+Input (any format)
+    ↓
+Import Pipeline (CSV/XLSX/PDF/OCR/Screenshot/Paste)
+    ↓
+Canonical FundalystDataset (global-data-store)
+    ↓
+Financial Model Selectors (financial-model-selectors.ts)
+    ├── Filing comparison
+    ├── DCF pre-fill (FCF, shares, debt)
+    ├── Ratios (IS + BS)
+    ├── Working Capital
+    ├── Trends (multi-period)
+    └── Peer Comparison
+```
+
+**Key principle:** Tools read from the canonical model. They do not store their own input data. The only per-tool state is user assumptions (e.g. DCF growth rate, WACC).
+
+**Monetization hook:** The canonical model is the unit of value. A paid tier adds server-side persistence, allowing users to save/load companies across sessions and devices.
 
 ---
 
 ## FILE MAP
 
 ```
-fundalyst-next/
-├── package.json
-├── tsconfig.json
-├── next.config.ts
-├── vitest.config.ts
-├── HANDoFF.md
-└── src/
-    ├── app/
-    │   ├── layout.tsx            # Root layout (Inter + IBM Plex Mono, Nav, Toast, ErrorBoundary, footer)
-    │   ├── loading.tsx           # Global loading skeleton
-    │   ├── page.tsx              # Home page + Quick Company Check (6 fields, instant verdict)
-    │   ├── globals.css           # Design system v8 (~450 lines, all CSS classes, zero inline)
-    │   ├── about/page.tsx
-    │   ├── import/page.tsx       # Smart Import + PDF viewer + sample data + paste support
-    │   ├── workspace/page.tsx    # Research Workspace (7-step sidebar, SVG icons, Investment Thesis)
-    │   ├── research/
-    │   │   ├── page.tsx          # Redirect → /research/filing
-    │   │   ├── filing/page.tsx   # Filing comparison + clickable metric chips + CSV export
-    │   │   ├── trends/page.tsx   # Multi-line Recharts chart
-    │   │   └── growth/page.tsx   # YoY growth rates
-    │   └── tools/
-    │       ├── page.tsx          # Redirect → /tools/wc
-    │       ├── dcf/page.tsx      # DCF + sensitivity heatmap + chart
-    │       ├── wc/page.tsx       # Cash Efficiency + InsightCards + WarningCards
-    │       ├── ratios/page.tsx   # 6 inputs → 5 key ratios + locked placeholders
-    │       └── peer/page.tsx     # Multi-company comparison + sample data + inline bars
-    ├── components/
-    │   ├── import/PdfViewer.tsx  # Embedded PDF viewer (pdfjs-dist canvas rendering)
-    │   ├── layout/Nav.tsx        # 11-tab nav with SVG icons + category separators
-    │   ├── shared/
-    │   │   ├── ErrorBoundary.tsx
-    │   │   └── ToastProvider.tsx
-    │   ├── tools/
-    │   │   ├── dcf/DCFChart.tsx
-    │   │   └── trends/TrendsChart.tsx
-    │   └── ui/index.tsx          # 30+ shared components + 30 custom SVG icon components
-    ├── lib/
-    │   ├── calculations.ts       # Pure financial functions (typed, 29 tests)
-    │   ├── calculations.test.ts
-    │   ├── chart-theme.ts        # Chart colors (muted slate primary)
-    │   ├── helpers.ts
-    │   └── importer/
-    │       ├── types.ts          # CanonicalFact, FundalystDataset + all types
-    │       ├── metric-aliases.ts # 250+ aliases for 32 canonical metrics
-    │       ├── normalizer.ts     # Indian commas, Cr/L/Bn, bracket negatives
-    │       ├── detector.ts
-    │       ├── parser.ts         # CSV/XLSX/PDF/Image → rows → facts → dataset
-    │       ├── csv-detector.ts
-    │       ├── confidence.ts
-    │       ├── pdf-validator.ts
-    │       ├── tool-validation.ts # getLatestValue (sorted), accounting checks
-    │       ├── import-hooks.ts   # useGlobalImportFill + all extract functions
-    │       ├── reference-formats.ts
-    │       ├── xbrl-parser.ts
-    │       ├── ocr.ts            # OCR + PDF text extraction + scanned PDF
-    │       ├── pdf-importer.ts
-    │       └── screenshot/       # preprocessor (1200px), table-finder, value-extractor
-    ├── store/
-    │   ├── index.ts              # 7 tool stores (6 persist + 1 ephemeral) + analysis store
-    │   ├── global-data-store.ts  # Central multi-dataset store (auto-clears samples on import)
-    │   └── importer-store.ts
-    └── types/
-        └── financial.ts
+src/
+├── app/                              # App Router pages
+│   ├── layout.tsx                    # Root layout (Inter + IBM Plex Mono via next/font)
+│   ├── loading.tsx                   # Global loading skeleton
+│   ├── globals.css                   # Design System v2 (~820 lines)
+│   ├── page.tsx                      # Home: tool grid + Quick Company Check
+│   ├── about/page.tsx                # Static about page (Server Component)
+│   ├── import/page.tsx               # Smart Import: CSV/XLSX/PDF/OCR/Screenshot
+│   ├── workspace/page.tsx            # Research Workspace (7-step sidebar)
+│   ├── research/
+│   │   ├── page.tsx                  # Redirect → /research/filing
+│   │   ├── filing/page.tsx           # Spreadsheet input → insight-first comparison
+│   │   ├── trends/page.tsx           # Multi-line Recharts + auto-populate from model
+│   │   └── growth/page.tsx           # YoY growth rates
+│   └── tools/
+│       ├── page.tsx                  # Redirect → /tools/wc
+│       ├── dcf/page.tsx              # DCF + sensitivity heatmap + chart
+│       ├── wc/page.tsx               # Cash Efficiency
+│       ├── ratios/page.tsx           # Financial Ratios
+│       └── peer/page.tsx             # Multi-company comparison
+├── components/
+│   ├── input/
+│   │   ├── SpreadsheetInput.tsx      # Keyboard-first data grid (Tab/Enter/arrows, paste)
+│   │   ├── metric-library.ts         # 80+ categorized financial metrics
+│   │   └── index.ts
+│   ├── layout/Nav.tsx                # 11-tab nav with SVG icons
+│   ├── import/PdfViewer.tsx          # PDF.js canvas renderer
+│   ├── shared/
+│   │   ├── ErrorBoundary.tsx
+│   │   └── ToastProvider.tsx
+│   ├── tools/
+│   │   ├── dcf/DCFChart.tsx
+│   │   └── trends/TrendsChart.tsx
+│   └── ui/index.tsx                  # 30+ components + 30 SVG icons
+├── lib/
+│   ├── calculations.ts               # Pure financial functions (29 tests)
+│   ├── calculations.test.ts
+│   ├── chart-theme.ts
+│   ├── helpers.ts
+│   └── importer/                     # Full import pipeline
+│       ├── types.ts                  # CanonicalFact, FundalystDataset, StatementType
+│       ├── metric-aliases.ts         # 250+ aliases → 32 canonical metrics
+│       ├── normalizer.ts             # Indian commas, Cr/L/Bn, bracket negatives
+│       ├── detector.ts / parser.ts / csv-detector.ts / confidence.ts
+│       ├── pdf-validator.ts / ocr.ts / pdf-importer.ts / xbrl-parser.ts
+│       ├── import-hooks.ts           # useGlobalImportFill
+│       ├── reference-formats.ts / tool-validation.ts
+│       └── screenshot/               # preprocessor, table-finder, value-extractor
+├── store/
+│   ├── index.ts                      # Per-tool Zustand stores (assumptions only)
+│   ├── global-data-store.ts          # Central FundalystDataset store (persisted)
+│   ├── financial-model-selectors.ts  # Tools read from canonical model via this layer
+│   ├── canonical-helpers.ts          # spreadsheetToDataset, writeSpreadsheetToModel
+│   └── importer-store.ts
+└── types/
+    └── financial.ts                  # Calculation-specific types
 ```
 
 ---
 
 ## ROUTES
 
-| Route | Component | Auto-demo |
-|---|---|---|
-| `/` | HomePage — tools grid + Quick Company Check | — |
-| `/import` | ImportPage — Smart Import + PDF viewer + paste support | — |
-| `/workspace` | WorkspacePage — 7-step sidebar + Investment Thesis | — |
-| `/research/filing` | FilingPage — period comparison + clickable chips | ✅ Auto-executes |
-| `/research/trends` | TrendsPage — multi-period line charts | — |
-| `/research/growth` | GrowthPage — YoY growth rates | — |
-| `/tools/dcf` | DCFPage — DCF + sensitivity heatmap + chart | ✅ Auto-executes |
-| `/tools/wc` | WCPage — Cash Efficiency | — |
-| `/tools/ratios` | RatiosPage — 6 inputs → 5 ratios | — |
-| `/tools/peer` | PeerPage — multi-company comparison | — |
-| `/about` | AboutPage — methodology + support | — |
+| Route | Component | Auto-data | Description |
+|---|---|---|---|
+| `/` | HomePage | — | Tool grid + Quick Company Check |
+| `/import` | ImportPage | — | CSV/XLSX/PDF/OCR upload pipeline |
+| `/workspace` | WorkspacePage | — | 7-step research workflow |
+| `/research/filing` | FilingPage | ✅ Spreadsheet → model → compare | Spreadsheet input + insight-first output |
+| `/research/trends` | TrendsPage | ✅ Reads from canonical model | Multi-period chart |
+| `/research/growth` | GrowthPage | — | YoY growth rates |
+| `/tools/dcf` | DCFPage | ✅ Pre-fills FCF/shares/debt from model | DCF + sensitivity heatmap |
+| `/tools/wc` | WCPage | ✅ Pre-fills from model | Cash Conversion Cycle |
+| `/tools/ratios` | RatiosPage | ✅ Pre-fills from model | 9 financial ratios |
+| `/tools/peer` | PeerPage | — | Multi-company comparison |
+| `/about` | AboutPage | — | Static page (Server Component) |
 
 ---
 
 ## STATE MANAGEMENT
 
-### Per-tool stores (`src/store/index.ts`)
-All use Zustand with `persist` middleware (localStorage), `version: 2`:
-- `useFilingStore`, `useWCStore`, `useRatiosStore`, `usePeerStore`, `useTrendsStore`, `useYoyStore` — persisted
-- **`useDCFStore`** — **NO persist** (ephemeral per session)
-- `useAnalysisStore` — cross-tool transient (NOT persisted)
+### Canonical Model (single source of truth)
+- **`useGlobalDataStore`** (`global-data-store.ts`) — Zustand + persist
+- Holds `FundalystDataset[]` with facts, periods, company metadata
+- All tools read from this via `financial-model-selectors.ts`
+- `writeSpreadsheetToModel()` writes manual entry into the model
+- Import pipeline writes uploads into the model
 
-### DCF Defaults (must satisfy validation)
-- Growth (8%) must be < WACC (10%)
-- Terminal growth must be < WACC
-- If defaults change, ensure growth < discount always
-
-### Global data store (`src/store/global-data-store.ts`)
-- Central Zustand store with `persist` middleware
-- `addDataset` auto-clears `sourceType === 'sample'` datasets when real data is imported
-- Multi-file support via `datasets[]` and `activeDatasetId`
+### Per-tool Stores (assumptions only)
+- `useDCFStore` — growth rate, WACC, terminal growth (user assumptions)
+- `useWCStore`, `useRatiosStore`, `usePeerStore`, `useTrendsStore`, `useYoyStore` — all persisted
+- `useFilingStore` — result cache (diffs, flags)
+- `useAnalysisStore` — ephemeral cross-tool transient data
 
 ### localStorage keys
 `fundalyst-filing`, `fundalyst-wc`, `fundalyst-ratios`, `fundalyst-peer`, `fundalyst-trends`, `fundalyst-yoy`, `fundalyst-importer`, `fundalyst-global-data`, `fundalyst_tab`, `fundalyst_last_tab`, `fundalyst-errors`, `fundalyst-thesis`
 
-**Note:** `fundalyst-dcf` is NOT persisted.
+**Note:** `fundalyst-dcf` is NOT persisted by design (ephemeral per session).
+
+### DCF Validation Constraints
+- Growth (default 8%) must be < WACC (default 10%)
+- Terminal growth must be < WACC
+- WACC must be > 0%
 
 ---
 
-## DESIGN SYSTEM V8 — Dark Institutional (Inter + Restrained Accent)
+## DESIGN SYSTEM V2
 
 ### Color Palette
 ```
---bg: #0D0D0F                    // Near-black, serious
---bg-elevated: #161618           // Card backgrounds
---bg-surface: #1E1E20            // Surface/hover base
---bg-hover: #242426              // Hover state
---bg-active: #2C2C2E             // Active/pressed
---bg-field: #121214              // Input fields
---border: #2C2C2E                // Default borders
---border-light: #222224          // Subtle
---border-strong: #38383A         // Strong
---border-focus: #7B8DA0          // Focus ring
+--bg: #141416               // Warm monochrome (near-black)
+--bg-elevated: #1B1B1E      // Card surfaces
+--bg-surface: #222226        // Input fields, hover base
+--bg-hover: #29292D          // Hover state
+--bg-active: #313135         // Active/pressed
+--bg-field: #18181A          // Input fields
+--border: #2E2E32            // Default borders
+--border-light: #232326      // Subtle borders
+--border-strong: #3A3A3E     // Strong borders
+--border-focus: #4F6EF7      // Focus ring (cool indigo)
 
---text: #EAEAEE                  // Primary (high contrast)
---text-secondary: #B0B2B8        // Secondary labels
---text-tertiary: #8A8C92         // Helper text
---text-muted: #6A6C72            // Captions, metadata
+--text: #EEEEF2              // Primary (high contrast)
+--text-secondary: #B0B2B8    // Secondary labels
+--text-tertiary: #8A8C92     // Helper text
+--text-muted: #6A6C72        // Captions, metadata
 
---primary: #7B8DA0               // Muted slate accent (wayfinding only)
---primary-hover: #8FA0B2
---primary-subtle: rgba(123,141,160,0.06)
+--primary: #4F6EF7           // Cool indigo accent (wayfinding only)
+--primary-hover: #6B86FF
+--primary-subtle: rgba(79,110,247,0.06)
 
---green: #3DA06D                 // Financial data only
+--green: #3DA06D             // Financial data only
 --red: #CC5A5A
 --amber: #B08C40
 ```
 
-### Typography Scale (Inter sans-serif + IBM Plex Mono for data)
+### Design Principles
+- 95% neutral grayscale — color only for financial data (green/red) and wayfinding (indigo)
+- All buttons are ghost style (border-only, no filled backgrounds)
+- Cards: 10px radius, `--shadow-card`, thin borders
+- Tables: compact rows, right-aligned numbers, alternating stripes
+- No decorative elements, no filled buttons, no brand color
+- Static grid background (48px, 1.2% opacity) + noise texture (4%)
+
+### Typography
 ```
---text-2xs: 11px   --text-xs: 12px    --text-sm: 13.5px
---text-base: 15px  --text-lg: 17px    --text-xl: 21px
---text-2xl: 26px   --text-3xl: 34px
+--text-2xs: 11px  --text-xs: 12px   --text-sm: 13.5px
+--text-base: 15px --text-lg: 17px   --text-xl: 21px
+--text-2xl: 26px  --text-3xl: 34px
 ```
 
 ### Spacing (4px grid)
 ```
---space-1: 4px    --space-4: 16px   --space-8: 32px
---space-2: 8px    --space-5: 20px   --space-10: 40px
---space-3: 12px   --space-6: 24px   --space-12: 48px
+--space-1: 4px   --space-4: 16px  --space-8: 32px
+--space-2: 8px   --space-5: 20px  --space-10: 40px
+--space-3: 12px  --space-6: 24px  --space-12: 48px
 ```
 
-### Background — Single static grid + noise texture
-- `body::before`: static 48px grid at 1.2% white opacity
-- `.bg-noise`: fractal noise at 4% opacity for subtle leather/titanium texture
-- **Removed**: gradient mesh, animated curves, grid pulse, parallax script
-
-### Design principles
-- 95% neutral grayscale — color only for financial data (green/red) and wayfinding (slate accent)
-- All buttons are ghost style (border-only, no filled backgrounds)
-- Cards have 8px border-radius, thin borders, no shadows
-- Tables: compact rows (6px 10px), alternating stripes, right-aligned numbers
-- No decorative elements, no filled buttons, no brand color
+### Responsive Breakpoints
+- **1024px:** Home grid 2 cols
+- **820px:** About grid 1 col, field grid 2 cols, metric grid 2 cols
+- **640px:** Main mobile — icon-only nav, 1-col grids, compact cards/padding
+- **420px:** Small phones — minimal padding, 9px table fonts, 15px metric values
+- **Pointer:coarse:** 44px min touch targets for all interactive elements
 
 ---
 
-## KEY FEATURES
+## KEY COMPONENTS
 
-### Smart Import (`/import`)
-- Upload CSV, XLSX, PDF, or paste screenshots
-- Auto-detects periods, currency, company name
-- Metric mapping with confidence scoring (250+ aliases → 32 canonical)
-- Review screen with editable mappings + PDF viewer + image preview
-- Screenshot pipeline: 1200px max dimension (44% faster OCR), grayscale + sharpening
-- Press "Confirm Import" → data flows to all tools via `useGlobalImportFill`
-- Sample data auto-clears on real import (global-data-store logic)
+### SpreadsheetInput (`components/input/SpreadsheetInput.tsx`)
+- Keyboard-first financial data grid
+- Tab/Enter/Arrow navigation, Shift+Tab to go back
+- Paste from Excel/Google Sheets (tab-separated) — auto-detects headers
+- Metric auto-suggest dropdown (80+ metrics)
+- Add/remove rows and columns
+- contentEditable cells for native copy/paste
+- Live data via `onDataChange` callback
 
-### Filing Comparison (`/research/filing`)
-- Two-column period comparison with textarea input
-- **14 clickable metric chips** (Revenue, Net Profit, etc.) — inserts at cursor, focuses textarea
-- Diff table with magnitude bars, risk flags (6 thresholds)
-- Keyboard accessible chips (Enter/Space activate, focus-visible styling)
-- CSV export of comparison results
+### Metric Library (`components/input/metric-library.ts`)
+- 80+ metrics across 4 categories: Income Statement, Balance Sheet, Cash Flow, Ratios
+- Percentage-type flags for margins/ratios
+- Used by SpreadsheetInput for suggestions
 
-### DCF Valuation (`/tools/dcf`)
-- Gordon Growth Model with 5 input sections
-- Plain-English hints throughout
-- Sensitivity heatmap (5×5) with base cell highlighted
-- Animated bar chart (Recharts) + projected cash flows table
-- Ephemeral store (no persist) — resets on session close
+### Financial Model Selectors (`store/financial-model-selectors.ts`)
+Read-only access layer for all tools:
+- `useActiveDataset()` — hook to get current dataset
+- `getMetricValue(dataset, metric, period?)` — highest-confidence value
+- `findMetricFlexibly(dataset, searchTerm, period?)` — alias-aware search
+- `extractFilingData()` / `extractDCFInputsFromModel()` / `extractRatiosFromModel()` / `extractWCFromModel()` / `extractTrendData()`
+- `datasetToSpreadsheetRows()` — canonical model → editable spreadsheet
 
-### Research Workspace (`/workspace`)
-- 7-step sidebar with **SVG icons** (all Unicode icons replaced with 14px SVGs)
-- Overview, Import, Data, Filing, DCF, Ratios, Thesis panels
-- Investment Thesis with save/load/delete, verdict selector, checklist
-
-### Home Page (`/`)
-- **Literal-action hero**: "Upload annual reports. Compare periods. Estimate value."
-- **7 unique SVG icons** for tool cards (each tool has its own icon)
-- Quick Company Check (6 fields, instant ratio calculation)
-- **Removed**: Three Steps section, Trust section, eyebrow badge, privacy claims
-
-### Nav Bar
-- **11 SVG icons** inline before labels (all unique per tab)
-- Active tab: muted slate accent color + bold 600 weight (no colored underline)
-- Right side: dataset badge (hidden if 0 facts) + ghost-style Import/Upload button + Clear
+### UI Components (`components/ui/index.tsx`)
+- **ConfidenceBadge** — 99% (green) / 85% (neutral) / 60% (amber) pill badges
+- **TrustBadge** — Source/method badges (e.g. "DCF - Gordon Growth")
+- **StatRow** — Bloomberg-style compact data row with trend indicator
+- **MetricGrid** — with context/trend props for at-a-glance comprehension
+- **EmptyState** — with action link (WHY → HOW → WHAT)
+- **InsightCard / WarningCard** — Financial insight display
+- **Toolbar / PageHeader / Field / FieldGrid / Card** — Layout primitives
 
 ---
 
-## UI COMPONENT SYSTEM (`src/components/ui/index.tsx`)
+## DATA FLOW
 
-30+ shared components plus 30 custom SVG icon components:
-
-| Component | Description |
-|---|---|
-| `IconFiling`, `IconTrends`, `IconGrowth`, `IconDCF`, etc. | 11 unique tool icons (20×20, 1.5px stroke) |
-| `IconNavFiling`, `IconNavDCF`, etc. | 11 nav icons (14×14, 1.3px stroke) |
-| `IconUpload`, `IconArrowRight`, `IconCheck`, etc. | 10 action icons |
-| `IconInsightPositive`, `IconInsightRisk`, etc. | 4 insight card icons |
-| `PageHeader`, `Card`, `Field`, `FieldGrid`, `Toolbar` | Common layout |
-| `MetricGrid`, `InsightCard`, `WarningCard` | Data display |
-| `EmptyState`, `NextLinks`, `Disclaimer`, `CalcTimestamp` | Utility |
-| `DataQualityBar`, `FormulaDisclosure`, `SectionTitle` | Meta |
-| `UploadBar` | File upload with IconUpload |
-
----
-
-## TESTING
-
+### Manual entry (Filing page)
 ```
-npm test          # → Vitest: 29 tests, ~300ms
-npm run build     # → Next.js build (Turbopack)
+SpreadsheetInput → rows + periods
+    ↓
+writeSpreadsheetToModel() → global-data-store (addDataset)
+    ↓
+Financial Model Selectors → Filing comparison
+    ↓
+Insight-first output: Executive Summary → Key Metrics → Top Changes → Risk Flags → Expandable Table
 ```
 
-| Suite | Tests | Coverage |
-|---|---|---|
-| `computeDCF` | 12 | Full DCF validation, sensitivity, edge cases |
-| `validateDCFInputs` | 5 | Empty fields, growth<WACC, terminal>=WACC |
-| `computeWC` | 3 | DSO, CCC, null handling |
-| `computeRatios` | 3 | All 9 ratios, missing values |
-| `fmtNum` / `fmtINR` | 3 | Indian locale, crores, null |
-| `parseLines` / `computeDiff` / `generateRiskFlags` | 3 | (not tested directly) |
+### Upload (Import page)
+```
+CSV/XLSX/PDF/Screenshot
+    ↓
+detect.ts → parser.ts → normalizer.ts → metric-aliases.ts
+    ↓
+FundalystDataset (global-data-store)
+    ↓
+All tools pre-fill from model automatically
+```
+
+### Trust signals
+- Every canonical fact carries `confidence: 0-1`
+- `ConfidenceBadge` component renders confidence percentage
+- `DataQualityBar` shows source type, periods, metrics count
+- `FormulaDisclosure` shows calculation formulas
+- `CalcTimestamp` shows when calculations were computed
 
 ---
 
-## BUGS FIXED
+## MOBILE
 
-| Bug | Fix |
-|---|---|
-| Filing `dir` threshold 1% — hid changes | Changed to 0.1% |
-| isPct heuristic misclassified growth rates | Regex excludes growth/change/decline |
-| Test precision too loose | Tightened to 1 decimal |
-| Quick Check ROE positive for insolvent | Added equity > 0 guard |
-| WACC=0% breaks Gordon Growth | Validation: WACC must be > 0% |
-| Growth >= WACC flat PVs | Validation: growth < WACC |
-| DCF auto-execute broken (growth=WACC) | Default growth 10% → 8% |
-| No Equity input in Quick Check | Added equity + derivation hint |
-| Label chips not clickable | Added onClick, role, tabIndex, keyboard support |
-| Workspace Unicode icons (◉↥☰⇅∑%✦) | Replaced with 7 SVG icons |
-| Nav active used colored underline | Changed to bold weight + text color |
-| Insight cards had colored backgrounds | Changed to left-border only |
-| Metric grid cell borders | Replaced with 1px gap container |
-| Home page: Three Steps + Trust sections | Removed entirely |
-| Hero tagline marketing language | Changed to literal actions |
-| Privacy claims in eyebrow/CTA | Removed |
-| Footer inline styles | Moved to .site-footer CSS class |
-| Empty state icon circle | Removed |
-| Nav badge showed "0 metrics" | Hidden when facts.length === 0 |
-| Disclaimer said "client-side" | Removed |
-| Inline style={{}} count reduced | 239→~180 (utility classes added) |
-| `: any` type annotations | 21→17 (remaining in library interop) |
-| Sample data not clearing on import | addDataset filters sample sourceType |
-| Screenshot OCR slow (1600px) | Reduced to 1200px (44% faster) |
-| getLatestValue not sorting periods | Added chronological sort |
-| extractFilingInputs unsorted | Added period + metric sorting |
-| Light theme (original) | Replaced with dark theme |
-| Background animations (pulse, drift, curves) | Removed — static grid + noise only |
-| @theme inline Tailwind block | Removed |
-| ✕ and ⚠ Unicode in import page | Replaced with SVG icons |
-| Empty state messages vague | Updated with reason + action + outcome |
-
----
-
-## DESIGN DECISIONS
-
-| Decision | Why |
-|---|---|
-| No backend | Client-side only. Privacy as product advantage. |
-| TypeScript strict | Financial calculation safety |
-| Zustand over Redux | Lightweight, typed, persist built-in |
-| Recharts over Chart.js | Declarative, SSR-safe, no canvas refs |
-| Custom CSS over Tailwind | User's existing design system |
-| DCF store no persist | Race condition with rapid setState |
-| Global data store | Imported data flows to all tools |
-| Refs for callback deps | Prevents infinite render loops |
-| Vitest over Jest | Faster, native TS, no Babel |
-| Dark theme over light | Bloomberg/wealth/institutional feel |
-| Inter over IBM Plex Sans | Better tabular figures, fintech standard |
-| Ghost buttons | No decorative elements, information-forward |
-| Static grid + noise | Subtle depth without distraction |
-| Muted slate accent (#7B8DA0) | Wayfinding only — not a brand color |
-| 4 responsive breakpoints | 1024/820/640/420px complete coverage |
+- **Nav:** Icons-only at <640px (labels hidden, active tab shows label)
+- **Spreadsheet:** 80px metric column, 55px period columns on <420px phones
+- **Touch targets:** 44px min for all interactive elements (pointer:coarse)
+- **Cards:** Padding reduced 50% at 640px, 75% at 420px
+- **Tables:** Horizontal scroll on overflow, 9px font at 420px
+- **Metrics:** Single column at 640px, 15px values at 420px
 
 ---
 
@@ -338,58 +298,48 @@ npm run build     # → Next.js build (Turbopack)
 
 | Issue | Severity | Notes |
 |---|---|---|
-| ~180 inline `style={{ }}` remaining | Medium | Migrate to CSS utility classes |
-| 17 `: any` type annotations | Low | All in pdfjs/tesseract dynamic imports |
-| No ESLint CI enforcement | Low | Would catch unused imports |
-| Auto-execute may not fire in production | Low | User can click Calculate/Compare |
-| No component/E2E tests | Low | Manual testing required |
+| ~178 inline `style={{}}` | Low | Most are dynamic (bar widths, spinner animations) — not migratable to classes |
+| 17 `: any` type annotations | Low | All in pdfjs/tesseract/recharts dynamic imports |
+| No component/E2E tests | Medium | Manual testing only. Add Playwright/Cypress before monetization |
+| No ESLint CI | Low | Would catch unused imports |
+| Auto-execute may not fire in production | Low | User can always click Calculate/Compare |
+| No paywall/subscription layer | N/A | Needs auth provider (NextAuth/Clerk) + Stripe before monetizing |
 
 ---
 
-## PRODUCTION DEPLOYMENT
+## MONETIZATION GAPS
 
-```bash
-cd "C:\Users\kingo\Desktop\fundalyst-next"
+Before monetizing, these need to be built:
 
-npm install
-npm run dev          # → http://localhost:3000
-npm run build        # → .next/
-npm start -p 3001    # → production server
-npm test             # → 29 tests, ~300ms
+1. **Auth system** — NextAuth.js or Clerk for user accounts
+2. **Server-side persistence** — Save company models to DB (Supabase/Neon) instead of only localStorage
+3. **Paywall gate** — Stripe integration, tier enforcement middleware
+4. **PDF import upgrade** — Server-side PDF parsing (unlocks complex statements, larger files)
+5. **XBRL import** — Parse BSE/NSE filing XML directly (high-value paid feature)
+6. **Data sync** — Cross-device company library
+7. **Export** — PDF reports, Excel exports, one-click reports
 
-git add -A
-git commit -m "..."
-git push origin main
-
-# Vercel: Import fundalyst- repo → Deploy
-```
+**The canonical model is the product.** The FundalystDataset with its facts, periods, and confidence scores is what paid users pay for — persistence, import power, and export.
 
 ---
 
 ## CRITICAL PITFALLS
 
-1. **Never use `read_file()` + `write_file()` in execute_code** — read_file returns `1|content` format. Use `patch()` or `sed`.
-2. **Stale server issue** — `taskkill //F //PID` requires double-slash on MSYS2. Verify CSS hash matches between .next/ and served HTML.
-3. **DCF growth must be < WACC** — Default 8% < 10%. If defaults change, validation blocks auto-execute.
-4. **DCF store has no persist** — Ephemeral per session. Don't add persist without partialize filtering.
-5. **File corruption** — `open().write()` from read_file content introduces line-number prefixes. Recover with `sed -i 's/^[0-9]*|//' <files>`.
-6. **CRLF line endings** — Python's `f.write()` on Windows writes `\r\n`. Breaks multiline JSX strings. Use `patch()` or `git checkout -- <file>`.
+1. **Never use `read_file()` + `write_file()` in execute_code** — read_file returns line-number-prefixed content. Use `patch()` or `sed`.
+2. **DCF growth must be < WACC** — defaults 8% < 10%. If changed, validation blocks auto-execute.
+3. **DCF store has no persist** — Ephemeral per session. Don't add persist without partialize filtering.
+4. **Nav logo + favicon use #4F6EF7** — If accent color changes, update both `Nav.tsx` and `layout.tsx`.
+5. **Spreadsheet cell refs** — `contentEditable` cells use `window.getSelection()` for cursor position (not DOM `selectionStart`).
+6. **getPeriods preserves insertion order** — Periods appear in the order they were first encountered in the facts array, not sorted alphabetically.
 
 ---
 
-## VERDICT
+## DEPLOYMENT
 
-Fundalyst is a **production-ready financial analysis tool** for Indian retail investors, designed to feel like Bloomberg Terminal rebuilt for the browser.
-
-**Strengths:**
-- Zero friction: no accounts, no sign-up
-- Privacy-first: all client-side computation
-- Financial accuracy: 29 independently verified tests
-- Complete workflow: Import → Filing → DCF → Ratios → Thesis
-- Professional design: Inter typography, dark institutional theme, restrained accent
-- Full import pipeline: CSV, XLSX, PDF, screenshot OCR
-- Mobile-optimized: 4 breakpoints, touch targets, iOS-safe inputs
-
-**Stage:** Ready for public launch.
-**Target:** Indispensable research tool for Indian retail value investors.
-**North star:** "Bloomberg Terminal for Indian retail investors — in the browser, no server, at cost."
+```bash
+npm run build          # → zero errors, 14 static routes
+npm test               # → 29 tests pass
+git add -A && git commit -m "..."
+git push origin main
+# Vercel: Import repo → Deploy (no config needed — static export)
+```
