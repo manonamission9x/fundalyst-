@@ -27,13 +27,15 @@ export function useActiveDataset(): FundalystDataset | null {
   });
 }
 
-/** Get all unique periods across all facts, sorted chronologically */
+/** Get all unique periods across all facts, sorted by first occurrence order */
 export function getPeriods(dataset: FundalystDataset): string[] {
-  const seen = new Set<string>();
+  const ordered: string[] = [];
   for (const f of dataset.facts) {
-    if (f.periodLabel) seen.add(f.periodLabel);
+    if (f.periodLabel && !ordered.includes(f.periodLabel)) {
+      ordered.push(f.periodLabel);
+    }
   }
-  return [...seen].sort();
+  return ordered;
 }
 
 /** Get all unique statements detected in the dataset */

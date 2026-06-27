@@ -47,13 +47,14 @@ export default function DCFPage() {
   useEffect(() => {
     if (!dcfActiveDataset || dcfActiveDataset.facts.length < 3) return;
     const modelInputs = extractDCFInputsFromModel(dcfActiveDataset);
-    if (modelInputs.fcf !== null && inputs.fcf === '' && useDCFStore.getState().inputs.fcf === '') {
+    const current = useDCFStore.getState().inputs;
+    if (modelInputs.fcf !== null && current.fcf === '') {
       setInput('fcf', modelInputs.fcf);
     }
-    if (modelInputs.shares !== null && inputs.shares === '' && useDCFStore.getState().inputs.shares === '') {
+    if (modelInputs.shares !== null && current.shares === '') {
       setInput('shares', modelInputs.shares);
     }
-    if (modelInputs.netDebt !== null && inputs.netDebt === '' && useDCFStore.getState().inputs.netDebt === '') {
+    if (modelInputs.netDebt !== null && current.netDebt === '') {
       setInput('netDebt', modelInputs.netDebt);
     }
   }, [dcfActiveDataset]);

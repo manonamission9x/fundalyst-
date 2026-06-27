@@ -7,7 +7,22 @@
 
 import type { FundalystDataset, CanonicalFact } from '@/lib/importer/types';
 import type { SpreadsheetRow } from '@/components/input';
+import { findBestMetricMatch } from '@/lib/importer/metric-aliases';
 import { generateDatasetId, useGlobalDataStore } from './global-data-store';
+
+/**
+ * Convert a user-entered metric label to the canonical key.
+ * Uses fuzzy matching against the alias library; falls back to snake_case.
+ */
+function labelToCanonicalKey(label: string): string {
+  const match = findBestMetricMatch(label);
+  if (match && match.confidence > 0.6) return match.canonical;
+  // Fallback: generate snake_case key from label
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '');
+}
 
 /**
  * Convert spreadsheet rows + periods into a canonical FundalystDataset.
@@ -23,10 +38,7 @@ export function spreadsheetToDataset(
   for (const row of rows) {
     if (!row.metric || row.values.every((v) => !v.trim())) continue;
 
-    const canonicalKey = row.metric
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '_')
-      .replace(/^_|_$/g, '');
+    const canonicalKey = labelToCanonicalKey(row.metric);
 
     for (let pi = 0; pi < periods.length; pi++) {
       const rawVal = row.values[pi]?.trim();

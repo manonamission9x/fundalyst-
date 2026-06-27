@@ -27,8 +27,6 @@ interface SpreadsheetInputProps {
   className?: string;
 }
 
-const EMPTY_VAL = '';
-
 export default function SpreadsheetInput({
   initialPeriods = ['FY23', 'FY24'],
   initialData,
