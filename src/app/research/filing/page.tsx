@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { parseLines, computeDiff, generateRiskFlags, fmtINR, fmtChangeTrend } from '@/lib/calculations';
-import { readFile, downloadCSV } from '@/lib/helpers';
+import { downloadCSV } from '@/lib/helpers';
 import { useFilingStore, useAnalysisStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
 import {
@@ -12,6 +12,8 @@ import {
 } from '@/components/ui';
 import { SpreadsheetInput } from '@/components/input';
 import type { SpreadsheetRow } from '@/components/input';
+import { useActiveDataset, extractFilingData, getPeriods, datasetToSpreadsheetRows } from '@/store/financial-model-selectors';
+import { writeSpreadsheetToModel } from '@/store/canonical-helpers';
 import { useGlobalImportFill, getDataSourceLabel, extractFilingInputs } from '@/lib/importer/import-hooks';
 
 export default function FilingPage() {
@@ -54,11 +56,27 @@ export default function FilingPage() {
     extractFilingInputs,
   );
 
-  // ── Manual demo load on first visit ──
+  // ── Pre-fill from canonical model (if data exists in global store) ──
+  const activeDataset = useActiveDataset();
+
+  // ── Load data on mount: canonical model > demo data ──
   const autoDemoRef = useRef(false);
   useEffect(() => {
     if (autoDemoRef.current) return;
     autoDemoRef.current = true;
+
+    // Priority 1: pre-fill from canonical model
+    if (activeDataset && activeDataset.facts.length >= 4) {
+      const periods = getPeriods(activeDataset);
+      if (periods.length >= 2) {
+        const rows = datasetToSpreadsheetRows(activeDataset);
+        setSheetPeriods(periods);
+        setSheetRows(rows.map((r) => ({ metric: r.metric, values: r.values })));
+        return;
+      }
+    }
+
+    // Priority 2: demo data (first visit)
     if (sheetRows.length === 0) {
       setSheetPeriods(['FY23', 'FY24']);
       setSheetRows([
@@ -70,7 +88,7 @@ export default function FilingPage() {
         { metric: 'Cash & Equivalents', values: ['450', '680'] },
       ]);
     }
-  }, []);
+  }, [activeDataset]);
 
   // ── Auto-demo compare ──
   useEffect(() => {
@@ -89,7 +107,10 @@ export default function FilingPage() {
 
     setLoading(true);
 
-    // Convert spreadsheet rows to period text format for existing computeDiff
+    // Step 1: Write spreadsheet data to the canonical model
+    writeSpreadsheetToModel(rows, periods, activeDataset?.companyName || 'Unnamed Company');
+
+    // Step 2: Convert spreadsheet rows to period text format for existing computeDiff
     const periodA = rows
       .filter((r) => r.values[0]?.trim())
       .map((r) => `${r.metric}: ${r.values[0]}`)

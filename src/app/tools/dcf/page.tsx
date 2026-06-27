@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { computeDCF, computeDCFSensitivity, validateDCFInputs, fmtNum } from '@/lib/calculations';
 import { useDCFStore } from '@/store';
+import { useActiveDataset, extractDCFInputsFromModel } from '@/store/financial-model-selectors';
 import { useToast } from '@/components/shared/ToastProvider';
 import {
   PageHeader,
@@ -40,6 +41,22 @@ export default function DCFPage() {
     },
     extractDCFInputs,
   );
+
+  // ── Pre-fill from canonical model when available ──
+  const dcfActiveDataset = useActiveDataset();
+  useEffect(() => {
+    if (!dcfActiveDataset || dcfActiveDataset.facts.length < 3) return;
+    const modelInputs = extractDCFInputsFromModel(dcfActiveDataset);
+    if (modelInputs.fcf !== null && inputs.fcf === '' && useDCFStore.getState().inputs.fcf === '') {
+      setInput('fcf', modelInputs.fcf);
+    }
+    if (modelInputs.shares !== null && inputs.shares === '' && useDCFStore.getState().inputs.shares === '') {
+      setInput('shares', modelInputs.shares);
+    }
+    if (modelInputs.netDebt !== null && inputs.netDebt === '' && useDCFStore.getState().inputs.netDebt === '') {
+      setInput('netDebt', modelInputs.netDebt);
+    }
+  }, [dcfActiveDataset]);
 
   // Auto-demo on first visit: run DCF with defaults if no results exist
   const autoDemoRef = useRef(false);
