@@ -740,130 +740,165 @@ details[open] .details-summary::before {
   .workspace-header { flex-direction: column; gap: var(--space-2); align-items: flex-start; }
 }
 @media (max-width: 640px) {
-  .page { padding: 0 var(--space-3) var(--space-6); }
-  .nav-inner { padding: 0 var(--space-2); overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .nav-tab { padding: 8px 7px; font-size: 11px; gap: 3px; }
-  .nav-tab svg { width: 15px; height: 15px; flex-shrink: 0; }
-  /* Hide nav labels, show only icons (except active) */
+  .page { padding: 0 var(--space-2) var(--space-4); }
+
+  /* ── Nav: minimal footprint ── */
+  .nav-inner { padding: 0 var(--space-1); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .nav-tab { padding: 6px 5px; font-size: 10px; gap: 2px; min-height: unset; min-width: unset; }
+  .nav-tab svg { width: 12px; height: 12px; flex-shrink: 0; }
   .nav-tab span:not(.nav-brand) { display: none; }
   .nav-tab.active span { display: inline; }
-  .nav-brand { font-size: 12px; gap: 5px; margin-right: var(--space-2); flex-shrink: 0; }
-  .nav-brand span { display: inline; }
-  .nav-brand svg { width: 14px; height: 14px; }
-  .nav-cta { font-size: 10px; padding: 4px 7px; gap: 3px; }
+  /* Hide brand text, show only logo */
+  .nav-brand { font-size: 0; gap: 4px; margin-right: var(--space-1); flex-shrink: 0; min-height: unset; }
+  .nav-brand span { display: none; }
+  .nav-brand svg { width: 12px; height: 12px; flex-shrink: 0; }
+  /* Import button: icon only */
+  .nav-cta { font-size: 0; padding: 3px 5px; gap: 0; min-height: unset; min-width: unset; }
+  .nav-cta span { display: none; }
   .nav-cta svg { width: 11px; height: 11px; }
-  .nav-badge { font-size: 8px; padding: 2px 5px; }
-  .nav-clear { font-size: 8px; padding: 2px 5px; }
-  .nav-sep { margin: 0 2px; }
-  .home-grid { grid-template-columns: 1fr; }
-  .workflow-steps { grid-template-columns: 1fr; }
-  .field-grid { grid-template-columns: 1fr; gap: var(--space-2); }
-  .metric-grid { grid-template-columns: 1fr; gap: 1px; }
-  .home-hero h1 { font-size: 22px; }
-  .home-hero { padding: var(--space-4) 0 var(--space-3); }
-  .home-hero-inner { max-width: 100%; }
-  .home-subtitle { font-size: var(--text-sm); }
-  .home-cta-primary, .home-cta-secondary { width: 100%; justify-content: center; padding: 10px 16px; font-size: var(--text-sm); }
-  .home-card { padding: var(--space-2) var(--space-3); }
-  .home-card-icon { width: 24px; height: 24px; }
-  .home-card-icon svg { width: 14px; height: 14px; }
-  .home-card-title { font-size: var(--text-sm); }
-  .home-card-desc { font-size: var(--text-xs); }
-  .home-card-cta { font-size: var(--text-2xs); }
-  .home-section { margin-bottom: var(--space-4); }
-  .page-hero { padding: var(--space-3) 0 var(--space-2); }
-  .page-hero h1 { font-size: 18px; }
-  .page-hero-sub { font-size: 12px; }
-  .page-hero-answer { font-size: 10px; }
-  .card-body { padding: var(--space-2) var(--space-3); }
-  .card-header { padding: var(--space-1) var(--space-3); }
-  .card-actions { padding: var(--space-1) var(--space-3); flex-wrap: wrap; gap: var(--space-1); }
-  .card-label { font-size: 9px; }
-  .section-title { font-size: 10px; margin-bottom: var(--space-1); }
-  .metric-cell { padding: 8px 12px; }
-  .metric-value { font-size: 17px; }
-  .metric-label { font-size: 9px; }
-  .metric-sub { font-size: var(--text-2xs); }
-  .stat-value { font-size: var(--text-base); }
-  .stat-label { font-size: 9px; }
-  .stat-context { font-size: 9px; }
-  .diff-table { font-size: 10px; }
-  .diff-table th, .diff-table td { padding: 4px 5px; }
-  .diff-table th { font-size: 8px; }
-  .sens-table { font-size: 10px; }
-  .sens-table th, .sens-table td { padding: 4px 5px; font-size: 10px; }
-  .sens-table td:first-child { font-size: 9px; }
-  .next-links { flex-wrap: wrap; gap: 6px; }
-  .next-links a { font-size: 10px; }
-  .upload-zone { padding: 8px 10px; flex-wrap: wrap; gap: 4px; }
-  .upload-label { font-size: 10px; padding: 3px 8px; }
-  .upload-hint { font-size: 9px; }
-  .import-dropzone-icon { width: 28px; height: 28px; }
-  .workspace-brand { font-size: 13px; }
-  .workspace-company { font-size: 12px; }
-  .workspace-step { padding: var(--space-1) var(--space-2); font-size: 12px; gap: var(--space-1); }
-  .workspace-card-header { font-size: 9px; padding: var(--space-1) var(--space-3); }
-  .empty-state { padding: 24px 16px; }
-  .empty-state-title { font-size: var(--text-sm); }
-  .empty-state-desc { font-size: var(--text-xs); }
-  .chart-wrap { padding: var(--space-2); overflow-x: auto; }
-  .data-quality { gap: var(--space-1) var(--space-2); font-size: 10px; }
-  .calc-timestamp { font-size: 9px; }
-  .insight-card { padding: 8px 10px; gap: 8px; }
-  .insight-title { font-size: 11px; }
-  .insight-text { font-size: var(--text-xs); }
-  .warning-card { padding: 6px 10px; gap: 6px; }
-  .warning-label { font-size: var(--text-xs); }
-  .warning-text { font-size: var(--text-xs); }
-  .about-card { padding: var(--space-3); }
-  .about-card-title { font-size: var(--text-sm); }
-  .about-card-text { font-size: var(--text-xs); }
-  .disclaimer { font-size: 9px; gap: 4px 8px; padding: 6px 0; }
-  .site-footer { padding: var(--space-3) var(--space-3); font-size: 9px; }
-  .err-msg { font-size: 10px; }
-  .trust-badge { font-size: 9px; padding: 1px 6px; }
-  .source-tag { font-size: 8px; }
-  .confidence-badge { font-size: 8px; padding: 0 4px; }
-}
-@media (max-width: 420px) {
-  .page { padding: 0 var(--space-2) var(--space-4); }
-  .nav-inner { padding: 0 var(--space-1); }
-  .nav-tab { padding: 7px 5px; font-size: 10px; gap: 2px; }
-  .nav-tab svg { width: 13px; height: 13px; }
-  .nav-brand { font-size: 11px; margin-right: var(--space-1); gap: 4px; }
-  .nav-brand svg { width: 12px; height: 12px; }
-  .nav-cta { font-size: 9px; padding: 3px 6px; gap: 2px; }
-  .nav-badge { font-size: 7px; padding: 1px 4px; }
-  .nav-clear { font-size: 7px; padding: 1px 4px; }
-  .nav-sep { margin: 0 1px; }
+  /* Hide secondary elements */
+  .nav-badge { display: none; }
+  .nav-clear { display: none; }
+  .nav-sep { margin: 0 1px; height: 10px; }
+
+  /* ── Home page ── */
+  .home-hero { padding: var(--space-2) 0 var(--space-1); }
   .home-hero h1 { font-size: 20px; }
-  .home-hero { padding: var(--space-3) 0 var(--space-2); }
-  .home-subtitle { font-size: 12px; }
-  .home-cta-primary, .home-cta-secondary { padding: 9px 14px; font-size: 12px; }
-  .home-active-dataset { font-size: 11px; padding: 3px 7px; }
-  .metric-value { font-size: 15px; }
+  .home-hero-inner { max-width: 100%; }
+  .home-subtitle { font-size: var(--text-xs); }
+  .home-cta-primary, .home-cta-secondary { width: 100%; justify-content: center; padding: 8px 14px; font-size: var(--text-xs); }
+  .home-grid { grid-template-columns: 1fr; gap: var(--space-2); }
+  .home-card { padding: var(--space-1) var(--space-2); min-height: unset; min-width: unset; }
+  .home-card-icon { width: 20px; height: 20px; }
+  .home-card-icon svg { width: 12px; height: 12px; }
+  .home-card-title { font-size: var(--text-xs); }
+  .home-card-desc { font-size: 10px; }
+  .home-card-cta { font-size: 9px; }
+  .home-section { margin-bottom: var(--space-3); }
+  .home-active-dataset { font-size: 10px; padding: 2px 6px; }
+
+  /* ── Page headers ── */
+  .page-hero { padding: var(--space-2) 0 var(--space-1); }
+  .page-hero h1 { font-size: 17px; }
+  .page-hero-sub { font-size: 11px; }
+  .page-hero-answer { font-size: 9px; display: none; }
+
+  /* ── Cards ── */
+  .card-body { padding: var(--space-1) var(--space-2); }
+  .card-header { padding: var(--space-1) var(--space-2); }
+  .card-actions { padding: var(--space-1) var(--space-2); flex-wrap: wrap; gap: var(--space-1); }
+  .card-label { font-size: 8px; }
+
+  /* ── Sections ── */
+  .section-title { font-size: 9px; margin-bottom: var(--space-1); }
+  .mt-4 { margin-top: var(--space-3) !important; }
+  .mt-6 { margin-top: var(--space-4) !important; }
+  .mb-4 { margin-bottom: var(--space-3) !important; }
+
+  /* ── Metrics ── */
+  .metric-grid { grid-template-columns: 1fr; gap: 1px; }
   .metric-cell { padding: 6px 10px; }
+  .metric-value { font-size: 15px; }
   .metric-label { font-size: 8px; }
   .metric-sub { font-size: 9px; }
+  .stat-value { font-size: var(--text-sm); }
+  .stat-label { font-size: 8px; }
+  .stat-context { font-size: 8px; }
+
+  /* ── Tables ── */
   .diff-table { font-size: 9px; }
   .diff-table th, .diff-table td { padding: 3px 4px; }
   .diff-table th { font-size: 7px; }
-  .card-body { padding: var(--space-1) var(--space-2); }
-  .num-input { font-size: 16px; padding: 4px 8px; }
-  button, .btn { padding: 4px 8px; font-size: 11px; }
-  .workflow-step { padding: var(--space-2); }
-  .workspace-header { padding: var(--space-1) var(--space-2); }
-  .workspace-sidebar { gap: 1px; }
-  .workspace-step { font-size: 11px; padding: 5px 6px; gap: 3px; }
-  .card-header { padding: var(--space-1) var(--space-2); }
-  .field-grid { gap: var(--space-1); }
-  .field-group { gap: 2px; }
+  .sens-table { font-size: 9px; }
+  .sens-table th, .sens-table td { padding: 3px 4px; font-size: 9px; }
+  .sens-table td:first-child { font-size: 8px; }
+
+  /* ── Charts ── */
+  .chart-wrap { padding: var(--space-1); overflow-x: auto; }
+
+  /* ── Grids ── */
+  .field-grid { grid-template-columns: 1fr; gap: var(--space-1); }
+  .workflow-steps { grid-template-columns: 1fr; gap: var(--space-2); }
+
+  /* ── Filing results ── */
+  .data-quality { display: none; }
+  .calc-timestamp { font-size: 8px; }
+  .next-links { flex-wrap: wrap; gap: 4px; }
+  .next-links a { font-size: 9px; }
+  .disclaimer { font-size: 8px; gap: 3px 6px; padding: 4px 0; }
+
+  /* ── Insights ── */
+  .insight-card { padding: 6px 8px; gap: 6px; }
+  .insight-title { font-size: 10px; }
+  .insight-text { font-size: 10px; }
+  .insight-formula { font-size: 8px; }
+  .warning-card { padding: 5px 8px; gap: 4px; }
+  .warning-label { font-size: 10px; }
+  .warning-text { font-size: 10px; }
+  .warning-badge { font-size: 8px; }
+
+  /* ── Trust / confidence ── */
+  .trust-badge { font-size: 8px; padding: 1px 4px; }
+  .source-tag { font-size: 7px; }
+  .confidence-badge { font-size: 7px; padding: 0 3px; }
+
+  /* ── Upload ── */
+  .upload-zone { padding: 6px 8px; flex-wrap: wrap; gap: 3px; }
+  .upload-label { font-size: 9px; padding: 2px 6px; }
+  .upload-hint { font-size: 8px; }
+  .import-dropzone-icon { width: 24px; height: 24px; }
+
+  /* ── Workspace ── */
+  .workspace-brand { font-size: 12px; }
+  .workspace-company { font-size: 11px; }
+  .workspace-step { padding: 4px 6px; font-size: 11px; gap: 3px; }
+  .workspace-card-header { font-size: 8px; padding: var(--space-1) var(--space-2); }
+  .workspace-header { gap: var(--space-1); }
+
+  /* ── Empty states ── */
+  .empty-state { padding: 16px 12px; }
+  .empty-state-title { font-size: var(--text-xs); }
+  .empty-state-desc { font-size: 10px; }
+
+  /* ── About ── */
+  .about-card { padding: var(--space-2); }
+  .about-card-title { font-size: var(--text-xs); }
+  .about-card-text { font-size: 10px; }
+  .about-cta-btn { padding: 8px 16px; font-size: 11px; }
+
+  /* ── Footer ── */
+  .site-footer { padding: var(--space-2) var(--space-2); font-size: 8px; }
+  .err-msg { font-size: 9px; }
+
+  /* ── Inputs ── */
+  .num-input { font-size: 16px; padding: 3px 6px; }
+  button, .btn { padding: 3px 7px; font-size: 10px; }
   .field-hint { font-size: 8px; }
-  .home-card-icon { width: 20px; height: 20px; }
-  .home-card-icon svg { width: 12px; height: 12px; }
-  .trust-badge { font-size: 8px; padding: 0 4px; }
-  .data-quality { font-size: 9px; }
-  .about-cta-btn { padding: 9px 18px; font-size: 12px; }
+  .field-group { gap: 1px; }
+}
+@media (max-width: 420px) {
+  .page { padding: 0 var(--space-1) var(--space-3); }
+  .nav-tab { padding: 5px 3px; font-size: 9px; gap: 1px; }
+  .nav-tab svg { width: 10px; height: 10px; }
+  .nav-brand svg { width: 10px; height: 10px; }
+  .nav-cta { padding: 2px 4px; }
+  .nav-cta svg { width: 9px; height: 9px; }
+  .home-hero { padding: var(--space-1) 0 var(--space-1); }
+  .home-hero h1 { font-size: 18px; }
+  .home-subtitle { font-size: 11px; }
+  .metric-value { font-size: 14px; }
+  .metric-cell { padding: 5px 8px; }
+  .diff-table { font-size: 8px; }
+  .diff-table th, .diff-table td { padding: 2px 3px; }
+  .card-body { padding: var(--space-1) var(--space-2); }
+  .insight-card { padding: 5px 7px; }
+  .workspace-step { font-size: 10px; padding: 3px 5px; }
+  .home-card { padding: var(--space-1) var(--space-2); }
+  .home-card-icon { width: 16px; height: 16px; }
+  .home-card-icon svg { width: 10px; height: 10px; }
+  .trust-badge { font-size: 7px; padding: 0 3px; }
+  .data-quality { font-size: 8px; }
+  button, .btn { padding: 3px 6px; font-size: 9px; }
 }
 
 /* Ensure tables can scroll horizontally on small screens */
