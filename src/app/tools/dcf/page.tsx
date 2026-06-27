@@ -8,8 +8,6 @@ import { useToast } from '@/components/shared/ToastProvider';
 import {
   PageHeader,
   Card,
-  FieldGrid,
-  Field,
   Toolbar,
   SectionTitle,
   ResultPanel,
@@ -22,64 +20,103 @@ import {
   CalcTimestamp,
   TrustBadge,
 } from '@/components/ui';
+import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
+import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import dynamic from 'next/dynamic';
 import { useGlobalImportFill, extractDCFInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
+import { useModelData } from '@/store/use-model-data';
 
 const DCFChart = dynamic(() => import('@/components/tools/dcf/DCFChart'), {
   ssr: false,
   loading: () => <div className="skeleton" style={{ width: '100%', height: 300 }} />,
 });
 
+/** Map ToolSpreadsheet rows → DCF store input fields */
+const METRIC_TO_FIELD: Record<string, keyof import('@/types/financial').DCFInputs> = {
+  'Free Cash Flow': 'fcf',
+  'Growth Rate (%)': 'growth',
+  'Projection Years': 'years',
+  'WACC (%)': 'discount',
+  'Terminal Growth (%)': 'terminal',
+  'Net Debt': 'netDebt',
+  'Shares Outstanding': 'shares',
+  'Current Price (₹)': 'price',
+};
+
+function rowsToDCFInputs(rows: SpreadsheetRow[]): Record<string, number | ''> {
+  const result: Record<string, number | ''> = {};
+  for (const row of rows) {
+    const field = METRIC_TO_FIELD[row.metric.split(' (')[0]] || row.metric.toLowerCase().replace(/[^a-z]/g, '');
+    const val = row.values[0]?.trim() || '';
+    result[field] = val === '' ? '' : parseFloat(val) || 0;
+  }
+  return result;
+}
+
 export default function DCFPage() {
   const showToast = useToast();
-  const { inputs, show, summary, sens, setInput, setShow, setSummary, setSens, clear } = useDCFStore();
+  const { show, summary, sens, setShow, setSummary, setSens } = useDCFStore();
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
 
-  const { dataSource, companyName } = useGlobalImportFill(
-    (vals) => {
-      Object.entries(vals).forEach(([key, val]) => setInput(key as keyof typeof inputs, val));
-    },
-    extractDCFInputs,
-  );
+  // Model pre-fill via universal hook
+  const modelData = useModelData((ds) => extractDCFInputsFromModel(ds));
 
-  // ── Pre-fill from canonical model when available ──
-  const dcfActiveDataset = useActiveDataset();
+  // Pre-fill from canonical model when available
+  const prefilledRef = useRef(false);
   useEffect(() => {
-    if (!dcfActiveDataset || dcfActiveDataset.facts.length < 3) return;
-    const modelInputs = extractDCFInputsFromModel(dcfActiveDataset);
-    const current = useDCFStore.getState().inputs;
-    if (modelInputs.fcf !== null && current.fcf === '') {
-      setInput('fcf', modelInputs.fcf);
+    if (prefilledRef.current) return;
+    if (!modelData.data || sheetRows.length > 0) return;
+    const { fcf, shares, netDebt } = modelData.data;
+    if (fcf !== null || shares !== null || netDebt !== null) {
+      setSheetRows((prev) => {
+        if (prev.length > 0) return prev;
+        return [
+          { metric: 'Free Cash Flow', values: [fcf !== null ? String(fcf) : ''] },
+          { metric: 'Growth Rate (%)', values: ['8'] },
+          { metric: 'Projection Years', values: ['5'] },
+          { metric: 'WACC (%)', values: ['10'] },
+          { metric: 'Terminal Growth (%)', values: ['3'] },
+          { metric: 'Net Debt', values: [netDebt !== null ? String(netDebt) : ''] },
+          { metric: 'Shares Outstanding', values: [shares !== null ? String(shares) : ''] },
+          { metric: 'Current Price (₹)', values: [''] },
+        ];
+      });
+      prefilledRef.current = true;
     }
-    if (modelInputs.shares !== null && current.shares === '') {
-      setInput('shares', modelInputs.shares);
-    }
-    if (modelInputs.netDebt !== null && current.netDebt === '') {
-      setInput('netDebt', modelInputs.netDebt);
-    }
-  }, [dcfActiveDataset]);
+  }, [modelData.data, sheetRows.length]);
 
-  // Auto-demo on first visit: run DCF with defaults if no results exist
+  // Auto-demo on first visit
   const autoDemoRef = useRef(false);
   useEffect(() => {
     if (autoDemoRef.current) return;
     autoDemoRef.current = true;
-    if (!useDCFStore.getState().show && useDCFStore.getState().summary === null) {
+    if (!show && summary === null && sheetRows.length === 0) {
+      setSheetRows([
+        { metric: 'Free Cash Flow', values: ['1240'] },
+        { metric: 'Growth Rate (%)', values: ['8'] },
+        { metric: 'Projection Years', values: ['5'] },
+        { metric: 'WACC (%)', values: ['10'] },
+        { metric: 'Terminal Growth (%)', values: ['3'] },
+        { metric: 'Net Debt', values: ['180'] },
+        { metric: 'Shares Outstanding', values: ['100'] },
+        { metric: 'Current Price (₹)', values: ['450'] },
+      ]);
       const timer = setTimeout(() => runDCF(), 400);
       return () => clearTimeout(timer);
     }
   }, []);
 
   function runDCF() {
-    const s = useDCFStore.getState().inputs;
-    const fcf = s.fcf;
-    const growth = s.growth;
-    const years = s.years;
-    const discount = s.discount;
-    const terminal = s.terminal;
-    const netDebt = s.netDebt;
-    const shares = s.shares;
-    const price = s.price;
+    const mapped = rowsToDCFInputs(sheetRows);
+    const fcf = mapped.fcf;
+    const growth = mapped.growth;
+    const years = mapped.years;
+    const discount = mapped.discount;
+    const terminal = mapped.terminal;
+    const netDebt = mapped.netDebt;
+    const shares = mapped.shares;
+    const price = mapped.price;
 
     const validationErrors = validateDCFInputs(fcf, growth, years, discount, terminal, netDebt, shares, price);
     const errorMap: Record<string, string> = {};
@@ -119,14 +156,17 @@ export default function DCFPage() {
   }
 
   const handleClear = useCallback(() => {
-    clear();
+    setSheetRows([]);
+    setShow(false);
+    setSummary(null);
+    setSens([]);
     setErrors({});
-  }, [clear]);
+  }, [setShow, setSummary, setSens]);
 
-  const priceVal = useMemo(
-    () => typeof inputs.price === 'number' ? inputs.price : Number(inputs.price) || 0,
-    [inputs.price],
-  );
+  const priceVal = useMemo(() => {
+    const pRow = sheetRows.find((r) => r.metric === 'Current Price (₹)');
+    return pRow ? Number(pRow.values[0]) || 0 : 0;
+  }, [sheetRows]);
 
   return (
     <div>
@@ -137,116 +177,46 @@ export default function DCFPage() {
       />
 
       <DataQualityBar
-        source={getDataSourceLabel(dataSource, companyName)}
-        metrics={useMemo(() => Object.values(inputs).filter((v) => v !== '' && v !== null && v !== 0).length, [inputs])}
+        source={modelData.isLoaded ? `Model: ${modelData.companyName || 'Loaded'}` : 'Manual mode'}
+        metrics={sheetRows.filter((r) => r.values[0]?.trim()).length}
       />
 
-      {/* ── Consolidated Input Card — single card, visual sections ── */}
+      {/* ── Unified ToolSpreadsheet input — same UX as Filing page ── */}
       <Card>
-        {/* Cash Flow */}
         <div className="card-body" style={{ borderBottom: '1px solid var(--border-light)' }}>
-          <SectionTitle>Cash Flow Assumptions</SectionTitle>
-          <FieldGrid>
-            <Field
-              label="Free Cash Flow (₹ Cr)"
-              value={inputs.fcf}
-              onChange={(v) => { setInput('fcf', v); setErrors((e) => ({ ...e, fcf: '' })); }}
-              hint="Cash generated after expenses & investments (trailing 12 months)"
-            />
-          </FieldGrid>
-          {errors.fcf && <div className="err-msg mt-1">{errors.fcf}</div>}
+          <SectionTitle>DCF Assumptions</SectionTitle>
+          <ToolSpreadsheet
+            tool="dcf"
+            initialData={sheetRows.length > 0 ? sheetRows : undefined}
+            singleColumnLabel="Value"
+            onDataChange={(rows) => setSheetRows(rows)}
+            hint="Type or paste values. Tab to navigate between rows."
+          />
         </div>
-
-        {/* Growth */}
-        <div className="card-body" style={{ borderBottom: '1px solid var(--border-light)' }}>
-          <SectionTitle>Growth Assumptions</SectionTitle>
-          <FieldGrid>
-            <Field
-              label="Growth Rate (%)"
-              value={inputs.growth}
-              onChange={(v) => setInput('growth', v)}
-              hint="Expected yearly growth rate of this cash flow"
-            />
-            <Field
-              label="Projection Years"
-              value={inputs.years}
-              onChange={(v) => { setInput('years', v); setErrors((e) => ({ ...e, years: '' })); }}
-              hint="How many years to project (typically 5–10)"
-            />
-          </FieldGrid>
-          {errors.years && <div className="err-msg mt-1">{errors.years}</div>}
-        </div>
-
-        {/* Discount */}
-        <div className="card-body" style={{ borderBottom: '1px solid var(--border-light)' }}>
-          <SectionTitle>Discount Assumptions</SectionTitle>
-          <FieldGrid>
-            <Field
-              label="WACC (%)"
-              value={inputs.discount}
-              onChange={(v) => { setInput('discount', v); setErrors((e) => ({ ...e, discount: '' })); }}
-              hint="Company's blended cost of debt and equity (typically 8–15%)"
-            />
-            <Field
-              label="Terminal Growth (%)"
-              value={inputs.terminal}
-              onChange={(v) => { setInput('terminal', v); setErrors((e) => ({ ...e, terminal: '' })); }}
-              hint="Long-term growth after projection years (must be below WACC)"
-            />
-          </FieldGrid>
-          {errors.discount && <div className="err-msg mt-1">{errors.discount}</div>}
-          {errors.terminal && <div className="err-msg mt-1">{errors.terminal}</div>}
-        </div>
-
-        {/* Share Price */}
-        <div className="card-body">
-          <SectionTitle>Share Price Assumptions</SectionTitle>
-          <FieldGrid>
-            <Field
-              label="Net Debt (₹ Cr)"
-              value={inputs.netDebt}
-              onChange={(v) => setInput('netDebt', v)}
-              hint="Total debt minus cash & equivalents"
-            />
-            <Field
-              label="Shares Outstanding (Cr)"
-              value={inputs.shares}
-              onChange={(v) => { setInput('shares', v); setErrors((e) => ({ ...e, shares: '' })); }}
-              hint="Total shares including options and warrants"
-            />
-            <Field
-              label="Current Price (₹)"
-              value={inputs.price}
-              onChange={(v) => setInput('price', v)}
-              hint="Current stock market price"
-            />
-          </FieldGrid>
-          {errors.shares && <div className="err-msg mt-1">{errors.shares}</div>}
-        </div>
-
-        <Toolbar
-          onClear={handleClear}
-          onAction={runDCF}
-          actionLabel="Calculate value"
-          hint="Defaults pre-filled — adjust as needed"
-        />
+        {Object.keys(errors).length > 0 && (
+          <div className="card-body py-2">
+            {Object.entries(errors).map(([key, msg]) => (
+              <div key={key} className="err-msg">{msg}</div>
+            ))}
+          </div>
+        )}
+        <Toolbar onClear={handleClear} onAction={runDCF} actionLabel="Calculate value" />
       </Card>
 
-      {/* ── Results ── */}
       {show && summary && (
         <DCFResults
           summary={summary}
           sens={sens}
           priceVal={priceVal}
-          discount={inputs.discount}
-          years={inputs.years}
+          discount={(() => { const r = sheetRows.find(r => r.metric === 'WACC (%)'); return r ? Number(r.values[0]) || 10 : 10; })()}
+          years={(() => { const r = sheetRows.find(r => r.metric === 'Projection Years'); return r ? Number(r.values[0]) || 5 : 5; })()}
         />
       )}
 
       {!show && (
         <EmptyState
-          title="Adjust assumptions above, then click Calculate value."
-          desc="Defaults pre-filled with sample assumptions. Adjust each value or enter real company data to see how assumptions affect intrinsic value."
+          title="Fill in the DCF assumptions above, then click Calculate value."
+          desc="Defaults pre-filled with sample data. Adjust Free Cash Flow, Growth Rate, WACC, and other assumptions to see how they affect intrinsic value."
           action={{ label: 'Load from import', href: '/import' }}
         />
       )}
@@ -254,7 +224,7 @@ export default function DCFPage() {
   );
 }
 
-// ── Extracted results component ──
+// ── Results component — unchanged from before ──
 
 function DCFResults({
   summary,
@@ -266,8 +236,8 @@ function DCFResults({
   summary: NonNullable<ReturnType<typeof useDCFStore.getState>['summary']>;
   sens: ReturnType<typeof useDCFStore.getState>['sens'];
   priceVal: number;
-  discount: number | '';
-  years: number | '';
+  discount: number;
+  years: number;
 }) {
   const iv = summary.iv;
   const isUndervalued = iv > priceVal;
@@ -309,19 +279,15 @@ function DCFResults({
         />
       </Card>
 
-      {/* ── Chart ── */}
       <Card label="Chart" className="mt-4">
         <div className="chart-wrap">
           <DCFChart projected={summary.projected} tv={summary.tv} pvTv={summary.pvTv} currentPrice={priceVal} />
         </div>
       </Card>
 
-      {/* ── Projected Cash Flows ── */}
       <Card label="Projected Cash Flows" className="mt-4">
         <table className="diff-table">
-          <thead>
-            <tr><th>Year</th><th>Projected FCF</th><th>Discount Factor</th><th>PV of FCF</th></tr>
-          </thead>
+          <thead><tr><th>Year</th><th>Projected FCF</th><th>Discount Factor</th><th>PV of FCF</th></tr></thead>
           <tbody>
             {summary.projected.map((p) => (
               <tr key={p.year}>
@@ -334,14 +300,13 @@ function DCFResults({
             <tr>
               <td><strong>Terminal value</strong></td>
               <td>{'₹' + fmtNum(Math.round(summary.tv))} →</td>
-              <td>{(1 / Math.pow(1 + Number(discount) / 100, Number(years))).toFixed(4)}</td>
+              <td>{(1 / Math.pow(1 + discount / 100, years)).toFixed(4)}</td>
               <td>{'₹' + fmtNum(Math.round(summary.pvTv))}</td>
             </tr>
           </tbody>
         </table>
       </Card>
 
-      {/* ── Sensitivity Analysis ── */}
       {sens.length > 0 && (
         <Card label="Sensitivity Analysis" className="mt-4">
           <div className="card-body">
@@ -352,27 +317,16 @@ function DCFResults({
           </div>
           <div className="overflow-x-auto">
             <table className="sens-table">
-              <thead>
-                <tr>
-                  <th>Growth ↓ / Disc →</th>
-                  {sens[0].cols.map((c) => (
-                    <th key={c.d}>{c.d}%</th>
-                  ))}
-                </tr>
-              </thead>
+              <thead><tr><th>Growth ↓ / Disc →</th>{sens[0].cols.map((c) => (<th key={c.d}>{c.d}%</th>))}</tr></thead>
               <tbody>
                 {sens.map((row) => (
                   <tr key={row.g}>
                     <td>{row.g}%</td>
                     {row.cols.map((c) => {
                       const diff = c.iv - priceVal;
-                      const isBaseCell = Math.abs(row.g - 3) < 0.5 && c.d === Number(discount);
+                      const isBaseCell = Math.abs(row.g - 3) < 0.5 && c.d === discount;
                       const cls = diff > 0 ? 'sens-td-up' : diff < 0 ? 'sens-td-down' : '';
-                      return (
-                        <td key={c.d} className={`${cls}${isBaseCell ? ' sens-td-base' : ''}`}>
-                              {'₹' + fmtNum(Math.round(c.iv * 10) / 10)}
-                            </td>
-                      );
+                      return (<td key={c.d} className={`${cls}${isBaseCell ? ' sens-td-base' : ''}`}>{'₹' + fmtNum(Math.round(c.iv * 10) / 10)}</td>);
                     })}
                   </tr>
                 ))}
@@ -388,12 +342,7 @@ function DCFResults({
         <TrustBadge label="₹ Indian Market" />
       </div>
       <Disclaimer extra="Method: DCF with Gordon Growth terminal value" />
-      <NextLinks
-        links={[
-          { label: 'Compare peers', href: '/tools/peer' },
-          { label: 'Review filings', href: '/research/filing' },
-        ]}
-      />
+      <NextLinks links={[{ label: 'Compare peers', href: '/tools/peer' }, { label: 'Review filings', href: '/research/filing' }]} />
     </ResultPanel>
   );
 }

@@ -101,7 +101,7 @@ body::before {
 .skip-link { position: absolute; top: -100%; left: 0; z-index: 9999; padding: 8px 14px; background: var(--bg-elevated); color: var(--text); border: 1px solid var(--border); border-radius: 0 0 var(--radius-md) 0; text-decoration: none; transition: top var(--transition); font-size: var(--text-xs); }
 .skip-link:focus { top: 0; }
 
-.page { max-width: var(--content-max); margin: 0 auto; padding: 0 var(--space-5) var(--space-10); position: relative; z-index: 1; }
+.page { max-width: var(--content-max); margin: 0 auto; padding: 0 var(--space-5) calc(var(--space-10) + env(safe-area-inset-bottom)); position: relative; z-index: 1; }
 #main-content:focus { outline: none; }
 
 /* ── Nav ── */
@@ -109,11 +109,11 @@ body::before {
 .nav-inner { max-width: var(--content-max); margin: 0 auto; display: flex; align-items: stretch; padding: 0 var(--space-5); gap: 0; min-height: 0; }
 .nav-brand { font-size: 13px; font-weight: 500; color: var(--text-secondary); padding: 9px 0; margin-right: var(--space-4); flex-shrink: 0; display: flex; align-items: center; gap: 7px; text-decoration: none; }
 .nav-brand:hover { color: var(--text); }
-.nav-tab { font-size: 12px; font-weight: 500; color: var(--text-tertiary); padding: 9px 12px; cursor: pointer; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; transition: color var(--transition), border-color var(--transition), background var(--transition-fast); white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; position: relative; }
+.nav-tab { font-size: 12px; font-weight: 500; color: var(--text-tertiary); padding: 9px 12px; cursor: pointer; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; transition: color var(--transition), border-color var(--transition), background var(--transition-fast); white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; position: relative; min-height: 44px; }
 .nav-tab svg { flex-shrink: 0; }
 .nav-tab:hover { color: var(--text-secondary); background: var(--primary-subtle); }
 .nav-tab.active { color: var(--primary); font-weight: 600; border-bottom-color: var(--primary); }
-.nav-cta { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 5px 10px; cursor: pointer; text-decoration: none; transition: all var(--transition); background: transparent; }
+.nav-cta { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 5px 10px; min-height: 44px; cursor: pointer; text-decoration: none; transition: all var(--transition); background: transparent; }
 .nav-cta:hover { border-color: var(--border-strong); color: var(--text-secondary); }
 .nav-cta svg { width: 12px; height: 12px; flex-shrink: 0; }
 .nav-sep { width: 1px; height: 14px; background: var(--border); flex-shrink: 0; margin: 0 4px; align-self: center; }
@@ -133,7 +133,7 @@ body::before {
 .card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
 .card-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--border); }
 .card-label { font-family: 'IBM Plex Mono', monospace; font-size: var(--text-2xs); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); font-weight: 500; }
-.card-body { padding: var(--space-3) var(--space-4); }
+.card-body { padding: var(--space-3); }
 .card-actions { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-top: 1px solid var(--border); }
 .card-accent { height: 2px; background: var(--border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
 
@@ -149,6 +149,7 @@ button, .btn {
   transition: all var(--transition-fast); line-height: 1.4;
   display: inline-flex; align-items: center; gap: 5px;
   text-decoration: none; user-select: none;
+  min-height: 44px;
 }
 button:hover, .btn:hover { color: var(--primary); border-color: var(--primary); }
 button:active, .btn:active { opacity: 0.8; }
@@ -703,8 +704,8 @@ tr:hover .spreadsheet-remove-btn {
   .spreadsheet-remove-btn { font-size: 11px; padding: 2px; }
 }
 @media (max-width: 420px) {
-  .spreadsheet-corner { width: 80px; min-width: 60px; }
-  .spreadsheet-header { width: 55px; min-width: 50px; }
+  .spreadsheet-corner { width: 100px; min-width: 80px; }
+  .spreadsheet-header { width: 65px; min-width: 60px; }
   .spreadsheet-cell { padding: 3px 4px; font-size: 10px; min-height: 20px; }
   .spreadsheet-add-col { width: 20px; min-width: 20px; }
   .spreadsheet-footer { flex-direction: column; gap: 3px; }
@@ -756,7 +757,7 @@ details[open] .details-summary::before {
 
   /* ── Nav: minimal footprint ── */
   .nav-inner { padding: 0 var(--space-1); overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .nav-tab { padding: 6px 5px; font-size: 10px; gap: 2px; min-height: unset; min-width: unset; }
+  .nav-tab { padding: 6px 5px; font-size: 10px; gap: 2px; }
   .nav-tab svg { width: 12px; height: 12px; flex-shrink: 0; }
   .nav-tab span:not(.nav-brand) { display: none; }
   .nav-tab.active span { display: inline; }
@@ -793,10 +794,10 @@ details[open] .details-summary::before {
   .page-hero { padding: var(--space-2) 0 var(--space-1); }
   .page-hero h1 { font-size: 17px; }
   .page-hero-sub { font-size: 11px; }
-  .page-hero-answer { font-size: 9px; display: none; }
+  .page-hero-answer { font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 
   /* ── Cards ── */
-  .card-body { padding: var(--space-1) var(--space-2); }
+  .card-body { padding: var(--space-3) var(--space-4); }
   .card-header { padding: var(--space-1) var(--space-2); }
   .card-actions { padding: var(--space-1) var(--space-2); flex-wrap: wrap; gap: var(--space-1); }
   .card-label { font-size: 8px; }
@@ -902,7 +903,7 @@ details[open] .details-summary::before {
   .metric-cell { padding: 5px 8px; }
   .diff-table { font-size: 8px; }
   .diff-table th, .diff-table td { padding: 2px 3px; }
-  .card-body { padding: var(--space-1) var(--space-2); }
+  .card-body { padding: var(--space-2); }
   .insight-card { padding: 5px 7px; }
   .workspace-step { font-size: 10px; padding: 3px 5px; }
   .home-card { padding: var(--space-1) var(--space-2); }
@@ -921,9 +922,90 @@ details[open] .details-summary::before {
 @media print { .nav, #toast, .skip-link { display: none; } body { background: #fff; color: #000; } .card { border: 1px solid #ccc; background: #fff; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
 @media (pointer: coarse) {
-  .nav-tab, .nav-cta, button, .btn, .home-card, .upload-label, .import-dropzone,
-  .workspace-step, .workspace-cta, .workspace-quick-link, .empty-state-action,
-  .nav-clear, .spreadsheet-add-btn, .spreadsheet-remove-btn, .details-summary { min-height: 44px; min-width: 44px; }
   .num-input, .period-label-input, .spreadsheet-header-input, .spreadsheet-cell { min-height: 44px; font-size: 16px; }
-  .card-body { padding: var(--space-2) var(--space-3); }
+}
+
+/* ── Mobile landscape (keyboard open, wide but short) ── */
+@media (max-width: 640px) and (orientation: landscape) {
+  .page { padding-left: var(--space-3); padding-right: var(--space-3); }
+  .page-hero { padding: var(--space-1) 0 var(--space-1); }
+  .page-hero h1 { font-size: 15px; }
+  .page-hero-sub { font-size: 10px; }
+  .page-hero-answer { font-size: 8px; }
+  .card:has(.diff-table),
+  .card:has(.sens-table),
+  .card:has(.spreadsheet-wrap) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .spreadsheet-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* ── Sticky bottom action bar for mobile (toolbar cards) ── */
+.sticky-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 50;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+  margin-top: var(--space-4);
+}
+
+/* ── Keyboard-avoiding: scroll inputs into view on focus ── */
+input:focus, textarea:focus, select:focus, [contenteditable]:focus,
+.num-input:focus, .spreadsheet-cell:focus, .spreadsheet-header-input:focus {
+  scroll-margin-bottom: 120px;
+}
+
+/* ── Desktop expansions ── */
+@media (min-width: 640px) {
+  .card-body { padding: var(--space-3) var(--space-4); }
+}
+@media (min-width: 1024px) {
+  .card-body { padding: var(--space-3) var(--space-4); }
+  .nav-tab { min-height: unset; }
+  button, .btn { min-height: unset; }
+  .nav-cta { min-height: unset; }
+}
+
+/* ── Remove hover effects on touch devices (desktop-only hover) ── */
+@media (hover: none) and (pointer: coarse) {
+  button:hover, .btn:hover, .btn-primary:hover, .btn-secondary:hover,
+  .btn-ghost:hover, .nav-tab:hover, .nav-cta:hover, .nav-brand:hover,
+  .home-card:hover, .workspace-step:hover, .workspace-cta:hover,
+  .workspace-quick-link:hover, .empty-state-action:hover, .nav-clear:hover,
+  .upload-label:hover, .upload-zone:hover, .about-cta-btn:hover,
+  .home-cta-primary:hover, .home-cta-secondary:hover,
+  .spreadsheet-suggestion-item:hover, .workspace-upload-area:hover,
+  .spreadsheet-add-btn:hover, .spreadsheet-remove-btn:hover,
+  .details-summary:hover, .next-links a:hover,
+  .insight-card:hover, .warning-card:hover {
+    color: inherit !important;
+    border-color: inherit !important;
+    background: inherit !important;
+    text-decoration: none !important;
+    opacity: inherit !important;
+  }
+  /* Reset specific known hover color values */
+  .nav-tab:hover { color: var(--text-tertiary); background: none; }
+  .nav-tab.active:hover { color: var(--primary); }
+  button:hover, .btn:hover { color: var(--text-secondary); border-color: var(--border-strong); }
+  .btn-primary:hover { color: var(--primary); border-color: var(--border-strong); }
+  .btn-ghost:hover { color: var(--text-muted); }
+  .btn-secondary:hover { color: var(--text-secondary); border-color: var(--border-strong); }
+  .nav-cta:hover { color: var(--text-tertiary); border-color: var(--border); }
+  .nav-brand:hover { color: var(--text-secondary); }
+  .home-card:hover { border-color: var(--border); }
+  .about-cta-btn:hover { border-color: var(--border-strong); color: var(--text); }
+  .home-cta-primary:hover { border-color: var(--border-strong); color: var(--text); }
+  .home-cta-secondary:hover { border-color: var(--border); color: var(--text-tertiary); }
+  .workspace-step:hover { background: none; color: var(--text-tertiary); }
+  .workspace-cta:hover { border-color: var(--border); color: var(--text-tertiary); }
+  .upload-label:hover { color: var(--text-secondary); }
+  .upload-zone:hover { border-color: var(--border-strong); }
+  .next-links a:hover { text-decoration: none; }
+  .spreadsheet-add-btn:hover { color: var(--text-muted); background: none; }
+  tr:hover .spreadsheet-remove-btn { opacity: 0; }
 }

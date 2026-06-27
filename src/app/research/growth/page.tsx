@@ -1,6 +1,6 @@
 'use client';
 
-import { fmtNum } from '@/lib/calculations';
+import { useState, useCallback } from 'react';
 import { useYoyStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
@@ -17,19 +17,45 @@ import {
   DataQualityBar,
   TrustBadge,
 } from '@/components/ui';
+import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
+import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import { useGlobalImportFill, extractYoYInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
+import { useModelData } from '@/store/use-model-data';
+import { extractTrendData } from '@/store/financial-model-selectors';
 
 export default function YoyPage() {
   const showToast = useToast();
-  const { years, csv, rows, setYears, setCsv, setRows, clear } = useYoyStore();
+  const { years, csv, rows, setYears, setCsv, setRows, clear: clearStore } = useYoyStore();
+  const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
 
   const dataInfo = useGlobalImportFill(
-    (vals) => {
-      setYears(vals.years);
-      setCsv(vals.csv);
-    },
+    (vals) => { setYears(vals.years); setCsv(vals.csv); },
     extractYoYInputs
   );
+
+  const modelData = useModelData((ds) => extractTrendData(ds));
+
+  // Pre-fill from model when available
+  const [prefilled, setPrefilled] = useState(false);
+  const handleDataChange = useCallback((newRows: SpreadsheetRow[], newPeriods: string[]) => {
+    setSheetRows(newRows);
+    // Convert to growth format
+    const labels = newPeriods.join(',');
+    setYears(labels);
+    const csvText = newRows.map((r) => `${r.metric},${r.values.join(',')}`).join('\n');
+    setCsv(csvText);
+    parseWithText(csvText);
+  }, [setYears, setCsv]);
+
+  const parseWithText = useCallback((text: string) => {
+    const lines = text.split('\n').filter(Boolean);
+    setRows(lines.map((l) => {
+      const cols = l.split(',').map((s) => s.trim());
+      const vals = cols.slice(1).map(Number);
+      const growth = vals.map((v, i) => i > 0 && vals[i - 1] ? ((v - vals[i - 1]) / Math.abs(vals[i - 1])) * 100 : null);
+      return { label: cols[0], vals, growth };
+    }));
+  }, [setRows]);
 
   async function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -38,24 +64,22 @@ export default function YoyPage() {
       const text = await readFile(file);
       setCsv(text);
       parseWithText(text);
+      // Also populate sheet
+      const lines = text.split('\n').filter(Boolean);
+      const periods = lines[0]?.split(',').slice(1).map(s => s.trim()) || [];
+      const parsedRows = lines.map(l => {
+        const cols = l.split(',').map(s => s.trim());
+        return { metric: cols[0], values: cols.slice(1) };
+      });
+      if (parsedRows.length > 0) {
+        setSheetRows(parsedRows);
+        setYears(periods.join(','));
+      }
+      showToast('Loaded data');
     } catch (err: unknown) {
       showToast('Error reading file: ' + (err instanceof Error ? err.message : 'unknown'));
     }
     e.target.value = '';
-  }
-
-  function parseWithText(text: string) {
-    const lines = text.split('\n').filter(Boolean);
-    setRows(
-      lines.map((l) => {
-        const cols = l.split(',').map((s) => s.trim());
-        const vals = cols.slice(1).map(Number);
-        const growth = vals.map((v, i) =>
-          i > 0 && vals[i - 1] ? ((v - vals[i - 1]) / Math.abs(vals[i - 1])) * 100 : null
-        );
-        return { label: cols[0], vals, growth };
-      })
-    );
   }
 
   function parse() {
@@ -63,54 +87,29 @@ export default function YoyPage() {
     const lines = csv.split('\n').filter(Boolean);
     if (lines.length > 0) {
       showToast('Loaded ' + lines.length + ' metrics');
-      setTimeout(() => {
-        document.getElementById('growth-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 200);
     }
   }
 
-  function handleClear() { clear(); }
+  function handleClear() { clearStore(); setSheetRows([]); }
 
   const yearList = years.split(',').map((s) => s.trim()).filter(Boolean);
   const colLabels = rows.length > 0
-    ? rows[0].growth.slice(1).map((_, i) => {
-        if (yearList.length >= i + 2) {
-          return `${yearList[i]}→${yearList[i + 1]}`;
-        }
-        return `Yr${i + 1}→Yr${i + 2}`;
-      })
+    ? rows[0].growth.slice(1).map((_, i) => yearList.length >= i + 2 ? `${yearList[i]}→${yearList[i + 1]}` : `Yr${i + 1}→Yr${i + 2}`)
     : [];
 
-  const fastestGrowing =
-    rows.length > 0
-      ? rows
-          .map((r) => {
-            const avgGrowth =
-              r.growth
-                .slice(1)
-                .filter((g): g is number => g !== null)
-                .reduce((a, b) => a + b, 0) /
-              r.growth.slice(1).filter((g): g is number => g !== null).length;
-            return { label: r.label, avg: isNaN(avgGrowth) ? -Infinity : avgGrowth };
-          })
-          .sort((a, b) => b.avg - a.avg)[0]
-      : null;
+  const fastestGrowing = rows.length > 0
+    ? rows.map((r) => {
+        const avg = r.growth.slice(1).filter((g): g is number => g !== null).reduce((a, b) => a + b, 0) / r.growth.slice(1).filter((g): g is number => g !== null).length;
+        return { label: r.label, avg: isNaN(avg) ? -Infinity : avg };
+      }).sort((a, b) => b.avg - a.avg)[0]
+    : null;
 
-  const declining =
-    rows.length > 0
-      ? rows
-          .map((r) => {
-            const avgGrowth =
-              r.growth
-                .slice(1)
-                .filter((g): g is number => g !== null)
-                .reduce((a, b) => a + b, 0) /
-              r.growth.slice(1).filter((g): g is number => g !== null).length;
-            return { label: r.label, avg: isNaN(avgGrowth) ? Infinity : avgGrowth };
-          })
-          .filter((m) => m.avg < 0)
-          .sort((a, b) => a.avg - b.avg)[0]
-      : null;
+  const declining = rows.length > 0
+    ? rows.map((r) => {
+        const avg = r.growth.slice(1).filter((g): g is number => g !== null).reduce((a, b) => a + b, 0) / r.growth.slice(1).filter((g): g is number => g !== null).length;
+        return { label: r.label, avg: isNaN(avg) ? Infinity : avg };
+      }).filter((m) => m.avg < 0).sort((a, b) => a.avg - b.avg)[0]
+    : null;
 
   return (
     <div>
@@ -123,24 +122,15 @@ export default function YoyPage() {
       <DataQualityBar source={getDataSourceLabel(dataInfo.dataSource, dataInfo.companyName)} />
       <UploadBar onUpload={handleCsvFile} hint="CSV: Metric, Year1, Year2, Year3, ..." />
 
-      <Card label="Data" className="mt-4">
+      <Card label="Data">
         <div className="card-body">
-          <div className="field-group mb-2">
-            <span className="field-label">Years:</span>
-            <input
-              type="text"
-              className="num-input"
-              value={years}
-              onChange={(e) => setYears(e.target.value)}
-            />
-          </div>
-          <textarea
-            id="growth-csv"
-            rows={6}
-            className="num-input"
-            value={csv}
-            onChange={(e) => setCsv(e.target.value)}
-            aria-label="Growth data CSV input"
+          <ToolSpreadsheet
+            tool="growth"
+            multiColumn
+            initialData={sheetRows.length > 0 ? sheetRows : undefined}
+            initialPeriods={yearList.length >= 3 ? yearList : ['FY22', 'FY23', 'FY24']}
+            onDataChange={handleDataChange}
+            hint="Add rows for each metric. Tab to navigate between cells."
           />
           <Toolbar onClear={handleClear} onAction={parse} actionLabel="Calculate growth" />
         </div>
@@ -150,28 +140,13 @@ export default function YoyPage() {
         <div id="growth-results">
           <Card label="Growth rates (YoY %)" className="mt-4">
             <table className="diff-table">
-              <thead>
-                <tr>
-                  <th>Metric</th>
-                  {colLabels.map((cl, i) => <th key={i}>{cl}</th>)}
-                </tr>
-              </thead>
+              <thead><tr><th>Metric</th>{colLabels.map((cl, i) => <th key={i}>{cl}</th>)}</tr></thead>
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i}>
                     <td><strong>{r.label}</strong></td>
                     {r.growth.slice(1).map((g, j) => (
-                      <td
-                        key={j}
-                        style={{
-                          color:
-                            g !== null && g > 0
-                              ? 'var(--green)'
-                              : g !== null && g < 0
-                                ? 'var(--red)'
-                                : 'var(--text)',
-                        }}
-                      >
+                      <td key={j} style={{ color: g !== null && g > 0 ? 'var(--green)' : g !== null && g < 0 ? 'var(--red)' : 'var(--text)' }}>
                         {g !== null ? (g > 0 ? '+' : '') + g.toFixed(1) + '%' : '—'}
                       </td>
                     ))}
@@ -180,64 +155,30 @@ export default function YoyPage() {
               </tbody>
             </table>
             <div className="flex justify-center py-3">
-              <button
-                className="btn-secondary btn-sm"
-                onClick={() => {
-                  const hdrs = ['Metric', ...colLabels];
-                  const data = rows.map((r) => [
-                    r.label,
-                    ...r.growth.slice(1).map((g) =>
-                      g !== null ? (g > 0 ? '+' : '') + g.toFixed(1) + '%' : ''
-                    ),
-                  ]);
-                  downloadCSV('yoy_growth.csv', [hdrs, ...data]);
-                }}
-              >
-                Download CSV
-              </button>
+              <button className="btn-secondary btn-sm" onClick={() => {
+                const hdrs = ['Metric', ...colLabels];
+                const data = rows.map((r) => [r.label, ...r.growth.slice(1).map((g) => g !== null ? (g > 0 ? '+' : '') + g.toFixed(1) + '%' : '')]);
+                downloadCSV('yoy_growth.csv', [hdrs, ...data]);
+              }}>Download CSV</button>
             </div>
           </Card>
 
           <div className="flex flex-col gap-3 mt-4">
-            {fastestGrowing && fastestGrowing.avg > -Infinity && (
-              <InsightCard
-                type="positive"
-                title="Fastest growing metric"
-                text={`${fastestGrowing.label} averaged ${fastestGrowing.avg.toFixed(1)}% growth across the periods.`}
-              />
-            )}
-            {declining && (
-              <InsightCard
-                type="risk"
-                title="Declining metric"
-                text={`${declining.label} averaged ${declining.avg.toFixed(1)}% — worth investigating further.`}
-              />
-            )}
+            {fastestGrowing && fastestGrowing.avg > -Infinity && <InsightCard type="positive" title="Fastest growing metric" text={`${fastestGrowing.label} averaged ${fastestGrowing.avg.toFixed(1)}% growth.`} />}
+            {declining && <InsightCard type="risk" title="Declining metric" text={`${declining.label} averaged ${declining.avg.toFixed(1)}% — worth investigating.`} />}
           </div>
 
           <div className="mt-4">
-            <NextLinks
-              links={[
-                { label: 'Trend charts', href: '/research/trends' },
-                { label: 'Review filings', href: '/research/filing' },
-              ]}
-            />
+            <NextLinks links={[{ label: 'Trend charts', href: '/research/trends' }, { label: 'Review filings', href: '/research/filing' }]} />
             <CalcTimestamp />
-            <div className="flex gap-2 flex-wrap mt-2">
-              <TrustBadge label="Growth Rate Analysis" variant="source" />
-              <TrustBadge label="₹ Indian Market" />
-            </div>
+            <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label="Growth Rate Analysis" variant="source" /><TrustBadge label="₹ Indian Market" /></div>
             <Disclaimer />
           </div>
         </div>
       )}
 
       {!rows.length && (
-        <EmptyState
-          title="No growth data yet"
-          desc="Enter year labels and metrics above (CSV format: Metric, Year1, Year2...), then click Calculate growth. The tool computes year-over-year percentage changes and identifies accelerating or declining metrics. Data can also be pre-filled from the Smart Import tool."
-          action={{ label: 'Import data', href: '/import' }}
-        />
+        <EmptyState title="No growth data yet" desc="Enter year labels and metrics in the spreadsheet above (or upload a CSV), then click Calculate growth. The tool computes year-over-year percentage changes." action={{ label: 'Import data', href: '/import' }} />
       )}
     </div>
   );

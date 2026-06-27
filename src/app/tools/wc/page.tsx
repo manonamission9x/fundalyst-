@@ -1,16 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { computeWC, fmtNum } from '@/lib/calculations';
-import { readFile } from '@/lib/helpers';
 import { useWCStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
 import {
   PageHeader,
   Card,
-  UploadBar,
-  FieldGrid,
-  Field,
   Toolbar,
   MetricGrid,
   InsightCard,
@@ -22,73 +18,67 @@ import {
   CalcTimestamp,
   TrustBadge,
 } from '@/components/ui';
-import { useGlobalImportFill, extractWCInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
+import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
+import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import { useActiveDataset, extractWCFromModel } from '@/store/financial-model-selectors';
+import { useModelData } from '@/store/use-model-data';
+
+const WC_METRICS = ['Revenue (annual)', 'Cost of Goods Sold', 'Trade Receivables', 'Inventory', 'Payables', 'Cash & Equivalents'];
+
+function rowsToWCInputs(rows: SpreadsheetRow[]) {
+  const result: Record<string, number | null> = {};
+  for (const row of rows) {
+    const val = row.values[0]?.trim();
+    result[row.metric] = val ? Number(val) || 0 : null;
+  }
+  return {
+    revenue: result['Revenue (annual)'],
+    cogs: result['Cost of Goods Sold'],
+    receivables: result['Trade Receivables'],
+    inventory: result['Inventory'],
+    payables: result['Payables'],
+    cash: result['Cash & Equivalents'],
+  };
+}
 
 export default function WCPage() {
   const showToast = useToast();
-  const { inputs, res, setInput, setRes, clear } = useWCStore();
+  const { res, setRes, clear: clearStore } = useWCStore();
+  const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
+  const [showResults, setShowResults] = useState(false);
 
-  const dataInfo = useGlobalImportFill(
-    (vals) => {
-      Object.entries(vals).forEach(([key, val]) => setInput(key as keyof typeof inputs, val));
-    },
-    extractWCInputs
-  );
+  const modelData = useModelData((ds) => extractWCFromModel(ds));
 
-  // ── Pre-fill from canonical model when available ──
-  const wcActiveDataset = useActiveDataset();
+  const prefilledRef = useRef(false);
   useEffect(() => {
-    if (!wcActiveDataset || wcActiveDataset.facts.length < 3) return;
-    const modelInputs = extractWCFromModel(wcActiveDataset);
-    const wcKeys = ['revenue', 'cogs', 'receivables', 'inventory', 'payables', 'cash'] as const;
-    for (const key of wcKeys) {
-      const val = modelInputs[key];
-      if (val !== null && useWCStore.getState().inputs[key] === '') {
-        setInput(key, val);
-      }
+    if (prefilledRef.current) return;
+    if (!modelData.data || sheetRows.length > 0) return;
+    const { revenue, cogs, receivables, inventory, payables, cash } = modelData.data;
+    if (revenue !== null || cogs !== null || receivables !== null) {
+      setSheetRows([
+        { metric: 'Revenue (annual)', values: [revenue !== null ? String(revenue) : ''] },
+        { metric: 'Cost of Goods Sold', values: [cogs !== null ? String(cogs) : ''] },
+        { metric: 'Trade Receivables', values: [receivables !== null ? String(receivables) : ''] },
+        { metric: 'Inventory', values: [inventory !== null ? String(inventory) : ''] },
+        { metric: 'Payables', values: [payables !== null ? String(payables) : ''] },
+        { metric: 'Cash & Equivalents', values: [cash !== null ? String(cash) : ''] },
+      ]);
+      prefilledRef.current = true;
     }
-  }, [wcActiveDataset]);
-
-  async function handleCsv(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const text = await readFile(file);
-      const rows = text.split('\n').filter(Boolean);
-      if (rows.length < 2) return;
-      const vals = rows[1].split(',').map((s) => parseFloat(s.trim()));
-      if (vals.length >= 6) {
-        setInput('revenue', vals[0] || 0);
-        setInput('cogs', vals[1] || 0);
-        setInput('receivables', vals[2] || 0);
-        setInput('inventory', vals[3] || 0);
-        setInput('payables', vals[4] || 0);
-        setInput('cash', vals[5] || 0);
-        showToast('Loaded ' + vals.length + ' values');
-      }
-    } catch (err: unknown) {
-      showToast('Error reading file: ' + (err instanceof Error ? err.message : 'unknown'));
-    }
-    e.target.value = '';
-  }
+  }, [modelData.data, sheetRows.length]);
 
   function analyze() {
-    setRes(computeWC(
-      inputs.revenue === '' ? null : Number(inputs.revenue),
-      inputs.cogs === '' ? null : Number(inputs.cogs),
-      inputs.receivables === '' ? null : Number(inputs.receivables),
-      inputs.inventory === '' ? null : Number(inputs.inventory),
-      inputs.payables === '' ? null : Number(inputs.payables),
-      inputs.cash === '' ? null : Number(inputs.cash)
-    ));
+    const inputs = rowsToWCInputs(sheetRows);
+    setRes(computeWC(inputs.revenue, inputs.cogs, inputs.receivables, inputs.inventory, inputs.payables, inputs.cash));
+    setShowResults(true);
     showToast('Analysis complete');
-    setTimeout(() => {
-      document.getElementById('wc-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 200);
   }
 
-  function handleClear() { clear(); }
+  const handleClear = useCallback(() => {
+    clearStore();
+    setSheetRows([]);
+    setShowResults(false);
+  }, [clearStore]);
 
   return (
     <div>
@@ -99,169 +89,49 @@ export default function WCPage() {
       />
 
       <DataQualityBar
-        source={getDataSourceLabel(dataInfo.dataSource, dataInfo.companyName)}
-        periods={dataInfo.companyName ? `Company: ${dataInfo.companyName}` : undefined}
+        source={modelData.isLoaded ? `Model: ${modelData.companyName || 'Loaded'}` : 'Manual mode'}
+        periods={modelData.companyName ? `Company: ${modelData.companyName}` : undefined}
       />
 
-      <UploadBar onUpload={handleCsv} hint="CSV: Revenue, COGS, Receivables, Inventory, Payables, Cash" />
-
-      <Card label="Inputs (₹ Cr)">
-        <FieldGrid>
-          {[
-            { l: 'Revenue (annual)', key: 'revenue' as const },
-            { l: 'Cost of goods sold', key: 'cogs' as const },
-            { l: 'Trade receivables', key: 'receivables' as const },
-            { l: 'Inventory', key: 'inventory' as const },
-            { l: 'Payables', key: 'payables' as const },
-            { l: 'Cash & equivalents', key: 'cash' as const },
-          ].map((f) => (
-            <Field key={f.key} label={f.l} value={inputs[f.key]} onChange={(v) => setInput(f.key, v)} hint="In ₹ Cr" />
-          ))}
-        </FieldGrid>
+      <Card label="Cash Efficiency Inputs">
+        <div className="card-body">
+          <ToolSpreadsheet
+            tool="wc"
+            singleColumnLabel="₹ Cr"
+            initialData={sheetRows.length > 0 ? sheetRows : undefined}
+            onDataChange={(rows) => setSheetRows(rows)}
+            hint="Enter annual values in ₹ Cr. Tab to navigate."
+          />
+        </div>
         <Toolbar onClear={handleClear} onAction={analyze} actionLabel="Analyze" />
       </Card>
 
-      {res && (
+      {res && showResults && (
         <div id="wc-results">
           <Card label="Cash Conversion Metrics">
             <MetricGrid
               metrics={[
-                {
-                  label: 'DSO',
-                  value: (res.dso !== null ? Math.round(res.dso) : '—') + 'd',
-                  sub: 'Days to collect from customers',
-                  cls: res.dso !== null && res.dso > 90 ? 'warn' : res.dso !== null && res.dso < 45 ? 'good' : '',
-                },
-                {
-                  label: 'DIO',
-                  value: (res.dio !== null ? Math.round(res.dio) : '—') + 'd',
-                  sub: 'Days inventory sits before sold',
-                  cls: res.dio !== null && res.dio > 120 ? 'warn' : res.dio !== null && res.dio < 60 ? 'good' : '',
-                },
-                {
-                  label: 'DPO',
-                  value: (res.dpo !== null ? Math.round(res.dpo) : '—') + 'd',
-                  sub: 'Days to pay suppliers',
-                  cls: res.dpo !== null && res.dpo < 15 ? 'warn' : res.dpo !== null && res.dpo > 45 ? 'good' : '',
-                },
-                {
-                  label: 'CCC',
-                  value: Math.round(res.ccc) + 'd',
-                  sub: 'DSO + DIO − DPO. Lower is better.',
-                  cls: res.ccc > 90 ? 'warn' : res.ccc < 30 ? 'good' : '',
-                },
+                { label: 'DSO', value: (res.dso !== null ? Math.round(res.dso) : '—') + 'd', sub: 'Days to collect from customers', cls: res.dso !== null && res.dso > 90 ? 'warn' : res.dso !== null && res.dso < 45 ? 'good' : '' },
+                { label: 'DIO', value: (res.dio !== null ? Math.round(res.dio) : '—') + 'd', sub: 'Days inventory sits before sold', cls: res.dio !== null && res.dio > 120 ? 'warn' : res.dio !== null && res.dio < 60 ? 'good' : '' },
+                { label: 'DPO', value: (res.dpo !== null ? Math.round(res.dpo) : '—') + 'd', sub: 'Days to pay suppliers', cls: res.dpo !== null && res.dpo < 15 ? 'warn' : res.dpo !== null && res.dpo > 45 ? 'good' : '' },
+                { label: 'CCC', value: Math.round(res.ccc) + 'd', sub: 'DSO + DIO − DPO. Lower is better.', cls: res.ccc > 90 ? 'warn' : res.ccc < 30 ? 'good' : '' },
               ]}
             />
           </Card>
 
           <Card className="mt-4">
-            {res.dso !== null && res.dso > 90 && (
-              <WarningCard
-                level="danger"
-                label="High DSO"
-                text={`Customers take ${Math.round(res.dso)} days on average to pay. This strains working capital. Consider tighter credit terms.`}
-              />
-            )}
-            {res.dso !== null && res.dso < 45 && res.dso >= 0 && (
-              <InsightCard
-                type="positive"
-                title="Healthy DSO"
-                text={`At ${Math.round(res.dso)} days, the company collects from customers quickly, keeping cash flowing.`}
-                formula="DSO = (Receivables ÷ Revenue) × 365"
-              />
-            )}
-            {res.dio !== null && res.dio > 120 && (
-              <WarningCard
-                level="danger"
-                label="High DIO"
-                text={`Inventory sits for ${Math.round(res.dio)} days before being sold. This may signal slow-moving stock or overstocking.`}
-              />
-            )}
-            {res.dio !== null && res.dio < 60 && res.dio >= 0 && (
-              <InsightCard
-                type="positive"
-                title="Efficient Inventory"
-                text={`Inventory turns over in ${Math.round(res.dio)} days — the company isn't tying up cash in unsold goods.`}
-                formula="DIO = (Inventory ÷ COGS) × 365"
-              />
-            )}
-            {res.dpo !== null && res.dpo < 15 && (
-              <WarningCard
-                level="caution"
-                label="Low DPO"
-                text={`Suppliers are paid in just ${Math.round(res.dpo)} days. The company may be missing out on free financing by paying too early.`}
-              />
-            )}
-            {res.dpo !== null && res.dpo > 45 && (
-              <InsightCard
-                type="positive"
-                title="Favourable DPO"
-                text={`Taking ${Math.round(res.dpo)} days to pay suppliers helps conserve cash. This is beneficial as long as supplier relationships aren't strained.`}
-                formula="DPO = (Payables ÷ COGS) × 365"
-              />
-            )}
-            {res.ccc > 60 && (
-              <InsightCard
-                type="warning"
-                title="Long Cash Conversion Cycle"
-                text={`At ${Math.round(res.ccc)} days, cash is locked up for a long time. Focus on reducing DSO/DIO or negotiating longer payment terms.`}
-                formula="CCC = DSO + DIO − DPO"
-              />
-            )}
-            {res.ccc < 0 && (
-              <InsightCard
-                type="positive"
-                title="Negative CCC"
-                text={`A negative CCC (${Math.round(res.ccc)} days) means the company gets paid by customers before it has to pay suppliers — a strong cash position.`}
-              />
-            )}
-            {res.nwc < 0 && (
-              <WarningCard
-                level="caution"
-                label="Negative Net Working Capital"
-                text="Payables exceed receivables + inventory + cash. While this can signal efficiency, it may also indicate liquidity pressure if demand slows."
-              />
-            )}
-            {res.dso !== null && res.dso >= 45 && res.dso <= 90 && (
-              <InsightCard
-                type="info"
-                title="DSO in Check"
-                text={`At ${Math.round(res.dso)} days, DSO is within a reasonable range. Monitor for any upward trend.`}
-                formula="DSO = (Receivables ÷ Revenue) × 365"
-              />
-            )}
-            {res.dio !== null && res.dio >= 60 && res.dio <= 120 && (
-              <InsightCard
-                type="info"
-                title="DIO Within Range"
-                text={`Inventory sits for ${Math.round(res.dio)} days — typical for many industries. Compare with peers for context.`}
-                formula="DIO = (Inventory ÷ COGS) × 365"
-              />
-            )}
-            {res.dpo !== null && res.dpo >= 15 && res.dpo <= 45 && (
-              <InsightCard
-                type="info"
-                title="DPO at Typical Levels"
-                text={`Paying suppliers in ${Math.round(res.dpo)} days is within the normal range.`}
-                formula="DPO = (Payables ÷ COGS) × 365"
-              />
-            )}
-            {res.ccc >= 0 && res.ccc <= 60 && (
-              <InsightCard
-                type="positive"
-                title="Healthy CCC"
-                text={`At ${Math.round(res.ccc)} days, the cash conversion cycle is well-managed. Cash isn't tied up for too long.`}
-                formula="CCC = DSO + DIO − DPO"
-              />
-            )}
+            {res.dso !== null && res.dso > 90 && <WarningCard level="danger" label="High DSO" text={`Customers take ${Math.round(res.dso)} days on average to pay. This strains working capital.`} />}
+            {res.dso !== null && res.dso < 45 && res.dso >= 0 && <InsightCard type="positive" title="Healthy DSO" text={`At ${Math.round(res.dso)} days, the company collects from customers quickly.`} formula="DSO = (Receivables ÷ Revenue) × 365" />}
+            {res.dio !== null && res.dio > 120 && <WarningCard level="danger" label="High DIO" text={`Inventory sits for ${Math.round(res.dio)} days before being sold.`} />}
+            {res.dio !== null && res.dio < 60 && res.dio >= 0 && <InsightCard type="positive" title="Efficient Inventory" text={`Inventory turns over in ${Math.round(res.dio)} days.`} formula="DIO = (Inventory ÷ COGS) × 365" />}
+            {res.dpo !== null && res.dpo < 15 && <WarningCard level="caution" label="Low DPO" text={`Suppliers are paid in just ${Math.round(res.dpo)} days.`} />}
+            {res.dpo !== null && res.dpo > 45 && <InsightCard type="positive" title="Favourable DPO" text={`Taking ${Math.round(res.dpo)} days to pay suppliers conserves cash.`} formula="DPO = (Payables ÷ COGS) × 365" />}
+            {res.ccc > 60 && <InsightCard type="warning" title="Long Cash Conversion Cycle" text={`At ${Math.round(res.ccc)} days, cash is locked up for a long time.`} formula="CCC = DSO + DIO − DPO" />}
+            {res.ccc < 0 && <InsightCard type="positive" title="Negative CCC" text={`A negative CCC (${Math.round(res.ccc)} days) is a strong cash position.`} />}
+            {res.nwc < 0 && <WarningCard level="caution" label="Negative Net Working Capital" text="Payables exceed receivables + inventory + cash." />}
           </Card>
 
-          <NextLinks
-            links={[
-              { label: 'Financial ratios', href: '/tools/ratios' },
-              { label: 'Estimate value', href: '/tools/dcf' },
-            ]}
-          />
+          <NextLinks links={[{ label: 'Financial ratios', href: '/tools/ratios' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
           <CalcTimestamp />
           <div className="flex gap-2 flex-wrap mt-2">
             <TrustBadge label="Cash Conversion Cycle" variant="source" />
@@ -271,10 +141,10 @@ export default function WCPage() {
         </div>
       )}
 
-      {!res && (
+      {!showResults && (
         <EmptyState
           title="No cash efficiency data yet"
-          desc="Enter revenue, COGS, and balance sheet figures above, then click Analyze. The tool calculates DSO, DIO, DPO, and the Cash Conversion Cycle. You can also upload a CSV or pre-fill from the Smart Import tool."
+          desc="Enter revenue, COGS, and balance sheet figures in the spreadsheet above, then click Analyze. The tool calculates DSO, DIO, DPO, and the Cash Conversion Cycle."
           action={{ label: 'Import data', href: '/import' }}
         />
       )}

@@ -4,6 +4,7 @@ import type { FundalystDataset, ToolReadiness, ValidationCheck } from '@/lib/imp
 import { TOOL_METRICS } from '@/lib/importer/types';
 import { canonicalDisplayName } from '@/lib/importer/metric-aliases';
 import { runValidationChecks } from '@/lib/importer/tool-validation';
+import { usePipelineStore } from './pipeline-store';
 
 interface GlobalDataState {
   /** All imported datasets (multi-file support) */
@@ -54,6 +55,8 @@ export const useGlobalDataStore = create<GlobalDataState>()(
           datasets: updated,
           activeDatasetId: dataset.id,
         });
+        // Notify all tools that the canonical model has been updated
+        setTimeout(() => usePipelineStore.getState().notifyModelUpdated(), 0);
       },
 
       removeDataset: (id: string) => {
