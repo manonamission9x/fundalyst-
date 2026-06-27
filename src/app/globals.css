@@ -713,6 +713,8 @@ tr:hover .spreadsheet-remove-btn {
   .spreadsheet-add-row-btn { font-size: 9px; padding: 2px 8px; }
   .spreadsheet-row-actions { width: 20px; min-width: 20px; }
   .spreadsheet-remove-btn { font-size: 11px; padding: 2px; }
+  /* Override pointer:coarse remove-btn opacity — always visible on touch */
+  @media (pointer: coarse) { .spreadsheet-remove-btn { opacity: 0.6; } tr:hover .spreadsheet-remove-btn { opacity: 0.6; } }
 }
 @media (max-width: 420px) {
   .spreadsheet-corner { width: 100px; min-width: 80px; }
@@ -764,10 +766,10 @@ details[open] .details-summary::before {
   .workspace-header { flex-direction: column; gap: var(--space-2); align-items: flex-start; }
 }
 @media (max-width: 640px) {
-  .page { padding: 0 var(--space-2) var(--space-4); }
+  .page { padding: 0 var(--space-2) calc(var(--space-4) + env(safe-area-inset-bottom, 0px)); }
 
   /* ── Nav: minimal footprint ── */
-  .nav-inner { padding: 0 var(--space-1); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .nav-inner { padding: 0 var(--space-1); overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-padding: 0 var(--space-2); }
   .nav-tab { padding: 6px 5px; font-size: 11px; gap: 2px; }
   .nav-tab svg { width: 12px; height: 12px; }
   .nav-tab span:not(.nav-brand) { display: none; }
@@ -876,8 +878,10 @@ details[open] .details-summary::before {
   .workspace-brand { font-size: 12px; }
   .workspace-company { font-size: 11px; }
   .workspace-step { padding: 4px 6px; font-size: 11px; gap: 3px; }
+  .workspace-sidebar { gap: 1px; }
   .workspace-card-header { font-size: 8px; padding: var(--space-1) var(--space-2); }
   .workspace-header { gap: var(--space-1); }
+  .workspace-upload-area { padding: var(--space-4) var(--space-2); }
 
   /* ── Empty states ── */
   .empty-state { padding: 16px 12px; }
@@ -894,6 +898,15 @@ details[open] .details-summary::before {
   .site-footer { padding: var(--space-2) var(--space-2); font-size: 8px; }
   .err-msg { font-size: 9px; }
 
+  /* ── Sticky bottom bar ── */
+  .sticky-actions { padding: var(--space-1) var(--space-2); padding-bottom: calc(var(--space-1) + env(safe-area-inset-bottom, 0px)); gap: var(--space-1); flex-wrap: wrap; }
+
+  /* ── Import page ── */
+  .import-formats { flex-wrap: wrap; gap: 4px; font-size: 8px; }
+  .import-formats span { white-space: nowrap; }
+  .pdf-validation { padding: 6px 8px; font-size: 11px; }
+  .pdf-progress-bar { max-width: 160px; }
+
   /* ── Inputs ── */
   .num-input { font-size: 16px; padding: 3px 6px; }
   button, .btn { padding: 3px 7px; font-size: 10px; }
@@ -901,7 +914,7 @@ details[open] .details-summary::before {
   .field-group { gap: 1px; }
 }
 @media (max-width: 420px) {
-  .page { padding: 0 var(--space-1) var(--space-3); }
+  .page { padding: 0 var(--space-1) calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); }
   .nav-tab { padding: 5px 3px; font-size: 9px; gap: 1px; }
   .nav-tab svg { width: 10px; height: 10px; }
   .nav-brand svg { width: 10px; height: 10px; }
@@ -920,9 +933,19 @@ details[open] .details-summary::before {
   .home-card { padding: var(--space-1) var(--space-2); }
   .home-card-icon { width: 16px; height: 16px; }
   .home-card-icon svg { width: 10px; height: 10px; }
+  .home-section { margin-bottom: var(--space-2); }
+  .about-card { padding: var(--space-1) var(--space-2); }
+  .workspace-step { font-size: 9px; padding: 2px 4px; }
+  .workspace-step-icon { width: 14px; }
+  .workspace-upload-icon { width: 22px; height: 22px; }
   .trust-badge { font-size: 7px; padding: 0 3px; }
   .data-quality { font-size: 8px; }
   button, .btn { padding: 3px 6px; font-size: 9px; }
+  .sens-table th, .sens-table td { padding: 2px 3px; font-size: 8px; }
+  .sens-table td:first-child { font-size: 7px; }
+  .diff-table tr td:first-child { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .import-formats { font-size: 7px; gap: 2px; }
+  .sticky-actions { padding: var(--space-1); padding-bottom: calc(var(--space-1) + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* Ensure tables can scroll horizontally on small screens */
@@ -961,6 +984,7 @@ details[open] .details-summary::before {
   background: var(--bg-elevated);
   border-top: 1px solid var(--border);
   padding: var(--space-2) var(--space-3);
+  padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
   display: flex;
   align-items: center;
   gap: var(--space-2);
