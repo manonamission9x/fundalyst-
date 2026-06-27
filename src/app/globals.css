@@ -109,10 +109,10 @@ body::before {
 .nav-inner { max-width: var(--content-max); margin: 0 auto; display: flex; align-items: stretch; padding: 0 var(--space-5); gap: 0; min-height: 0; }
 .nav-brand { font-size: 13px; font-weight: 500; color: var(--text-secondary); padding: 9px 0; margin-right: var(--space-4); flex-shrink: 0; display: flex; align-items: center; gap: 7px; text-decoration: none; }
 .nav-brand:hover { color: var(--text); }
-.nav-tab { font-size: 12px; font-weight: 500; color: var(--text-tertiary); padding: 9px 12px; cursor: pointer; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; transition: color var(--transition), border-color var(--transition), background var(--transition-fast); white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; position: relative; min-height: 44px; }
+.nav-tab { font-size: 13px; font-weight: 500; color: var(--text-tertiary); padding: 10px 14px; cursor: pointer; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; transition: color var(--transition), border-color var(--transition), background var(--transition-fast); white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; position: relative; min-height: 44px; }
 .nav-tab svg { flex-shrink: 0; }
 .nav-tab:hover { color: var(--text-secondary); background: var(--primary-subtle); }
-.nav-tab.active { color: var(--primary); font-weight: 600; border-bottom-color: var(--primary); }
+.nav-tab.active { color: var(--primary); font-weight: 600; border-bottom-color: var(--primary); background: rgba(79,110,247,0.04); }
 .nav-cta { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 5px 10px; min-height: 44px; cursor: pointer; text-decoration: none; transition: all var(--transition); background: transparent; }
 .nav-cta:hover { border-color: var(--border-strong); color: var(--text-secondary); }
 .nav-cta svg { width: 12px; height: 12px; flex-shrink: 0; }
@@ -758,7 +758,7 @@ details[open] .details-summary::before {
 
   /* ── Nav: minimal footprint ── */
   .nav-inner { padding: 0 var(--space-1); overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .nav-tab { padding: 6px 5px; font-size: 10px; gap: 2px; }
+  .nav-tab { padding: 6px 5px; font-size: 11px; gap: 2px; }
   .nav-tab svg { width: 12px; height: 12px; flex-shrink: 0; }
   .nav-tab span:not(.nav-brand) { display: none; }
   .nav-tab.active span { display: inline; }

@@ -369,13 +369,33 @@ export default function SpreadsheetInput({
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // Notify parent on data change
+  // Reset internal state when resetKey changes (for Clear button)
+  useEffect(() => {
+    if (resetKey === undefined) return;
+    setPeriods(initialPeriods);
+    setRows(
+      initialData && initialData.length > 0
+        ? initialData
+        : [
+            { metric: 'Revenue', values: initialPeriods.map(() => '') },
+            { metric: 'Net Profit', values: initialPeriods.map(() => '') },
+            { metric: 'Total Assets', values: initialPeriods.map(() => '') },
+          ],
+    );
+    setActiveRow(0);
+    setActiveCol(0);
+    setShowSuggestions(false);
+    setSuggestionFilter('');
+    setShowMetricBrowser(false);
+  }, [resetKey]);
+
+  // Notify parent on data change (always, including on mount)
   useEffect(() => {
     notifyChange(rows, periods);
   }, [rows, periods, notifyChange]);
 
   return (
-    <div className={`spreadsheet-wrap${className ? ' ' + className : ''}`} key={resetKey}>
+    <div className={`spreadsheet-wrap${className ? ' ' + className : ''}`}>
       <table className="spreadsheet-grid">
         <thead>
           <tr>

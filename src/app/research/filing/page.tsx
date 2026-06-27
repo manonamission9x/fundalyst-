@@ -60,11 +60,20 @@ export default function FilingPage() {
   // ── Pre-fill from canonical model (if data exists in global store) ──
   const activeDataset = useActiveDataset();
 
-  // ── Load data on mount: canonical model > demo data ──
+  // ── Load data on mount: canonical model > demo data (only once) ──
   const autoDemoRef = useRef(false);
+  const clearCountRef = useRef(0);
   useEffect(() => {
-    if (autoDemoRef.current) return;
+    if (autoDemoRef.current) {
+      // Block re-fill after clear
+      if (clearCountRef.current !== clearVersion) {
+        clearCountRef.current = clearVersion;
+        return;
+      }
+      return;
+    }
     autoDemoRef.current = true;
+    clearCountRef.current = clearVersion;
 
     // Priority 1: pre-fill from canonical model
     if (activeDataset && activeDataset.facts.length >= 4) {
@@ -249,6 +258,40 @@ export default function FilingPage() {
       />
 
       <DataQualityBar source={getDataSourceLabel(dataInfo.dataSource, dataInfo.companyName)} />
+
+      {/* ── Period type toggle ── */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-muted text-2xs font-mono" style={{ letterSpacing: '0.06em', textTransform: 'uppercase' }}>Period:</span>
+        <div className="flex items-center gap-1" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 2 }}>
+          {[
+            { label: 'Q1 Q2 Q3 Q4', periods: ['Q1', 'Q2', 'Q3', 'Q4'] as const, key: 'q' },
+            { label: 'FY 23/24', periods: ['FY23', 'FY24'] as const, key: 'fy' },
+            { label: 'Custom', periods: null as null, key: 'custom' },
+          ].map(({ label, periods, key }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => {
+                if (periods) {
+                  setClearVersion(v => v + 1);
+                  setSheetRows([]);
+                  setSheetPeriods([...periods]);
+                }
+              }}
+              className="btn-ghost btn-sm"
+              style={{
+                fontSize: 10,
+                fontWeight: sheetPeriods.length === periods?.length && sheetPeriods[0] === periods?.[0] ? 600 : 400,
+                color: sheetPeriods.length === periods?.length && sheetPeriods[0] === periods?.[0] ? 'var(--primary)' : 'var(--text-tertiary)',
+                padding: '3px 8px',
+                background: sheetPeriods.length === periods?.length && sheetPeriods[0] === periods?.[0] ? 'var(--primary-subtle)' : 'transparent',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* ── Spreadsheet Input ── */}
       <SectionTitle>Enter financial data</SectionTitle>
