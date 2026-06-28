@@ -159,13 +159,13 @@ Infosys, 156000, 28700, 172000, 24000`;
         answer="Which company is the strongest? Who is lagging?"
       />
 
-      <DataQualityBar source={dsCount > 0 ? `${dsCount} dataset(s) loaded` : 'Manual mode'} metrics={dsCount} />
+      <DataQualityBar source={dsCount > 0 ? `${dsCount} dataset(s) loaded` : undefined} metrics={dsCount} />
 
       <UploadBar onUpload={handleCsvFile} hint="Company, Revenue, Profit, Assets, Debt" />
 
       <div className="flex items-center gap-2 mb-2">
         <button type="button" className="btn-ghost btn-sm" onClick={loadSample}>
-          Load sample companies
+          Try with example data
         </button>
         <span className="text-muted text-2xs">Or type company names as column headers</span>
       </div>

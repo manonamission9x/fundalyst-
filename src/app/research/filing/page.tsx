@@ -266,44 +266,14 @@ export default function FilingPage() {
         answer="What this helps you answer: Is revenue growing? Are margins compressing? Is debt rising?"
       />
 
-      <DataQualityBar source={getDataSourceLabel(dataInfo.dataSource, dataInfo.companyName)} />
+      <DataQualityBar source={dataInfo.companyName || undefined} />
 
-      {/* ── Period type toggle ── */}
-      <div className="flex items-center gap-2 mb-3">
-        <span className="card-label">Period:</span>
-        <div className="period-toggle-group">
-          {[
-            { label: 'Q1 Q2 Q3 Q4', periods: ['Q1', 'Q2', 'Q3', 'Q4'] as const, key: 'q' },
-            { label: 'FY 23/24', periods: ['FY23', 'FY24'] as const, key: 'fy' },
-            { label: 'Custom', periods: null as null, key: 'custom' },
-          ].map(({ label, periods, key }) => {
-            const isActive = periods && sheetPeriods.length === periods.length && sheetPeriods[0] === periods[0];
-            return (
-              <button
-                key={label}
-                type="button"
-                onClick={() => {
-                  if (periods) {
-                    setClearVersion(v => v + 1);
-                    setSheetRows([]);
-                    setSheetPeriods([...periods]);
-                  }
-                }}
-                className={`period-toggle-btn${isActive ? ' active' : ''}`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── Spreadsheet Input ── */}
+      {/* ── Spreadsheet Input (periods entered directly in headers) ── */}
       <SectionTitle>Enter financial data</SectionTitle>
       <Card>
         <div className="card-body p-2">
           <SpreadsheetInput
-            initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : ['Q1', 'Q2', 'Q3', 'Q4']}
+            initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : ['Period 1', 'Period 2']}
             initialData={clearedRef.current ? [] : (sheetRows.length > 0 ? sheetRows : [
               { metric: 'Revenue', values: ['1000', '1150', '1240', '1380'] },
               { metric: 'Gross Profit', values: ['400', '470', '500', '550'] },

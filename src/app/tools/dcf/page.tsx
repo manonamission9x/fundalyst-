@@ -212,7 +212,7 @@ export default function DCFPage() {
       />
 
       <DataQualityBar
-        source={modelData.isLoaded ? `Model: ${modelData.companyName || 'Loaded'}` : 'Manual mode'}
+        source={modelData.companyName || undefined}
         metrics={sheetRows.filter((r) => r.values[0]?.trim()).length}
       />
 

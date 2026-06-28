@@ -755,7 +755,7 @@ export default function SpreadsheetInput({
         <thead>
           <tr>
             <th className={`spreadsheet-corner${activeCol >= 0 ? ' col-active' : ''}`}>
-              <span className="spreadsheet-corner-label">Metric</span>
+              <span className="spreadsheet-corner-label">Line Item</span>
             </th>
             {periods.map((p, ci) => (
               <th

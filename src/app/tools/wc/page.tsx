@@ -96,7 +96,7 @@ export default function WCPage() {
       />
 
       <DataQualityBar
-        source={modelData.isLoaded ? `Model: ${modelData.companyName || 'Loaded'}` : 'Manual mode'}
+        source={modelData.companyName || undefined}
         periods={modelData.companyName ? `Company: ${modelData.companyName}` : undefined}
       />
 

@@ -582,12 +582,13 @@ export function WarningCard({ level, label, text }: WarningCardProps) {
 
 // ── DataQualityBar ──
 interface DataQualityBarProps {
-  source: string;
+  source?: string;
   periods?: string;
   metrics?: number;
   missing?: number;
 }
 export function DataQualityBar({ source, periods, metrics, missing }: DataQualityBarProps) {
+  if (!source) return null;
   const dotClass = source === 'Manual mode' ? 'muted' : source.includes('sample') ? 'warn' : 'good';
   return (
     <div className="data-quality">

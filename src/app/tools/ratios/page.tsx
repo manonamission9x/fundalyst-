@@ -156,7 +156,7 @@ export default function RatiosPage() {
         answer="What this helps you answer: Is the company financially healthy? Can it cover debts?"
       />
 
-      <DataQualityBar source={modelData.isLoaded ? `Model: ${modelData.companyName || 'Loaded'}` : 'Manual mode'} />
+      <DataQualityBar source={modelData.companyName || undefined} />
 
       <Card label="Required (6 fields)">
         <div className="card-body">
@@ -169,7 +169,7 @@ export default function RatiosPage() {
             hint="Enter values in ₹ Cr. These 6 fields unlock: Net Profit Margin, ROE, Debt/Equity, Debt/Assets, Asset Turnover."
           />
         </div>
-        <Toolbar onClear={handleClear} onAction={analyze} actionLabel="Calculate" hint="Fill in at least Revenue and Net Profit" />
+        <Toolbar onClear={handleClear} onAction={analyze} actionLabel="Calculate" hint="Add Revenue and Net Profit to see net margin — add more for full ratio analysis" />
       </Card>
 
       {grouped.map(({ section, ratios }) => (

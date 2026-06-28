@@ -100,7 +100,7 @@ export default function TrendsPage() {
         subtitle="Track revenue, profit, costs, debt, and other metrics across periods."
         answer="What this helps you answer: Which metrics are improving? Which are declining?"
       />
-      <DataQualityBar source={modelData.isLoaded ? `Model: ${modelData.companyName || 'Loaded'}` : 'Manual mode'} />
+      <DataQualityBar source={modelData.companyName || undefined} />
       <UploadBar onUpload={handleCsvFile} hint="CSV: Metric, Period1, Period2, Period3, ..." />
 
       <Card label="Data">
@@ -168,7 +168,7 @@ export default function TrendsPage() {
       )}
 
       {!showResults && (
-        <EmptyState title="No trend data yet" desc="Enter period labels as the first column headers and metrics below in the spreadsheet, then click Plot. Data can also be pre-filled from the Filing Comparison or Smart Import tools." action={{ label: 'Import data', href: '/import' }} />
+        <EmptyState title="No trend data yet" desc="Enter period labels as the first column headers and metrics below in the spreadsheet, then click Plot. Data can also be pre-filled from the Filing Comparison or Import tools." action={{ label: 'Import data', href: '/import' }} />
       )}
     </div>
   );

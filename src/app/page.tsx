@@ -132,7 +132,7 @@ function QuickCheckForm() {
       )}
 
       <div className="mt-3 text-center font-mono text-muted text-2xs">
-        Results update instantly as you type. For full analysis, use the tools above.
+        For a deeper analysis, use the tools above.
       </div>
     </div>
   );
@@ -144,29 +144,30 @@ interface HomeTool {
   icon: ReactNode;
   desc: string;
   hero?: boolean;
+  cta?: string;
 }
 
 const tools: { section: string; items: HomeTool[] }[] = [
   {
     section: 'Core Analysis',
     items: [
-      {href: '/research/filing', label: 'Filing Comparison', icon: <FileText size={16} />, desc: 'Compare two periods line by line. Spot changes in revenue, margins, debt, and promoter holding.', hero: true },
-      { href: '/tools/dcf', label: 'DCF Valuation', icon: <Calculator size={16} />, desc: 'Estimate intrinsic value per share with sensitivity tables. Adjust assumptions in real time.', hero: true },
+      {href: '/research/filing', label: 'Filing Comparison', icon: <FileText size={16} />, desc: 'Compare two periods line by line. Spot changes in revenue, margins, debt, and promoter holding.', hero: true, cta: 'Compare periods →' },
+      { href: '/tools/dcf', label: 'DCF Valuation', icon: <Calculator size={16} />, desc: 'Estimate intrinsic value per share with sensitivity tables. Adjust assumptions in real time.', hero: true, cta: 'Value company →' },
     ],
   },
   {
     section: 'Research',
     items: [
-      { href: '/research/trends', label: 'Trend Charts', icon: <TrendingUp size={16} />, desc: 'Plot revenue, profit, and costs over 3+ years. Spot inflection points at a glance.' },
-      { href: '/research/growth', label: 'Growth Rates', icon: <BarChart3 size={16} />, desc: 'Year-over-year growth for every line item. Automatically color-coded for direction.' },
+      { href: '/research/trends', label: 'Trend Charts', icon: <TrendingUp size={16} />, desc: 'Plot revenue, profit, and costs over 3+ years. Spot inflection points at a glance.', cta: 'Plot trends →' },
+      { href: '/research/growth', label: 'Growth Rates', icon: <BarChart3 size={16} />, desc: 'Year-over-year growth for every line item. Automatically color-coded for direction.', cta: 'Calculate growth →' },
     ],
   },
   {
     section: 'Valuation & Analysis',
     items: [
-      { href: '/tools/wc', label: 'Cash Efficiency', icon: <DollarSign size={16} />, desc: 'DSO, DIO, DPO, and the Cash Conversion Cycle. See where cash is trapped.' },
-      { href: '/tools/ratios', label: 'Financial Ratios', icon: <PieChart size={16} />, desc: 'Liquidity, leverage, profitability, and efficiency — 9 ratios, one click.' },
-      { href: '/tools/peer', label: 'Peer Comparison', icon: <Users size={16} />, desc: 'Compare up to 10 companies side-by-side. Leaders and laggards highlighted instantly.' },
+      { href: '/tools/wc', label: 'Cash Efficiency', icon: <DollarSign size={16} />, desc: 'DSO, DIO, DPO, and the Cash Conversion Cycle. See where cash is trapped.', cta: 'Analyze cash →' },
+      { href: '/tools/ratios', label: 'Financial Ratios', icon: <PieChart size={16} />, desc: 'Liquidity, leverage, profitability, and efficiency — 9 ratios, one click.', cta: 'View ratios →' },
+      { href: '/tools/peer', label: 'Peer Comparison', icon: <Users size={16} />, desc: 'Compare up to 10 companies side-by-side. Leaders and laggards highlighted instantly.', cta: 'Compare peers →' },
     ],
   },
 ];
@@ -201,7 +202,7 @@ export default function HomePage() {
               Upload financial data
             </Link>
             <Link href="/tools/dcf" className="home-cta-secondary">
-              Try with sample data →
+              See it in action →
             </Link>
           </div>
 
@@ -239,7 +240,7 @@ export default function HomePage() {
 
       {/* ── Quick Company Check ── */}
       <section className="home-section mt-8">
-        <div className="section-title">Quick Company Check</div>
+        <div className="section-title">Company Snapshot</div>
         <Card>
           <div className="card-body">
             <p className="text-sm text-tertiary font-mono leading-normal mb-3">

@@ -129,7 +129,7 @@ Interest Expense, 45, 52, 60`;
   return (
     <div>
       <PageHeader
-        title="Smart Import"
+        title="Import"
         subtitle="Upload messy financial files. Fundalyst cleans, maps, and prepares them for analysis."
         answer="Upload messy data. We clean it. Your files stay in your browser."
       />
@@ -184,10 +184,10 @@ Interest Expense, 45, 52, 60`;
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3">
                 <path d="M2 7h10M7 2v10" />
               </svg>
-              Try with sample data →
+              Try an example →
             </button>
             <div style={{ marginTop: 6, fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-              No file needed — loads sample financial data to see how import works
+              No file needed — loads example financial data to see how import works
             </div>
           </div>
 
@@ -387,7 +387,7 @@ function ImportReview({
             missing={unknownCount}
           />
           <div className="flex gap-2 flex-wrap mt-2">
-            <TrustBadge label="Smart Import" variant="source" />
+            <TrustBadge label="Import" variant="source" />
             {pctMapped >= 80 && <TrustBadge label="High Mapping Quality" variant="good" />}
           </div>
 
@@ -416,8 +416,8 @@ function ImportReview({
           <div style={{ marginTop: 8, display: 'flex', gap: 16, fontSize: 11, fontFamily: 'var(--font-mono)' }}>
             <span style={{ color: 'var(--green)' }}>{factsCount} values found</span>
             <span style={{ color: 'var(--primary)' }}>{mappedCount} metrics mapped ({pctMapped}%)</span>
-            {unknownCount > 0 && <span style={{ color: 'var(--amber)' }}>{unknownCount} unmapped</span>}
-            {ignoredCount > 0 && <span style={{ color: 'var(--text-muted)' }}>{ignoredCount} ignored</span>}
+            {unknownCount > 0 && <span style={{ color: 'var(--amber)' }}>{unknownCount} need review</span>}
+            {ignoredCount > 0 && <span style={{ color: 'var(--text-muted)' }}>{ignoredCount} skipped</span>}
           </div>
         </div>
       </Card>
@@ -586,24 +586,24 @@ function ImportResult({
             <DetectItem label="Confidence" value="Review each tool for details" />
           </div>
           <DataQualityBar
-            source="Smart Import"
+            source="Import"
             periods={`${periods.length} periods`}
             metrics={groupedByMetric.size}
           />
           <div className="flex gap-2 flex-wrap mt-2">
-            <TrustBadge label="Smart Import" variant="source" />
+            <TrustBadge label="Import" variant="source" />
             <TrustBadge label="Data Ready for Analysis" variant="good" />
           </div>
           {/* Global data status */}
           <div className="import-success-banner">
             <span className="import-success-banner-title">
-              ✓ Data loaded globally
+              ✓ Import complete
             </span>
             <span className="import-success-banner-text">
               {dataset.facts.length} metrics across {periods.length} periods
             </span>
             <span className="import-success-banner-text">
-              {globalCount > 1 ? `${globalCount} datasets in memory` : 'Available in all tools'}
+              Available in all analysis tools
             </span>
           </div>
         </div>
@@ -620,7 +620,7 @@ function ImportResult({
                   className={`import-metric-chip${metric === 'Unmapped' ? ' missing' : ''}`}
                 >
                   <div className="import-metric-chip-title">
-                    {metric === 'Unmapped' ? 'Unmapped' : canonicalDisplayName(metric)}
+                  {metric === 'Unmapped' ? 'Needs review' : canonicalDisplayName(metric)}
                   </div>
                   <div className="import-metric-chip-count">{count} values</div>
                 </div>

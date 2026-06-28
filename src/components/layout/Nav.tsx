@@ -16,10 +16,10 @@ const items: { id: string; label: string; href: string; group?: string; icon: Re
   { id: 'filing', label: 'Filing', href: '/research/filing', group: 'Research', icon: <FileText size={14} /> },
   { id: 'trends', label: 'Trends', href: '/research/trends', group: 'Research', icon: <TrendingUp size={14} /> },
   { id: 'growth', label: 'Growth', href: '/research/growth', group: 'Research', icon: <BarChart3 size={14} /> },
-  { id: 'dcf', label: 'DCF', href: '/tools/dcf', group: 'Analysis', icon: <Calculator size={14} /> },
-  { id: 'wc', label: 'Cash', href: '/tools/wc', group: 'Analysis', icon: <DollarSign size={14} /> },
+  { id: 'dcf', label: 'Valuation', href: '/tools/dcf', group: 'Analysis', icon: <Calculator size={14} /> },
+  { id: 'wc', label: 'Cash Eff.', href: '/tools/wc', group: 'Analysis', icon: <DollarSign size={14} /> },
   { id: 'ratios', label: 'Ratios', href: '/tools/ratios', group: 'Analysis', icon: <PieChart size={14} /> },
-  { id: 'peer', label: 'Peer', href: '/tools/peer', group: 'Analysis', icon: <Users size={14} /> },
+  { id: 'peer', label: 'Peer Comp.', href: '/tools/peer', group: 'Analysis', icon: <Users size={14} /> },
   { id: 'workspace', label: 'Workspace', href: '/workspace', icon: <FolderKanban size={14} /> },
   { id: 'about', label: 'About', href: '/about', icon: <Info size={14} /> },
 ];
@@ -79,7 +79,7 @@ export default function Nav() {
           )}
           <Link href="/import" className="nav-cta">
             <ArrowUpFromLine size={12} />
-            {activeDataset ? 'Import more' : 'Upload Data'}
+            Import financials
           </Link>
           {activeDataset && (
             <button

@@ -18,7 +18,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Fundalyst — Financial analysis tool for Indian markets',
+  title: { template: '%s — Fundalyst', default: 'Fundalyst — Financial analysis tool for Indian markets' },
   description:
     'Upload financial statements, compare periods, analyze ratios, build DCF valuations, benchmark peers — all in your browser.',
   icons: {
@@ -47,7 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </ErrorBoundary>
           <footer className="site-footer">
             <div>
-              Fundalyst v0.1.0
+              Fundalyst
               <span className="nav-sep" aria-hidden="true" />
               Your data never leaves your machine
               <span className="nav-sep" aria-hidden="true" />

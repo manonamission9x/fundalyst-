@@ -56,7 +56,7 @@ const aboutCards = [
   },
   {
     title: 'Tools Included',
-    text: 'Smart Import (CSV/XLSX with auto-detection), Filing Comparison, DCF Valuation, Cash Efficiency, Financial Ratios, Peer Comparison, Trend Charts, and Growth Rates. <strong>8 tools, all frontend-only.</strong>',
+    text: 'Import (CSV/XLSX with auto-detection), Filing Comparison, DCF Valuation, Cash Efficiency, Financial Ratios, Peer Comparison, Trend Charts, and Growth Rates. <strong>8 tools, all frontend-only.</strong>',
     svg: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="1" y="1" width="6" height="6" rx="1" />
@@ -105,7 +105,7 @@ export default function AboutPage() {
             <li><strong>Working Capital:</strong> DSO = (Receivables / Revenue) × 365. DIO = (Inventory / COGS) × 365. DPO = (Payables / COGS) × 365. CCC = DSO + DIO − DPO.</li>
             <li><strong>Financial Ratios:</strong> Current Ratio, Quick Ratio, Debt/Equity, Debt/Assets, Interest Coverage, Gross Margin, Net Profit Margin, ROE, Asset Turnover.</li>
             <li><strong>Percentage Change:</strong> ((B − A) / |A|) × 100.</li>
-            <li><strong>Value Normalization:</strong> Smart Import converts Crores, Lakhs, Millions, and Billions to base units automatically.</li>
+            <li><strong>Value Normalization:</strong> Import converts Crores, Lakhs, Millions, and Billions to base units automatically.</li>
             <li><strong>Risk Flags:</strong> Debt surge &gt;20%, margin compression &lt;−10%, revenue decline &lt;−5%, profit drop &lt;−15%, cash drop &lt;−20%.</li>
           </ul>
         </div>

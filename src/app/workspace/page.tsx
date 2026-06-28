@@ -51,12 +51,7 @@ export default function WorkspacePage() {
               <span className="workspace-dot" />
               Data loaded
             </span>
-          ) : (
-            <span className="workspace-status muted">
-              <span className="workspace-dot muted" />
-              No data
-            </span>
-          )}
+          ) : null}
           <Link href="/import" className="workspace-cta">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M7 2v8M3 6l4-4 4 4" /><path d="M2 10v2h10v-2" />
