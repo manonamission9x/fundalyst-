@@ -71,7 +71,7 @@ export default function Nav() {
           {activeDataset && activeDataset.facts.length > 0 && (
             <span
               className="nav-badge"
-              title={`${activeDataset.companyName || 'Data'} — ${activeDataset.facts.length} facts, ${activeDataset.periods.length} periods`}
+              title={`${activeDataset.companyName || 'Imported data'} — ${activeDataset.facts.length} facts, ${activeDataset.periods.length} periods`}
             >
               <span className="nav-badge-dot" />
               {activeDataset.companyName || `${activeDataset.facts.length} metrics`}

@@ -111,7 +111,7 @@ body::before {
 .nav-inner { max-width: var(--content-max); margin: 0 auto; display: flex; align-items: center; padding: 0 var(--space-5); gap: 0; }
 .nav-brand { font-size: 13px; font-weight: 500; color: var(--text-secondary); padding: 8px 0; margin-right: var(--space-4); flex-shrink: 0; display: flex; align-items: center; gap: 7px; text-decoration: none; }
 .nav-brand:hover { color: var(--text); }
-.nav-tab { font-size: 13px; font-weight: 500; color: var(--text-tertiary); padding: 8px 12px; cursor: pointer; border: none; background: none; transition: color var(--transition), background var(--transition-fast); white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; position: relative; }
+.nav-tab { font-size: 13px; font-weight: 500; color: var(--text-tertiary); padding: 8px 12px; cursor: pointer; border: none; background: none; transition: color var(--transition), background var(--transition-fast); white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; position: relative; min-height: unset; }
 .nav-tab svg { flex-shrink: 0; }
 .nav-tab:hover { color: var(--text-secondary); background: var(--primary-subtle); }
 .nav-tab.active { color: var(--primary); font-weight: 600; background: rgba(79,110,247,0.04); }
@@ -125,14 +125,14 @@ body::before {
   background: var(--primary);
   border-radius: 1px 1px 0 0;
 }
-.nav-cta { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 4px 9px; cursor: pointer; text-decoration: none; transition: all var(--transition); background: transparent; }
+.nav-cta { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 4px 9px; cursor: pointer; text-decoration: none; transition: all var(--transition); background: transparent; min-height: unset; }
 .nav-cta:hover { border-color: var(--border-strong); color: var(--text-secondary); }
 .nav-cta svg { width: 12px; height: 12px; flex-shrink: 0; }
 .nav-sep { width: 1px; height: 14px; background: var(--border); flex-shrink: 0; margin: 0 4px; align-self: center; }
-.nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.nav-badge { font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--green); display: flex; align-items: center; gap: 3px; padding: 3px 7px; border: 1px solid rgba(61,160,109,0.12); border-radius: var(--radius-sm); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: var(--space-3); }
+.nav-badge { font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--green); display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border: 1px solid rgba(61,160,109,0.12); border-radius: var(--radius-sm); white-space: nowrap; min-height: unset; }
 .nav-badge-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
-.nav-clear { font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px 7px; cursor: pointer; transition: color var(--transition), border-color var(--transition); }
+.nav-clear { font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px 7px; cursor: pointer; transition: color var(--transition), border-color var(--transition); min-height: unset; }
 .nav-clear:hover { color: var(--red); border-color: var(--red); }
 
 /* ── Page Hero ── */
@@ -917,6 +917,7 @@ details[open] .details-summary::before {
   .metric-grid { grid-template-columns: repeat(2, 1fr); }
   .nav-tab { padding: 7px; font-size: 11px; }
   .nav-cta { padding: 5px 8px; font-size: 11px; }
+  .nav-inner { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-padding: 0 var(--space-2); }
   .home-hero h1 { font-size: 26px; }
   .workspace-body { flex-direction: column; }
   .workspace-sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding-bottom: var(--space-2); }
