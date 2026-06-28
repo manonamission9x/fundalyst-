@@ -27,20 +27,22 @@ import type { PeerRow } from '@/types/financial';
 const LABELS = ['Revenue', 'Profit', 'Assets', 'Debt'];
 const COL_LABELS = ['Revenue', 'Net Profit', 'Total Assets', 'Total Debt'];
 
-function best(rows: PeerRow[], ci: number): { value: number; isUnique: boolean } | null {
+const LOWER_IS_BETTER = [false, false, false, true]; // Revenue, Profit, Assets, Debt
+
+function bestOrWorst(rows: PeerRow[], ci: number): { value: number; isUnique: boolean } | null {
   const n = rows.map((r) => r.vals[ci]).filter((v) => !isNaN(v));
   if (n.length === 0) return null;
-  const max = Math.max(...n);
-  const count = n.filter((v) => v === max).length;
-  return { value: max, isUnique: count === 1 };
+  const target = LOWER_IS_BETTER[ci] ? Math.min(...n) : Math.max(...n);
+  const count = n.filter((v) => v === target).length;
+  return { value: target, isUnique: count === 1 };
 }
 
 function worst(rows: PeerRow[], ci: number): { value: number; isUnique: boolean } | null {
   const n = rows.map((r) => r.vals[ci]).filter((v) => !isNaN(v));
   if (n.length === 0) return null;
-  const min = Math.min(...n);
-  const count = n.filter((v) => v === min).length;
-  return { value: min, isUnique: count === 1 };
+  const target = LOWER_IS_BETTER[ci] ? Math.max(...n) : Math.min(...n);
+  const count = n.filter((v) => v === target).length;
+  return { value: target, isUnique: count === 1 };
 }
 
 function findBestRow(rows: PeerRow[], ci: number, preferMax: boolean): PeerRow | null {
@@ -208,7 +210,7 @@ Infosys, 156000, 28700, 172000, 24000`;
                     <tr key={i}>
                       <td><strong>{r.name}</strong></td>
                       {r.vals.map((v, j) => {
-                        const b = best(peerResults, j);
+                        const b = bestOrWorst(peerResults, j);
                         const w = worst(peerResults, j);
                         const isBest = b && v === b.value && b.isUnique;
                         const isWorst = w && v === w.value && w.isUnique;
@@ -219,7 +221,7 @@ Infosys, 156000, 28700, 172000, 24000`;
                           {r.vals.map((v, j) => {
                             if (isNaN(v) || maxPerCol[j] <= 0) return null;
                             const pct = (v / maxPerCol[j]) * 100;
-                            const isBest = best(peerResults, j) && v === best(peerResults, j)!.value && best(peerResults, j)!.isUnique;
+                            const isBest = bestOrWorst(peerResults, j) && v === bestOrWorst(peerResults, j)!.value && bestOrWorst(peerResults, j)!.isUnique;
                             return (
                               <div key={j} className="peer-bar-row">
                                 <span className="peer-bar-label">{LABELS[j][0]}</span>

@@ -173,7 +173,7 @@ export default function DCFPage() {
     const g = Number(growth);
     const d = Number(discount);
     const t = Number(terminal);
-    const sensGrowRates = [Math.max(0.5, t - 2), Math.max(0.5, t - 1), t, t + 1, t + 2].filter(r => r < d - 0.5);
+    const sensGrowRates = [Math.max(1, g - 3), Math.max(1, g - 1.5), g, g + 1.5, g + 3].filter(r => r < d - 0.5);
     const sensDiscRates = [Math.max(1, d - 4), Math.max(1, d - 2), d, d + 2, d + 4].filter(r => r <= 30);
     const sensResult = computeDCFSensitivity(
       Number(fcf), Number(growth), Number(years),

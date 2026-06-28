@@ -515,7 +515,7 @@ function ImportReview({
       </Card>
 
       {/* Actions */}
-      <div className="card-actions" style={{ justifyContent: 'space-between', marginTop: 2, border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '12px 20px' }}>
+      <div className="card-actions import-confirm-bar">
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" onClick={onCancel} style={{ fontSize: 12 }}>
             Cancel
@@ -577,7 +577,7 @@ function ImportResult({
       {/* Dataset summary */}
       <Card label="Dataset summary" style={{ marginTop: '1.5rem' }}>
         <div className="card-body">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
+          <div className="import-detection-grid" style={{ marginBottom: 14 }}>
             <DetectItem label="Company" value={dataset.companyName || 'Not specified'} />
             <DetectItem label="Currency" value={dataset.currency} />
             <DetectItem label="Unit" value={dataset.unit} />
@@ -595,19 +595,14 @@ function ImportResult({
             <TrustBadge label="Data Ready for Analysis" variant="good" />
           </div>
           {/* Global data status */}
-          <div style={{
-            marginTop: 12, padding: '10px 14px',
-            background: 'var(--green-subtle)', border: '1px solid rgba(46,204,113,0.15)',
-            borderRadius: 'var(--radius-md)',
-            display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-          }}>
-            <span style={{ fontSize: 12, color: 'var(--green)', fontWeight: 600 }}>
+          <div className="import-success-banner">
+            <span className="import-success-banner-title">
               ✓ Data loaded globally
             </span>
-            <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>
+            <span className="import-success-banner-text">
               {dataset.facts.length} metrics across {periods.length} periods
             </span>
-            <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>
+            <span className="import-success-banner-text">
               {globalCount > 1 ? `${globalCount} datasets in memory` : 'Available in all tools'}
             </span>
           </div>
@@ -618,21 +613,16 @@ function ImportResult({
       {groupedByMetric.size > 0 && (
         <Card label="Metrics detected" style={{ marginTop: 2 }}>
           <div className="card-body">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            <div className="grid grid-cols-4 gap-2">
               {[...groupedByMetric.entries()].map(([metric, count]) => (
                 <div
                   key={metric}
-                  style={{
-                    fontSize: 11, fontFamily: 'var(--font-mono)',
-                    color: metric === 'Unmapped' ? 'var(--amber)' : 'var(--text-secondary)',
-                    padding: '6px 10px', background: 'var(--bg-field)',
-                    borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)',
-                  }}
+                  className={`import-metric-chip${metric === 'Unmapped' ? ' missing' : ''}`}
                 >
-                  <div style={{ fontWeight: 600, color: metric === 'Unmapped' ? 'var(--amber)' : 'var(--text)' }}>
+                  <div className="import-metric-chip-title">
                     {metric === 'Unmapped' ? 'Unmapped' : canonicalDisplayName(metric)}
                   </div>
-                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>{count} values</div>
+                  <div className="import-metric-chip-count">{count} values</div>
                 </div>
               ))}
             </div>
@@ -665,18 +655,18 @@ function ImportResult({
       )}
 
       {/* Actions */}
-      <div className="card-actions" style={{ justifyContent: 'space-between', marginTop: '1rem', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '12px 20px' }}>
+      <div className="card-actions import-confirm-bar">
         <button type="button" onClick={onClear} style={{ fontSize: 12 }}>
           Clear imported data
         </button>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <Link href="/research/filing" className="btn-primary" style={{ fontSize: 12, padding: '7px 16px', textDecoration: 'none' }}>
+        <div className="import-action-bar">
+          <Link href="/research/filing" className="btn-primary import-action-link">
             Filing comparison →
           </Link>
-          <Link href="/tools/dcf" className="btn" style={{ fontSize: 12, padding: '7px 16px', textDecoration: 'none' }}>
+          <Link href="/tools/dcf" className="btn import-action-link">
             DCF valuation →
           </Link>
-          <Link href="/tools/wc" className="btn" style={{ fontSize: 12, padding: '7px 16px', textDecoration: 'none' }}>
+          <Link href="/tools/wc" className="btn import-action-link">
             Cash efficiency →
           </Link>
         </div>
@@ -692,10 +682,10 @@ function ImportResult({
 function DetectItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>
+      <div className="import-detection-label">
         {label}
       </div>
-      <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{value}</div>
+      <div className="import-detection-value">{value}</div>
     </div>
   );
 }

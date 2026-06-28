@@ -91,7 +91,7 @@ export default function YoyPage() {
       // Also populate sheet
       const lines = text.split('\n').filter(Boolean);
       const periods = lines[0]?.split(',').slice(1).map(s => s.trim()) || [];
-      const parsedRows = lines.map(l => {
+      const parsedRows = lines.slice(1).map(l => {
         const cols = l.split(',').map(s => s.trim());
         return { metric: cols[0], values: cols.slice(1) };
       });

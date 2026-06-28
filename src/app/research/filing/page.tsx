@@ -175,7 +175,7 @@ export default function FilingPage() {
     setClearVersion(v => v + 1);
     clear();
     setSheetRows([]);
-    setSheetPeriods(['Q1', 'Q2', 'Q3', 'Q4']);
+    setSheetPeriods([]);
   }
 
   function handleExportCSV() {
@@ -270,7 +270,7 @@ export default function FilingPage() {
 
       {/* ── Period type toggle ── */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-muted text-2xs font-mono" style={{ letterSpacing: '0.06em', textTransform: 'uppercase' }}>Period:</span>
+        <span className="card-label">Period:</span>
         <div className="period-toggle-group">
           {[
             { label: 'Q1 Q2 Q3 Q4', periods: ['Q1', 'Q2', 'Q3', 'Q4'] as const, key: 'q' },
@@ -349,7 +349,7 @@ export default function FilingPage() {
             </Card>
           )}
 
-          {/* 2. Key Metrics At a Glance */}
+          {/* 2. Key Metrics At a Glance — using MetricGrid */}
           {keyMetrics.length > 0 && (
             <div className="metric-grid mb-4">
               {keyMetrics.map((d, i) => {

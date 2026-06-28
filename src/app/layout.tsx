@@ -20,7 +20,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: 'Fundalyst — Financial analysis tool for Indian markets',
   description:
-    'Upload financial statements, compare periods, analyze ratios, build DCF valuations, benchmark peers — all in your browser, no server uploads.',
+    'Upload financial statements, compare periods, analyze ratios, build DCF valuations, benchmark peers — all in your browser.',
   icons: {
     icon: [
       { url: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22><rect width=%2220%22 height=%2220%22 rx=%223%22 fill=%22%234F6EF7%22/><path d=%22M5 14V6L10 10L15 6V14%22 stroke=%22%23141416%22 stroke-width=%221.5%22 fill=%22none%22/></svg>', type: 'image/svg+xml' },
@@ -46,8 +46,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </main>
           </ErrorBoundary>
           <footer className="site-footer">
-            <div>Fundalyst v0.1.0 · For research purposes only · Not financial advice</div>
-            <div>&copy; Fundalyst</div>
+            <div>
+              Fundalyst v0.1.0
+              <span className="nav-sep" aria-hidden="true" />
+              Your data never leaves your machine
+              <span className="nav-sep" aria-hidden="true" />
+              For research purposes only. Not financial advice.
+            </div>
+            <div>&copy; 2026 Fundalyst</div>
           </footer>
         </ToastProvider>
       </body>

@@ -5,10 +5,10 @@ import { PageHeader, Card, Disclaimer } from '@/components/ui';
 export const metadata: Metadata = {
   title: 'About — Fundalyst',
   description:
-    'A browser-based financial analysis tool for Indian markets. DCF valuation, ratio analysis, filing comparison, peer benchmarking — all client-side, no server uploads.',
+    'A browser-based financial analysis tool for Indian markets. DCF valuation, ratio analysis, filing comparison, peer benchmarking — all calculations performed client-side.',
   openGraph: {
     title: 'Fundalyst — Financial Analysis for Indian Markets',
-    description: 'Upload financial statements, compare periods, analyze ratios, build DCF valuations — all in your browser, no server uploads.',
+    description: 'Upload financial statements, compare periods, analyze ratios, build DCF valuations — all computed locally in your browser.',
   },
 };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
 import { Card, MetricGrid } from '@/components/ui';
 import { FileText, TrendingUp, BarChart3, Calculator, DollarSign, PieChart, Users, Upload, Search } from 'lucide-react';
 import { useGlobalDataStore } from '@/store/global-data-store';
@@ -131,18 +131,32 @@ function QuickCheckForm() {
         </p>
       )}
 
-      <div className="mt-3 text-center font-mono text-muted" style={{ fontSize: 10 }}>
+      <div className="mt-3 text-center font-mono text-muted text-2xs">
         Results update instantly as you type. For full analysis, use the tools above.
       </div>
     </div>
   );
 }
 
-const tools = [
+interface HomeTool {
+  href: string;
+  label: string;
+  icon: ReactNode;
+  desc: string;
+  hero?: boolean;
+}
+
+const tools: { section: string; items: HomeTool[] }[] = [
+  {
+    section: 'Core Analysis',
+    items: [
+      {href: '/research/filing', label: 'Filing Comparison', icon: <FileText size={16} />, desc: 'Compare two periods line by line. Spot changes in revenue, margins, debt, and promoter holding.', hero: true },
+      { href: '/tools/dcf', label: 'DCF Valuation', icon: <Calculator size={16} />, desc: 'Estimate intrinsic value per share with sensitivity tables. Adjust assumptions in real time.', hero: true },
+    ],
+  },
   {
     section: 'Research',
     items: [
-      {href: '/research/filing', label: 'Filing Comparison', icon: <FileText size={16} />, desc: 'Compare two periods line by line. Spot changes in revenue, margins, debt, and promoter holding.' },
       { href: '/research/trends', label: 'Trend Charts', icon: <TrendingUp size={16} />, desc: 'Plot revenue, profit, and costs over 3+ years. Spot inflection points at a glance.' },
       { href: '/research/growth', label: 'Growth Rates', icon: <BarChart3 size={16} />, desc: 'Year-over-year growth for every line item. Automatically color-coded for direction.' },
     ],
@@ -150,7 +164,6 @@ const tools = [
   {
     section: 'Valuation & Analysis',
     items: [
-      { href: '/tools/dcf', label: 'DCF Valuation', icon: <Calculator size={16} />, desc: 'Estimate intrinsic value per share with sensitivity tables. Adjust assumptions in real time.' },
       { href: '/tools/wc', label: 'Cash Efficiency', icon: <DollarSign size={16} />, desc: 'DSO, DIO, DPO, and the Cash Conversion Cycle. See where cash is trapped.' },
       { href: '/tools/ratios', label: 'Financial Ratios', icon: <PieChart size={16} />, desc: 'Liquidity, leverage, profitability, and efficiency — 9 ratios, one click.' },
       { href: '/tools/peer', label: 'Peer Comparison', icon: <Users size={16} />, desc: 'Compare up to 10 companies side-by-side. Leaders and laggards highlighted instantly.' },
@@ -211,7 +224,7 @@ export default function HomePage() {
           <div className="section-title">{group.section}</div>
           <div className="home-grid">
             {group.items.map((t) => (
-              <Link key={t.href} href={t.href} className="home-card">
+              <Link key={t.href} href={t.href} className={`home-card${t.hero ? ' hero-feature' : ''}`}>
                 <div className="home-card-icon">
                   {t.icon}
                 </div>
