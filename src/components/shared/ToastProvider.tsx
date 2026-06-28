@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 
 const ToastContext = createContext<((msg: string) => void) | null>(null);
 
@@ -14,6 +14,13 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
   const [msg, setMsg] = useState('');
   const [visible, setVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const showToast = useCallback((message: string) => {
     setMsg(message);

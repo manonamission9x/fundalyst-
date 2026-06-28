@@ -15,6 +15,7 @@ import type { SpreadsheetRow } from '@/components/input';
 import { useActiveDataset, extractFilingData, getPeriods, datasetToSpreadsheetRows } from '@/store/financial-model-selectors';
 import { writeSpreadsheetToModel } from '@/store/canonical-helpers';
 import { useGlobalImportFill, getDataSourceLabel, extractFilingInputs } from '@/lib/importer/import-hooks';
+import { useGlobalDataStore } from '@/store/global-data-store';
 
 import { usePageTitle } from '@/lib/use-page-title';
 
@@ -112,16 +113,6 @@ export default function FilingPage() {
     }
   }, [activeDataset]);
 
-  // ── Auto-demo compare — only if there are actual values, not empty rows ──
-  useEffect(() => {
-    if (autoDemoRef.current && !showResults && sheetRows.length >= 3) {
-      const hasValues = sheetRows.some(r => r.values.some(v => v.trim()));
-      if (!hasValues) return;
-      const timer = setTimeout(() => runCompare(sheetRows, sheetPeriods), 600);
-      return () => clearTimeout(timer);
-    }
-  }, [sheetRows]);
-
   // ── Run comparison ──
   function runCompare(rows: SpreadsheetRow[], periods: string[]) {
     if (rows.length < 2 || periods.length < 2) {
@@ -131,8 +122,11 @@ export default function FilingPage() {
 
     setLoading(true);
 
+    // Read the latest dataset directly from the store — not the closure snapshot
+    const latestDataset = useGlobalDataStore.getState().getActiveDataset();
+
     // Step 1: Write spreadsheet data to the canonical model
-    writeSpreadsheetToModel(rows, periods, activeDataset?.companyName || 'Unnamed Company');
+    writeSpreadsheetToModel(rows, periods, latestDataset?.companyName || 'Unnamed Company');
 
     // Step 2: Convert spreadsheet rows to period text format for existing computeDiff
     const periodA = rows
@@ -277,34 +271,30 @@ export default function FilingPage() {
       {/* ── Period type toggle ── */}
       <div className="flex items-center gap-2 mb-3">
         <span className="text-muted text-2xs font-mono" style={{ letterSpacing: '0.06em', textTransform: 'uppercase' }}>Period:</span>
-        <div className="flex items-center gap-1" style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', padding: 2 }}>
+        <div className="period-toggle-group">
           {[
             { label: 'Q1 Q2 Q3 Q4', periods: ['Q1', 'Q2', 'Q3', 'Q4'] as const, key: 'q' },
             { label: 'FY 23/24', periods: ['FY23', 'FY24'] as const, key: 'fy' },
             { label: 'Custom', periods: null as null, key: 'custom' },
-          ].map(({ label, periods, key }) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => {
-                if (periods) {
-                  setClearVersion(v => v + 1);
-                  setSheetRows([]);
-                  setSheetPeriods([...periods]);
-                }
-              }}
-              className="btn-ghost btn-sm"
-              style={{
-                fontSize: 10,
-                fontWeight: sheetPeriods.length === periods?.length && sheetPeriods[0] === periods?.[0] ? 600 : 400,
-                color: sheetPeriods.length === periods?.length && sheetPeriods[0] === periods?.[0] ? 'var(--primary)' : 'var(--text-tertiary)',
-                padding: '3px 8px',
-                background: sheetPeriods.length === periods?.length && sheetPeriods[0] === periods?.[0] ? 'var(--primary-subtle)' : 'transparent',
-              }}
-            >
-              {label}
-            </button>
-          ))}
+          ].map(({ label, periods, key }) => {
+            const isActive = periods && sheetPeriods.length === periods.length && sheetPeriods[0] === periods[0];
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => {
+                  if (periods) {
+                    setClearVersion(v => v + 1);
+                    setSheetRows([]);
+                    setSheetPeriods([...periods]);
+                  }
+                }}
+                className={`period-toggle-btn${isActive ? ' active' : ''}`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

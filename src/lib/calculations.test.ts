@@ -102,9 +102,9 @@ describe('computeDCFSensitivity', () => {
     expect(sens[0].cols[0].iv).toBeGreaterThan(0);
   });
 
-  it('returns 0 for invalid combinations', () => {
+  it('returns NaN for invalid combinations', () => {
     const sens = computeDCFSensitivity(1240, 10, 5, [10], [10], 180, 100, 450);
-    expect(sens[0].cols[0].iv).toBe(0); // terminal == WACC → 0
+    expect(sens[0].cols[0].iv).toBeNaN(); // terminal == WACC → NaN
   });
 });
 

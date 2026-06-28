@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useActiveDataset } from './financial-model-selectors';
 import { usePipelineStore } from './pipeline-store';
 
@@ -16,6 +16,8 @@ export function useModelData<T>(
   extractor: (dataset: NonNullable<ReturnType<typeof useActiveDataset>>) => T,
 ): { data: T | null; isLoaded: boolean; companyName: string } {
   const dataset = useActiveDataset();
+  const extractorRef = useRef(extractor);
+  extractorRef.current = extractor;
   const [data, setData] = useState<T | null>(null);
 
   const isLoaded = dataset !== null && dataset.facts.length > 0;
@@ -27,13 +29,13 @@ export function useModelData<T>(
       return;
     }
     try {
-      const result = extractor(dataset);
+      const result = extractorRef.current(dataset);
       setData(result);
-    } catch {
-      // Extractor may throw if data shape is unexpected
+    } catch (err) {
+      console.warn('[useModelData] extractor failed:', err);
       setData(null);
     }
-  }, [dataset, extractor]);
+  }, [dataset]);
 
   // Extract on mount and when dataset changes
   useEffect(() => {

@@ -345,7 +345,7 @@ export default function SpreadsheetInput({
             };
             // Also write to OS clipboard
             const text = data.map((row) => (row.includes('\t') ? row.map((c) => `"${c}"`).join('\t') : row.join('\t'))).join('\n');
-            navigator.clipboard?.writeText(text).catch(() => {});
+            navigator.clipboard?.writeText(text).catch((err) => console.warn('[SpreadsheetInput] clipboard write failed:', err));
             return;
           }
           case 'x': {
@@ -772,6 +772,7 @@ export default function SpreadsheetInput({
                       return next;
                     });
                   }}
+                  maxLength={20}
                   aria-label={`Period ${ci + 1} label`}
                 />
                 <button

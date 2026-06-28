@@ -67,8 +67,8 @@ export default function TrendsChart({ rows, headers }: TrendsChartProps) {
             contentStyle={tooltipStyle.contentStyle}
             labelStyle={tooltipStyle.labelStyle}
             itemStyle={tooltipStyle.itemStyle}
-            formatter={(value: any, name: any) => [fmtINR(value), name] as [string, string]}
-            labelFormatter={(label: any) => `Period: ${label}`}
+            formatter={(value: unknown, name: unknown) => [fmtINR(Number(value)), String(name)] as [string, string]}
+            labelFormatter={(_label: unknown) => `Period: ${_label}` as string}
           />
 
           {rows.map((r, i) => {

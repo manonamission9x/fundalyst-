@@ -368,10 +368,11 @@ function DCFResults({
                   <tr key={row.g}>
                     <td>{row.g}%</td>
                     {row.cols.map((c) => {
-                      const diff = c.iv - priceVal;
-                      const isBaseCell = Math.abs(row.g - 3) < 0.5 && c.d === discount;
-                      const cls = diff > 0 ? 'sens-td-up' : diff < 0 ? 'sens-td-down' : '';
-                      return (<td key={c.d} className={`${cls}${isBaseCell ? ' sens-td-base' : ''}`}>{'₹' + fmtNum(Math.round(c.iv * 10) / 10)}</td>);
+                      const isInvalid = isNaN(c.iv);
+                      const diff = isInvalid ? NaN : c.iv - priceVal;
+                      const isBaseCell = !isInvalid && Math.abs(row.g - 3) < 0.5 && c.d === discount;
+                      const cls = isInvalid ? '' : (diff > 0 ? 'sens-td-up' : diff < 0 ? 'sens-td-down' : '');
+                      return (<td key={c.d} className={`${cls}${isBaseCell ? ' sens-td-base' : ''}`}>{isInvalid ? '—' : '₹' + fmtNum(Math.round(c.iv * 10) / 10)}</td>);
                     })}
                   </tr>
                 ))}

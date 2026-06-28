@@ -69,7 +69,8 @@ export function computeDiff(periodA: LineItem[], periodB: LineItem[]): DiffResul
     const bVal = b !== undefined ? b : null;
     const absA = aVal !== null ? Math.abs(aVal) : 0;
     const pct = aVal !== null && bVal !== null && absA > 0 ? ((bVal - aVal) / absA) * 100 : null;
-    const isPct = /margin|holding|ratio|tax|yield|return|efficiency|roce|roe|roa/i.test(label) && !/(growth|change|decline)/i.test(label);
+    const isPct = /margin|tax|yield|efficiency|roce|roe|roa/i.test(label) && !/(growth|change|decline)/i.test(label);
+    const changeIsPct = isPct || /ratio|holding/i.test(label);
     diffs.push({
       label,
       a: aVal,
@@ -247,7 +248,7 @@ export function computeDCFSensitivity(
     g: tr,
     cols: discountRates.map((dr) => {
       const result = computeDCF(fcf, growth, years, dr, tr, netDebt, shares, price);
-      return { d: dr, iv: result?.iv ?? 0 };
+      return { d: dr, iv: result?.iv ?? NaN };
     }),
   }));
 }

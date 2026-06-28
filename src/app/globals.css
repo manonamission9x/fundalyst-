@@ -154,6 +154,12 @@ body::before {
 
 .section-separator { height: 1px; background: linear-gradient(to right, var(--border) 0%, transparent 100%); margin: var(--space-5) 0; }
 
+/* ── Period toggle ── */
+.period-toggle-group { display: flex; align-items: center; gap: 4px; background: var(--bg-surface); border-radius: var(--radius-md); padding: 3px; }
+.period-toggle-btn { font-size: 10px; font-weight: 400; color: var(--text-tertiary); padding: 3px 8px; border: none; background: transparent; border-radius: var(--radius-sm); cursor: pointer; transition: all var(--transition-fast); min-height: unset; }
+.period-toggle-btn.active { color: var(--primary); font-weight: 600; background: var(--primary-subtle); }
+.period-toggle-btn:hover { color: var(--text-secondary); }
+
 /* ── Buttons — all ghost, no filled backgrounds ── */
 button, .btn {
   font-family: 'Inter', sans-serif; font-size: var(--text-sm);
@@ -1158,14 +1164,6 @@ details[open] .details-summary::before {
 input:focus, textarea:focus, select:focus, [contenteditable]:focus,
 .num-input:focus, .spreadsheet-cell:focus, .spreadsheet-header-input:focus {
   scroll-margin-bottom: 120px;
-}
-
-/* ── Desktop expansions ── */
-@media (min-width: 640px) {
-  .card-body { padding: var(--space-3) var(--space-4); }
-}
-@media (min-width: 1024px) {
-  .card-body { padding: var(--space-3) var(--space-4); }
 }
 
 /* ── Remove hover effects on touch devices (desktop-only hover) ── */

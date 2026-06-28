@@ -89,11 +89,11 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
 
           <Tooltip
             {...tooltipStyle}
-            formatter={(value: any, name: any) => [
-              fmtINR(value),
+            formatter={(value: unknown, name: unknown) => [
+              fmtINR(Number(value)),
               name === 'fcf' ? 'Projected FCF' : 'PV of FCF',
-            ]}
-            labelFormatter={(label: any) => `Period: ${label}`}
+            ] as [string, string]}
+            labelFormatter={(_label: unknown) => `Period: ${_label}` as string}
           />
 
           <Bar
