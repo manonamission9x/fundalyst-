@@ -25,13 +25,23 @@ import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import dynamic from 'next/dynamic';
 import { useGlobalImportFill, extractDCFInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
 import { useModelData } from '@/store/use-model-data';
+import { usePageTitle } from '@/lib/use-page-title';
 
 const DCFChart = dynamic(() => import('@/components/tools/dcf/DCFChart'), {
   ssr: false,
   loading: () => <div className="skeleton" style={{ width: '100%', height: 300 }} />,
 });
 
-/** Map ToolSpreadsheet rows → DCF store input fields */
+const EMPTY_DCF_ROWS: SpreadsheetRow[] = [
+  { metric: 'Free Cash Flow', values: [''] },
+  { metric: 'Growth Rate (%)', values: ['8'] },
+  { metric: 'Projection Years', values: ['5'] },
+  { metric: 'WACC (%)', values: ['10'] },
+  { metric: 'Terminal Growth (%)', values: ['3'] },
+  { metric: 'Net Debt', values: [''] },
+  { metric: 'Shares Outstanding', values: [''] },
+  { metric: 'Current Price (₹)', values: [''] },
+];
 const METRIC_TO_FIELD: Record<string, keyof import('@/types/financial').DCFInputs> = {
   'Free Cash Flow': 'fcf',
   'Growth Rate (%)': 'growth',
@@ -55,8 +65,10 @@ function rowsToDCFInputs(rows: SpreadsheetRow[]): Record<string, number | ''> {
 
 export default function DCFPage() {
   const showToast = useToast();
+  usePageTitle('DCF Valuation');
   const { show, summary, sens, setShow, setSummary, setSens } = useDCFStore();
   const [clearVersion, setClearVersion] = useState(0);
+  const clearedRef = useRef(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
 
@@ -90,23 +102,36 @@ export default function DCFPage() {
   // Auto-demo on first visit
   const autoDemoRef = useRef(false);
   useEffect(() => {
+    if (clearedRef.current) return;
     if (autoDemoRef.current) return;
     autoDemoRef.current = true;
     if (!show && summary === null && sheetRows.length === 0) {
-      setSheetRows([
-        { metric: 'Free Cash Flow', values: ['1240'] },
-        { metric: 'Growth Rate (%)', values: ['8'] },
-        { metric: 'Projection Years', values: ['5'] },
-        { metric: 'WACC (%)', values: ['10'] },
-        { metric: 'Terminal Growth (%)', values: ['3'] },
-        { metric: 'Net Debt', values: ['180'] },
-        { metric: 'Shares Outstanding', values: ['100'] },
-        { metric: 'Current Price (₹)', values: ['450'] },
-      ]);
-      const timer = setTimeout(() => runDCF(), 400);
+      // Defer to let SpreadsheetInput notifyChange fire first, then override
+      const timer = setTimeout(() => {
+        setSheetRows([
+          { metric: 'Free Cash Flow', values: ['1240'] },
+          { metric: 'Growth Rate (%)', values: ['8'] },
+          { metric: 'Projection Years', values: ['5'] },
+          { metric: 'WACC (%)', values: ['10'] },
+          { metric: 'Terminal Growth (%)', values: ['3'] },
+          { metric: 'Net Debt', values: ['180'] },
+          { metric: 'Shares Outstanding', values: ['100'] },
+          { metric: 'Current Price (₹)', values: ['450'] },
+        ]);
+      }, 50);
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // Auto-calculate when demo data is populated (separate effect to avoid stale closure)
+  useEffect(() => {
+    if (autoDemoRef.current && !show && summary === null && sheetRows.length >= 8) {
+      const fcfRow = sheetRows.find(r => r.metric === 'Free Cash Flow');
+      if (!fcfRow || !fcfRow.values[0]?.trim()) return;
+      const timer = setTimeout(() => runDCF(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [sheetRows]);
 
   function runDCF() {
     const mapped = rowsToDCFInputs(sheetRows);
@@ -144,9 +169,16 @@ export default function DCFPage() {
       return;
     }
 
+    // Generate sensitivity ranges around user's inputs
+    const g = Number(growth);
+    const d = Number(discount);
+    const t = Number(terminal);
+    const sensGrowRates = [Math.max(0.5, t - 2), Math.max(0.5, t - 1), t, t + 1, t + 2].filter(r => r < d - 0.5);
+    const sensDiscRates = [Math.max(1, d - 4), Math.max(1, d - 2), d, d + 2, d + 4].filter(r => r <= 30);
     const sensResult = computeDCFSensitivity(
       Number(fcf), Number(growth), Number(years),
-      [1, 2, 3, 4, 5], [8, 10, 12, 14, 16],
+      sensGrowRates.length >= 3 ? sensGrowRates : [t - 1, t, t + 1],
+      sensDiscRates.length >= 3 ? sensDiscRates : [d - 2, d, d + 2],
       Number(netDebt), Number(shares), Number(price),
     );
 
@@ -157,6 +189,7 @@ export default function DCFPage() {
   }
 
   const handleClear = useCallback(() => {
+    clearedRef.current = true;
     setClearVersion(v => v + 1);
     setSheetRows([]);
     setShow(false);
@@ -189,7 +222,16 @@ export default function DCFPage() {
           <SectionTitle>DCF Assumptions</SectionTitle>
           <ToolSpreadsheet
             tool="dcf"
-            initialData={sheetRows.length > 0 ? sheetRows : undefined}
+            initialData={clearedRef.current ? EMPTY_DCF_ROWS : (sheetRows.length > 0 ? sheetRows : [
+              { metric: 'Free Cash Flow', values: ['1240'] },
+              { metric: 'Growth Rate (%)', values: ['8'] },
+              { metric: 'Projection Years', values: ['5'] },
+              { metric: 'WACC (%)', values: ['10'] },
+              { metric: 'Terminal Growth (%)', values: ['3'] },
+              { metric: 'Net Debt', values: ['180'] },
+              { metric: 'Shares Outstanding', values: ['100'] },
+              { metric: 'Current Price (₹)', values: ['450'] },
+            ])}
             resetKey={clearVersion}
             singleColumnLabel="Value"
             onDataChange={(rows) => setSheetRows(rows)}

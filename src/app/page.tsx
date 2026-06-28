@@ -158,7 +158,10 @@ const tools = [
   },
 ];
 
+import { usePageTitle } from '@/lib/use-page-title';
+
 export default function HomePage() {
+  usePageTitle('Home');
   const datasets = useGlobalDataStore((s) => s.datasets);
   const activeDataset = useGlobalDataStore((s) => {
     if (!s.activeDatasetId && s.datasets.length === 0) return null;

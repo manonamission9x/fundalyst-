@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useYoyStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
@@ -23,10 +23,14 @@ import { useGlobalImportFill, extractYoYInputs, getDataSourceLabel } from '@/lib
 import { useModelData } from '@/store/use-model-data';
 import { extractTrendData } from '@/store/financial-model-selectors';
 
+import { usePageTitle } from '@/lib/use-page-title';
+
 export default function YoyPage() {
   const showToast = useToast();
+  usePageTitle('Growth Rates');
   const { years, csv, rows, setYears, setCsv, setRows, clear: clearStore } = useYoyStore();
   const [clearVersion, setClearVersion] = useState(0);
+  const clearedRef = useRef(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
 
   const dataInfo = useGlobalImportFill(
@@ -36,8 +40,27 @@ export default function YoyPage() {
 
   const modelData = useModelData((ds) => extractTrendData(ds));
 
-  // Pre-fill from model when available
-  const [prefilled, setPrefilled] = useState(false);
+  // Pre-fill from canonical model when available
+  const prefilledRef = useRef(false);
+  useEffect(() => {
+    if (clearedRef.current) return;
+    if (prefilledRef.current) return;
+    if (!modelData.data || !modelData.isLoaded) return;
+    const td = modelData.data;
+    if (!td || !td.periods || td.periods.length < 2) return;
+    const periods = td.periods;
+    const rows: SpreadsheetRow[] = Object.entries(td.metrics).map(([metric, vals]) => ({
+      metric,
+      values: vals.map(v => v !== null ? String(v) : ''),
+    }));
+    setSheetRows(rows);
+    setYears(periods.join(','));
+    const csvText = rows.map((r) => `${r.metric},${r.values.join(',')}`).join('\n');
+    setCsv(csvText);
+    parseWithText(csvText);
+    prefilledRef.current = true;
+  }, [modelData.data, modelData.isLoaded]);
+
   const handleDataChange = useCallback((newRows: SpreadsheetRow[], newPeriods: string[]) => {
     setSheetRows(newRows);
     // Convert to growth format
@@ -91,7 +114,7 @@ export default function YoyPage() {
     }
   }
 
-  function handleClear() { setClearVersion(v => v + 1); clearStore(); setSheetRows([]); }
+  function handleClear() { clearedRef.current = true; setClearVersion(v => v + 1); clearStore(); setSheetRows([]); }
 
   const yearList = years.split(',').map((s) => s.trim()).filter(Boolean);
   const colLabels = rows.length > 0
@@ -128,9 +151,9 @@ export default function YoyPage() {
           <ToolSpreadsheet
             tool="growth"
             multiColumn
-            initialData={sheetRows.length > 0 ? sheetRows : undefined}
+            initialData={clearedRef.current ? undefined : (sheetRows.length > 0 ? sheetRows : undefined)}
             resetKey={clearVersion}
-            initialPeriods={yearList.length >= 3 ? yearList : ['FY22', 'FY23', 'FY24']}
+            initialPeriods={clearedRef.current ? ['', '', ''] : (yearList.length >= 3 ? yearList : ['FY22', 'FY23', 'FY24'])}
             onDataChange={handleDataChange}
             hint="Add rows for each metric. Tab to navigate between cells."
           />

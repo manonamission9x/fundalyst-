@@ -16,14 +16,18 @@ import { useActiveDataset, extractFilingData, getPeriods, datasetToSpreadsheetRo
 import { writeSpreadsheetToModel } from '@/store/canonical-helpers';
 import { useGlobalImportFill, getDataSourceLabel, extractFilingInputs } from '@/lib/importer/import-hooks';
 
+import { usePageTitle } from '@/lib/use-page-title';
+
 export default function FilingPage() {
   const showToast = useToast();
+  usePageTitle('Filing Comparison');
   const {
     diffs, flags, showResults,
     setDiffs, setFlags, setShowResults, clear,
   } = useFilingStore();
   const { setFiling } = useAnalysisStore();
   const [clearVersion, setClearVersion] = useState(0);
+  const clearedRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +68,10 @@ export default function FilingPage() {
   const autoDemoRef = useRef(false);
   const clearCountRef = useRef(0);
   useEffect(() => {
+    if (clearedRef.current) {
+      clearCountRef.current = clearVersion;
+      return;
+    }
     if (autoDemoRef.current) {
       // Block re-fill after clear
       if (clearCountRef.current !== clearVersion) {
@@ -86,17 +94,21 @@ export default function FilingPage() {
       }
     }
 
-    // Priority 2: demo data (first visit)
-    if (sheetRows.length === 0) {
-      setSheetPeriods(['Q1', 'Q2', 'Q3', 'Q4']);
-      setSheetRows([
-        { metric: 'Revenue', values: ['1000', '1150', '1240', '1380'] },
-        { metric: 'Gross Profit', values: ['400', '470', '500', '550'] },
-        { metric: 'EBITDA', values: ['220', '250', '270', '300'] },
-        { metric: 'Net Profit', values: ['90', '105', '115', '130'] },
-        { metric: 'Total Debt', values: ['250', '230', '200', '180'] },
-        { metric: 'Cash & Equivalents', values: ['50', '80', '100', '140'] },
-      ]);
+    // Priority 2: demo data (first visit) — only if spreadsheet hasn't been populated yet
+    if (sheetRows.length === 0 || !sheetRows.some(r => r.values.some(v => v.trim()))) {
+      // Defer to let SpreadsheetInput mount first, then override with demo data
+      const timer = setTimeout(() => {
+        setSheetPeriods(['Q1', 'Q2', 'Q3', 'Q4']);
+        setSheetRows([
+          { metric: 'Revenue', values: ['1000', '1150', '1240', '1380'] },
+          { metric: 'Gross Profit', values: ['400', '470', '500', '550'] },
+          { metric: 'EBITDA', values: ['220', '250', '270', '300'] },
+          { metric: 'Net Profit', values: ['90', '105', '115', '130'] },
+          { metric: 'Total Debt', values: ['250', '230', '200', '180'] },
+          { metric: 'Cash & Equivalents', values: ['50', '80', '100', '140'] },
+        ]);
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [activeDataset]);
 
@@ -165,6 +177,7 @@ export default function FilingPage() {
   }
 
   function handleClear() {
+    clearedRef.current = true;
     setClearVersion(v => v + 1);
     clear();
     setSheetRows([]);
@@ -300,9 +313,16 @@ export default function FilingPage() {
       <Card>
         <div className="card-body p-2">
           <SpreadsheetInput
-            key={clearVersion}
             initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : ['Q1', 'Q2', 'Q3', 'Q4']}
-            initialData={sheetRows.length > 0 ? sheetRows : undefined}
+            initialData={clearedRef.current ? [] : (sheetRows.length > 0 ? sheetRows : [
+              { metric: 'Revenue', values: ['1000', '1150', '1240', '1380'] },
+              { metric: 'Gross Profit', values: ['400', '470', '500', '550'] },
+              { metric: 'EBITDA', values: ['220', '250', '270', '300'] },
+              { metric: 'Net Profit', values: ['90', '105', '115', '130'] },
+              { metric: 'Total Debt', values: ['250', '230', '200', '180'] },
+              { metric: 'Cash & Equivalents', values: ['50', '80', '100', '140'] },
+            ])}
+            resetKey={clearVersion}
             onDataChange={(rows, periods) => {
               setSheetRows(rows);
               setSheetPeriods(periods);

@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState, useRef, useMemo } from 'react';
 import { fmtNum } from '@/lib/calculations';
 import { usePeerStore } from '@/store';
+import { usePageTitle } from '@/lib/use-page-title';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
 import {
@@ -62,12 +63,14 @@ function sheetToPeerRows(rows: SpreadsheetRow[], periods: string[]): PeerRow[] {
 }
 
 export default function PeerPage() {
+  usePageTitle('Peer Comparison');
   const showToast = useToast();
   const { rows, clear: clearStore } = usePeerStore();
   const datasets = useGlobalDataStore((s) => s.datasets);
   const dsCount = datasets.length;
 
   const [clearVersion, setClearVersion] = useState(0);
+  const clearedRef = useRef(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
   const [sheetPeriods, setSheetPeriods] = useState<string[]>([]);
   const [peerResults, setPeerResults] = useState<PeerRow[]>([]);
@@ -131,7 +134,7 @@ Infosys, 156000, 28700, 172000, 24000`;
     showToast('Loaded 4 sample companies');
   }
 
-  function handleClear() { setClearVersion(v => v + 1); clearStore(); setSheetRows([]); setSheetPeriods([]); setPeerResults([]); setShowResults(false); }
+  function handleClear() { clearedRef.current = true; setClearVersion(v => v + 1); clearStore(); setSheetRows([]); setSheetPeriods([]); setPeerResults([]); setShowResults(false); }
 
   // ── Insight helpers ──
   const bestRevenue = findBestRow(peerResults, 0, true);
@@ -170,15 +173,12 @@ Infosys, 156000, 28700, 172000, 24000`;
           <ToolSpreadsheet
             tool="peer"
             multiColumn
-            initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : ['Company A', 'Company B', 'Company C']}
+            initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : (clearedRef.current ? ['', ''] : ['Company A', 'Company B', 'Company C'])}
             resetKey={clearVersion}
             initialData={
               sheetRows.length > 0
                 ? sheetRows
-                : LABELS.map((label) => ({
-                    metric: label,
-                    values: ['', '', ''],
-                  }))
+                : LABELS.map((label) => ({ metric: label, values: ['', '', ''] }))
             }
             onDataChange={handleSheetChange}
             hint="Each column = one company. Each row = one financial metric. Tab to navigate."

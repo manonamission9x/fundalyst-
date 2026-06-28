@@ -69,7 +69,6 @@ export default function ToolSpreadsheet({
   return (
     <div>
       <SpreadsheetInput
-        key={resetKey}
         initialPeriods={periods}
         initialData={spreadsheetData}
         onDataChange={onDataChange}

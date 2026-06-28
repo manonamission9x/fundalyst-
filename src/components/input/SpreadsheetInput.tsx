@@ -97,23 +97,32 @@ export default function SpreadsheetInput({
     [],
   );
 
+  // ── Focus helper: move to cell, keep viewport stable ──
+  const focusCell = useCallback((row: number, col: number) => {
+    requestAnimationFrame(() => {
+      const el = cellRefs.current.get(`${row}-${col}`);
+      if (el) {
+        el.focus({ preventScroll: true });
+        // Scroll only what's needed — never jump to top
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    });
+  }, []);
+
   // Add a new row
   const addRow = useCallback(
-    (metric = '') => {
+    (metric = '', focusCol = 0) => {
       setRows((prev) => {
         const next = [...prev, { metric, values: periods.map(() => '') }];
         return next;
       });
+      // newIdx = current length (before state updates) = index of new row
       const newIdx = rows.length;
       setActiveRow(newIdx);
-      setActiveCol(0);
-      // Focus after render
-      requestAnimationFrame(() => {
-        const key = `${newIdx}-0`;
-        cellRefs.current.get(key)?.focus();
-      });
+      setActiveCol(focusCol);
+      focusCell(newIdx, focusCol);
     },
-    [periods.length],
+    [periods, rows.length, focusCell],
   );
 
   // Add a new period column
@@ -122,11 +131,8 @@ export default function SpreadsheetInput({
     setRows((prev) => prev.map((r) => ({ ...r, values: [...r.values, ''] })));
     const newCol = periods.length + 1;
     setActiveCol(newCol);
-    requestAnimationFrame(() => {
-      const key = `${activeRow}-${newCol}`;
-      cellRefs.current.get(key)?.focus();
-    });
-  }, [periods.length, activeRow]);
+    focusCell(activeRow, newCol);
+  }, [periods.length, activeRow, focusCell]);
 
   // Remove a row
   const removeRow = useCallback((rowIdx: number) => {
@@ -153,37 +159,41 @@ export default function SpreadsheetInput({
             nextRow = rowIdx + 1;
           }
           if (nextRow > maxRow) {
-            addRow();
+            addRow('', nextCol);
             return;
           }
           setActiveRow(nextRow);
           setActiveCol(nextCol);
-          requestAnimationFrame(() => {
-            cellRefs.current.get(`${nextRow}-${nextCol}`)?.focus();
-          });
+          focusCell(nextRow, nextCol);
           break;
         }
-        case 'Enter':
-        case 'ArrowDown': {
+        case 'Enter': {
           e.preventDefault();
-          const downRow = Math.min(rowIdx + 1, maxRow);
-          if (downRow === rowIdx && rowIdx >= maxRow) {
-            addRow();
+          // Move to next row. If on last row, create a new one.
+          if (rowIdx >= maxRow) {
+            addRow('', colIdx);
             return;
           }
-          setActiveRow(downRow);
-          requestAnimationFrame(() => {
-            cellRefs.current.get(`${downRow}-${colIdx}`)?.focus();
-          });
+          setActiveRow(rowIdx + 1);
+          focusCell(rowIdx + 1, colIdx);
           break;
         }
+        case 'Shift+Enter':
         case 'ArrowUp': {
           e.preventDefault();
           const upRow = Math.max(0, rowIdx - 1);
           setActiveRow(upRow);
-          requestAnimationFrame(() => {
-            cellRefs.current.get(`${upRow}-${colIdx}`)?.focus();
-          });
+          focusCell(upRow, colIdx);
+          break;
+        }
+        case 'ArrowDown': {
+          e.preventDefault();
+          if (rowIdx >= maxRow) {
+            addRow('', colIdx);
+            return;
+          }
+          setActiveRow(rowIdx + 1);
+          focusCell(rowIdx + 1, colIdx);
           break;
         }
         case 'ArrowRight': {
@@ -197,9 +207,7 @@ export default function SpreadsheetInput({
           e.preventDefault();
           const rightCol = Math.min(colIdx + 1, maxCol);
           setActiveCol(rightCol);
-          requestAnimationFrame(() => {
-            cellRefs.current.get(`${rowIdx}-${rightCol}`)?.focus();
-          });
+          focusCell(rowIdx, rightCol);
           break;
         }
         case 'ArrowLeft': {
@@ -212,9 +220,7 @@ export default function SpreadsheetInput({
           e.preventDefault();
           const leftCol = Math.max(0, colIdx - 1);
           setActiveCol(leftCol);
-          requestAnimationFrame(() => {
-            cellRefs.current.get(`${rowIdx}-${leftCol}`)?.focus();
-          });
+          focusCell(rowIdx, leftCol);
           break;
         }
         case 'Delete':
@@ -224,7 +230,7 @@ export default function SpreadsheetInput({
         }
       }
     },
-    [rows.length, periods.length, addRow],
+    [rows.length, periods.length, addRow, focusCell],
   );
 
   // ── Paste handling ──
@@ -314,13 +320,11 @@ export default function SpreadsheetInput({
       });
 
       // Focus the cell after paste
-      requestAnimationFrame(() => {
-        const targetRow =
-          dataStartRow < dataRows.length ? _rowIdx + dataStartRow : _rowIdx;
-        cellRefs.current.get(`${targetRow}-${_colIdx}`)?.focus();
-      });
+      const pasteTargetRow =
+        dataStartRow < dataRows.length ? _rowIdx + dataStartRow : _rowIdx;
+      focusCell(pasteTargetRow, _colIdx);
     },
-    [periods],
+    [periods, focusCell],
   );
 
   // ── Handle cell blur — commit value ──
@@ -348,11 +352,9 @@ export default function SpreadsheetInput({
       setSuggestionFilter('');
       // Move to next cell
       setActiveCol(1);
-      requestAnimationFrame(() => {
-        cellRefs.current.get(`${activeRow}-1`)?.focus();
-      });
+      focusCell(activeRow, 1);
     },
-    [activeRow, updateCell],
+    [activeRow, updateCell, focusCell],
   );
 
   // Close suggestions and metric browser on click outside
@@ -491,6 +493,7 @@ export default function SpreadsheetInput({
                         if (el) cellRefs.current.set(`${ri}-${ci + 1}`, el);
                       }}
                       onKeyDown={(e) => handleKeyDown(e, ri, ci + 1)}
+                      onInput={(e) => updateCell(ri, ci + 1, (e.target as HTMLElement).textContent ?? '')}
                       onBlur={(e) => handleBlur(e, ri, ci + 1)}
                       onFocus={() => {
                         setActiveRow(ri);

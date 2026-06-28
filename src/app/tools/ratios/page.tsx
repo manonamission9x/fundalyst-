@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { computeRatios } from '@/lib/calculations';
 import { useRatiosStore } from '@/store';
+import { usePageTitle } from '@/lib/use-page-title';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV } from '@/lib/helpers';
 import { useActiveDataset, extractRatiosFromModel } from '@/store/financial-model-selectors';
@@ -101,9 +102,11 @@ function rowsToRatioData(rows: SpreadsheetRow[]): RatioInputs {
 }
 
 export default function RatiosPage() {
+  usePageTitle('Financial Ratios');
   const showToast = useToast();
   const { res, setRes, clear: clearStore } = useRatiosStore();
   const [clearVersion, setClearVersion] = useState(0);
+  const clearedRef = useRef(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
   const [showResults, setShowResults] = useState(false);
 
@@ -111,6 +114,7 @@ export default function RatiosPage() {
 
   const prefilledRef = useRef(false);
   useEffect(() => {
+    if (clearedRef.current) return;
     if (prefilledRef.current) return;
     if (!modelData.data || sheetRows.length > 0) return;
     const { revenue, netProfit, totalAssets, totalEquity, totalDebt, ebit } = modelData.data;
@@ -135,6 +139,7 @@ export default function RatiosPage() {
   }
 
   const handleClear = useCallback(() => {
+    clearedRef.current = true;
     setClearVersion(v => v + 1);
     clearStore();
     setSheetRows([]);
@@ -158,7 +163,7 @@ export default function RatiosPage() {
           <ToolSpreadsheet
             tool="ratios"
             singleColumnLabel="₹ Cr"
-            initialData={sheetRows.length > 0 ? sheetRows : undefined}
+            initialData={clearedRef.current ? undefined : (sheetRows.length > 0 ? sheetRows : undefined)}
             resetKey={clearVersion}
             onDataChange={(rows) => setSheetRows(rows)}
             hint="Enter values in ₹ Cr. These 6 fields unlock: Net Profit Margin, ROE, Debt/Equity, Debt/Assets, Asset Turnover."

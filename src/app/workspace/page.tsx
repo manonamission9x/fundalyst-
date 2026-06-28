@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePageTitle } from '@/lib/use-page-title';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { useImporterStore } from '@/store/importer-store';
 import { SectionTitle, Disclaimer, Card, TrustBadge } from '@/components/ui';
@@ -28,6 +29,7 @@ const steps = [
 type StepId = (typeof steps)[number]['id'];
 
 export default function WorkspacePage() {
+  usePageTitle('Workspace');
   const [activeStep, setActiveStep] = useState<StepId>('overview');
   const datasets = useGlobalDataStore((s) => s.datasets);
   const lastDataset = useImporterStore((s) => s.lastDataset);

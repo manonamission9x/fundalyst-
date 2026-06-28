@@ -46,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </main>
           </ErrorBoundary>
           <footer className="site-footer">
-            <div>Fundalyst · For research purposes only · Not financial advice</div>
+            <div>Fundalyst v0.1.0 · For research purposes only · Not financial advice</div>
             <div>&copy; Fundalyst</div>
           </footer>
         </ToastProvider>

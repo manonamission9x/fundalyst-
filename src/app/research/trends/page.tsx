@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { fmtNum } from '@/lib/calculations';
 import { useAnalysisStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
@@ -13,6 +13,7 @@ import { useGlobalImportFill, extractTrendsCSV, getDataSourceLabel } from '@/lib
 import { useActiveDataset, extractTrendData } from '@/store/financial-model-selectors';
 import { useModelData } from '@/store/use-model-data';
 import type { TrendRow } from '@/types/financial';
+import { usePageTitle } from '@/lib/use-page-title';
 
 const TrendsChart = dynamic(() => import('@/components/tools/trends/TrendsChart'), {
   ssr: false,
@@ -21,11 +22,13 @@ const TrendsChart = dynamic(() => import('@/components/tools/trends/TrendsChart'
 
 export default function TrendsPage() {
   const showToast = useToast();
+  usePageTitle('Trend Charts');
   const { filingData } = useAnalysisStore();
   const { dataSource, companyName } = useGlobalImportFill((vals) => {}, extractTrendsCSV);
   const modelData = useModelData((ds) => extractTrendData(ds));
 
   const [clearVersion, setClearVersion] = useState(0);
+  const clearedRef = useRef(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
   const [sheetPeriods, setSheetPeriods] = useState<string[]>([]);
   const [trendRows, setTrendRows] = useState<TrendRow[]>([]);
@@ -34,7 +37,6 @@ export default function TrendsPage() {
   const handleSheetChange = useCallback((newRows: SpreadsheetRow[], periods: string[]) => {
     setSheetRows(newRows);
     setSheetPeriods(periods);
-    // Build trend rows
     const trendData: TrendRow[] = newRows.map((r) => ({
       label: r.metric,
       vals: r.values.map((v) => {
@@ -70,10 +72,23 @@ export default function TrendsPage() {
   }
 
   function parse() {
-    // Already parsed via handleSheetChange
+    if (sheetRows.length === 0) {
+      showToast('Add data to the spreadsheet first.');
+      return;
+    }
+    const trendData: TrendRow[] = sheetRows.map((r) => ({
+      label: r.metric,
+      vals: r.values.map((v) => {
+        const n = parseFloat(v.replace(/,/g, ''));
+        return isNaN(n) ? 0 : n;
+      }),
+    }));
+    setTrendRows(trendData);
+    setShowResults(true);
   }
 
   function handleClear() {
+    clearedRef.current = true;
     setClearVersion(v => v + 1);
     setSheetRows([]); setSheetPeriods([]); setTrendRows([]); setShowResults(false);
   }
@@ -93,16 +108,16 @@ export default function TrendsPage() {
           <ToolSpreadsheet
             tool="trends"
             multiColumn
-            initialPeriods={sheetPeriods.length >= 3 ? sheetPeriods : ['FY22', 'FY23', 'FY24', 'FY25', 'FY26']}
+            initialPeriods={sheetPeriods.length >= 3 ? sheetPeriods : (clearedRef.current ? ['', '', ''] : ['FY22', 'FY23', 'FY24', 'FY25', 'FY26'])}
             resetKey={clearVersion}
             initialData={
-              sheetRows.length > 0
+              clearedRef.current ? [] : (sheetRows.length > 0
                 ? sheetRows
                 : [
                     { metric: 'Revenue', values: ['1000', '1150', '1240', '1380', '1530'] },
                     { metric: 'Net Profit', values: ['160', '155', '142', '130', '119'] },
                     { metric: 'Total Assets', values: ['2000', '2200', '2450', '2700', '3000'] },
-                  ]
+                  ])
             }
             onDataChange={handleSheetChange}
             hint="First row = period labels. Each row below = one metric. Values update the chart instantly."

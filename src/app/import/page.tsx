@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { usePageTitle } from '@/lib/use-page-title';
 import { PageHeader, Card, Disclaimer, DataQualityBar, TrustBadge } from '@/components/ui';
 import { useImporterStore } from '@/store/importer-store';
 import { useGlobalDataStore } from '@/store/global-data-store';
@@ -18,6 +19,7 @@ const PdfViewer = dynamic(() => import('@/components/import/PdfViewer'), {
 });
 
 export default function ImportPage() {
+  usePageTitle('Import');
   const {
     review, isImporting, error, lastDataset,
     startImport, updateMapping, confirmImport, cancelImport,

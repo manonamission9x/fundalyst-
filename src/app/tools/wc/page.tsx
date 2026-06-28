@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { computeWC, fmtNum } from '@/lib/calculations';
 import { useWCStore } from '@/store';
+import { usePageTitle } from '@/lib/use-page-title';
 import { useToast } from '@/components/shared/ToastProvider';
 import {
   PageHeader,
@@ -42,9 +43,11 @@ function rowsToWCInputs(rows: SpreadsheetRow[]) {
 }
 
 export default function WCPage() {
+  usePageTitle('Cash Efficiency');
   const showToast = useToast();
   const { res, setRes, clear: clearStore } = useWCStore();
   const [clearVersion, setClearVersion] = useState(0);
+  const clearedRef = useRef(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
   const [showResults, setShowResults] = useState(false);
 
@@ -52,6 +55,7 @@ export default function WCPage() {
 
   const prefilledRef = useRef(false);
   useEffect(() => {
+    if (clearedRef.current) return;
     if (prefilledRef.current) return;
     if (!modelData.data || sheetRows.length > 0) return;
     const { revenue, cogs, receivables, inventory, payables, cash } = modelData.data;
@@ -76,6 +80,7 @@ export default function WCPage() {
   }
 
   const handleClear = useCallback(() => {
+    clearedRef.current = true;
     setClearVersion(v => v + 1);
     clearStore();
     setSheetRows([]);
@@ -100,7 +105,7 @@ export default function WCPage() {
           <ToolSpreadsheet
             tool="wc"
             singleColumnLabel="₹ Crores"
-            initialData={sheetRows.length > 0 ? sheetRows : undefined}
+            initialData={clearedRef.current ? undefined : (sheetRows.length > 0 ? sheetRows : undefined)}
             resetKey={clearVersion}
             onDataChange={(rows) => setSheetRows(rows)}
             hint="Enter annual values in ₹ Cr. Tab to navigate."
