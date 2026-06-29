@@ -191,6 +191,71 @@ Be direct about these. Do not paper over them in future implementation notes.
 
 ## Next Priorities
 
+## Codex + DeepSeek Workflow
+
+Current available agents:
+- Codex: orchestrator, product/architecture lead, reviewer, test runner, final integrator, committer.
+- DeepSeek V4 Flash via Hermes/user paste: implementation worker for tightly scoped tasks.
+
+Optimize for low token use without lowering code quality.
+
+Preferred loop:
+1. Codex inspects the repo and chooses one narrow implementation slice.
+2. Codex writes a compact DeepSeek prompt with exact objective, files, constraints, acceptance criteria, tests, and return format.
+3. User pastes that prompt into DeepSeek V4 Flash.
+4. User pastes DeepSeek output back into Codex.
+5. Codex reviews brutally, integrates/fixes if needed, runs tests/build/e2e, then commits and pushes.
+
+DeepSeek prompts should use this structure:
+
+```text
+You are implementing one scoped change in Fundalyst.
+
+Objective:
+...
+
+Files to inspect first:
+...
+
+Files likely to edit:
+...
+
+Do not touch:
+...
+
+Implementation requirements:
+...
+
+Acceptance criteria:
+...
+
+Verification:
+...
+
+Return:
+- concise summary
+- changed files
+- test results
+- unresolved risks
+```
+
+Rules:
+- Do not ask DeepSeek to explore broadly.
+- Do not give vague prompts like "make it enterprise-grade".
+- Do not allow broad refactors unless explicitly scoped.
+- Do not accept fake backend/enterprise claims.
+- Do not store provider credentials in frontend code or localStorage.
+- Do not skip tests.
+- Codex has final responsibility for reviewing diffs and shipping.
+
+Recommended next slices:
+1. Source-linked calculation drawer for DCF/Ratios/WC outputs.
+2. Investment memo export from Workspace.
+3. DCF scenario manager with Bull/Base/Bear cases.
+4. Backend architecture scaffold/API boundary without fake auth.
+
+Start with source-linked calculation drawer. It improves trust immediately and does not require a backend.
+
 ### P0: Backend Foundation
 
 Build real backend primitives before claiming enterprise readiness:
