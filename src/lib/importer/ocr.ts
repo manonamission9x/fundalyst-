@@ -15,7 +15,51 @@
  *   npm install pdfjs-dist
  */
 
-import type { FundalystDataset, ImportedTable, SourceType } from './types';
+import type { ImportedTable, SourceType } from './types';
+
+// ── Minimal interfaces for libraries without @types ─────────────────────────
+
+/** Tesseract.js logger progress message */
+interface OcrLoggerMessage {
+  status: string;
+  progress: number;
+}
+
+/** Tesseract.js library interface */
+interface TesseractLib {
+  recognize(
+    image: string | Blob,
+    lang: string,
+    options?: { logger?: (m: OcrLoggerMessage) => void }
+  ): Promise<{ data: { text: string } }>;
+}
+
+/** pdfjs-dist library interface (partial) */
+interface PdfjsLib {
+  GlobalWorkerOptions?: { workerSrc?: string };
+  getDocument(params: { data: ArrayBuffer }): { promise: Promise<PdfDoc> };
+}
+
+/** pdfjs-dist text content item (partial) */
+interface PdfTextItem {
+  str?: string;
+  transform?: number[];
+  width?: number;
+  height?: number;
+}
+
+/** pdfjs-dist PDF document proxy (minimal) */
+interface PdfDoc {
+  numPages: number;
+  getPage(num: number): Promise<{
+    getViewport(opts: { scale: number }): { width: number; height: number };
+    render(opts: {
+      canvasContext: CanvasRenderingContext2D;
+      viewport: { width: number; height: number };
+    }): { promise: Promise<void> };
+    getTextContent(): Promise<{ items: PdfTextItem[] }>;
+  }>;
+}
 
 // ── Progress types ──────────────────────────────────────────────────────────
 
@@ -168,7 +212,7 @@ export async function performOcr(
   const dataUrl = await fileToDataUrl(file);
 
   emit('ocr', 'Running OCR engine…', 30);
-  let tesseractModule: any;
+  let tesseractModule: unknown;
   try {
   tesseractModule = await import('tesseract.js');
   } catch {
@@ -177,9 +221,11 @@ export async function performOcr(
     return { tables: [], rawText: '', warnings: [warning] };
   }
 
-  const Tesseract = tesseractModule.default || tesseractModule;
+  const Tesseract: TesseractLib =
+    (tesseractModule as { default?: TesseractLib }).default ??
+    (tesseractModule as TesseractLib);
   const result = await Tesseract.recognize(dataUrl, 'eng', {
-    logger: (m: any) => {
+    logger: (m: OcrLoggerMessage) => {
       if (m.status === 'recognizing text') {
         const pct = 30 + Math.round(m.progress * 50);
         emit('ocr', `OCR: ${Math.round(m.progress * 100)}%`, pct);
@@ -242,7 +288,7 @@ export async function extractPdfText(
   emit('reading', `Loading PDF: ${file.name}…`, 5);
   const arrayBuffer = await file.arrayBuffer();
 
-  let pdfjsModule: any;
+  let pdfjsModule: unknown;
   try {
   pdfjsModule = await import('pdfjs-dist');
   } catch {
@@ -251,11 +297,13 @@ export async function extractPdfText(
     return { tables: [], rawText: '', warnings: [warning] };
   }
 
-  const pdfjsLib = pdfjsModule.default || pdfjsModule;
+  const pdfjsLib: PdfjsLib =
+    (pdfjsModule as { default?: PdfjsLib }).default ??
+    (pdfjsModule as PdfjsLib);
   // Set the workerSrc — use CDN matching installed pdfjs-dist version
   if (!pdfjsLib.GlobalWorkerOptions?.workerSrc) {
     try {
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
+      pdfjsLib.GlobalWorkerOptions!.workerSrc =
         'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.149/pdf.worker.min.mjs';
     } catch {
       // If setting workerSrc fails, some PDFs may still work synchronously
@@ -280,7 +328,7 @@ export async function extractPdfText(
     const rows: { y: number; items: { x: number; text: string }[] }[] = [];
 
     for (const item of textContent.items) {
-      const ti = item as any;
+      const ti = item as PdfTextItem;
       const x = ti.transform?.[4] ?? 0;
       const y = ti.transform?.[5] ?? 0;
       const text = (ti.str ?? '').trim();
@@ -371,8 +419,8 @@ export async function extractScannedPdfText(
   emit('reading', `Loading scanned PDF: ${file.name}…`, 5);
   const arrayBuffer = await file.arrayBuffer();
 
-  let pdfjsModule: any;
-  let tesseractModule: any;
+  let pdfjsModule: unknown;
+  let tesseractModule: unknown;
   try {
   pdfjsModule = await import('pdfjs-dist');
   tesseractModule = await import('tesseract.js');
@@ -381,12 +429,16 @@ export async function extractScannedPdfText(
     return { tables: [], rawText: '', warnings: [warning] };
   }
 
-  const pdfjsLib = pdfjsModule.default || pdfjsModule;
-  const Tesseract = tesseractModule.default || tesseractModule;
+  const pdfjsLib: PdfjsLib =
+    (pdfjsModule as { default?: PdfjsLib }).default ??
+    (pdfjsModule as PdfjsLib);
+  const Tesseract: TesseractLib =
+    (tesseractModule as { default?: TesseractLib }).default ??
+    (tesseractModule as TesseractLib);
 
   if (!pdfjsLib.GlobalWorkerOptions?.workerSrc) {
     try {
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
+      pdfjsLib.GlobalWorkerOptions!.workerSrc =
         'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.149/pdf.worker.min.mjs';
     } catch {
       // best-effort
@@ -430,7 +482,7 @@ export async function extractScannedPdfText(
 
     // OCR the image blob
     const result = await Tesseract.recognize(blob, 'eng', {
-      logger: (m: any) => {
+      logger: (m: OcrLoggerMessage) => {
         if (m.status === 'recognizing text') {
           const pct = ocrPct + Math.round(m.progress * 15);
           emit('ocr', `Page ${i} OCR: ${Math.round(m.progress * 100)}%`, pct);
@@ -655,7 +707,6 @@ export function cleanOcrText(tables: ImportedTable[]): ImportedTable[] {
 
     const seenSignatures = new Set<string>();
     const cleanedRows: string[][] = [];
-    let skipNext = false;
 
     for (let i = 0; i < table.rows.length; i++) {
       const row = normalizeRow(table.rows[i]);

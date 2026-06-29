@@ -32,9 +32,6 @@ function toFinite(v: number | '' | null | undefined, fallback = 0): number {
 }
 
 /** Clamp a value between min and max */
-function clamp(v: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, v));
-}
 
 // ── Filing Comparison ──
 
@@ -70,7 +67,6 @@ export function computeDiff(periodA: LineItem[], periodB: LineItem[]): DiffResul
     const absA = aVal !== null ? Math.abs(aVal) : 0;
     const pct = aVal !== null && bVal !== null && absA > 0 ? ((bVal - aVal) / absA) * 100 : null;
     const isPct = /margin|tax|yield|efficiency|roce|roe|roa/i.test(label) && !/(growth|change|decline)/i.test(label);
-    const changeIsPct = isPct || /ratio|holding/i.test(label);
     diffs.push({
       label,
       a: aVal,

@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { computeDCF, computeDCFSensitivity, validateDCFInputs, fmtNum } from '@/lib/calculations';
 import { useDCFStore } from '@/store';
-import { useActiveDataset, extractDCFInputsFromModel } from '@/store/financial-model-selectors';
+import { extractDCFInputsFromModel } from '@/store/financial-model-selectors';
 import { useToast } from '@/components/shared/ToastProvider';
 import {
   PageHeader,
@@ -19,11 +19,11 @@ import {
   DataQualityBar,
   CalcTimestamp,
   TrustBadge,
+  DataSourceBadge,
 } from '@/components/ui';
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import dynamic from 'next/dynamic';
-import { useGlobalImportFill, extractDCFInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
 import { useModelData } from '@/store/use-model-data';
 import { usePageTitle } from '@/lib/use-page-title';
 
@@ -71,6 +71,7 @@ export default function DCFPage() {
   const clearedRef = useRef(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
+  const [isAutoDemo, setIsAutoDemo] = useState(false);
 
   // Model pre-fill via universal hook
   const modelData = useModelData((ds) => extractDCFInputsFromModel(ds));
@@ -82,20 +83,23 @@ export default function DCFPage() {
     if (!modelData.data || sheetRows.length > 0) return;
     const { fcf, shares, netDebt } = modelData.data;
     if (fcf !== null || shares !== null || netDebt !== null) {
-      setSheetRows((prev) => {
-        if (prev.length > 0) return prev;
-        return [
-          { metric: 'Free Cash Flow', values: [fcf !== null ? String(fcf) : ''] },
-          { metric: 'Growth Rate (%)', values: ['8'] },
-          { metric: 'Projection Years', values: ['5'] },
-          { metric: 'WACC (%)', values: ['10'] },
-          { metric: 'Terminal Growth (%)', values: ['3'] },
-          { metric: 'Net Debt', values: [netDebt !== null ? String(netDebt) : ''] },
-          { metric: 'Shares Outstanding', values: [shares !== null ? String(shares) : ''] },
-          { metric: 'Current Price (₹)', values: [''] },
-        ];
-      });
+      const timer = setTimeout(() => {
+        setSheetRows((prev) => {
+          if (prev.length > 0) return prev;
+          return [
+            { metric: 'Free Cash Flow', values: [fcf !== null ? String(fcf) : ''] },
+            { metric: 'Growth Rate (%)', values: ['8'] },
+            { metric: 'Projection Years', values: ['5'] },
+            { metric: 'WACC (%)', values: ['10'] },
+            { metric: 'Terminal Growth (%)', values: ['3'] },
+            { metric: 'Net Debt', values: [netDebt !== null ? String(netDebt) : ''] },
+            { metric: 'Shares Outstanding', values: [shares !== null ? String(shares) : ''] },
+            { metric: 'Current Price (₹)', values: [''] },
+          ];
+        });
+      }, 0);
       prefilledRef.current = true;
+      return () => clearTimeout(timer);
     }
   }, [modelData.data, sheetRows.length]);
 
@@ -118,6 +122,7 @@ export default function DCFPage() {
           { metric: 'Shares Outstanding', values: ['100'] },
           { metric: 'Current Price (₹)', values: ['450'] },
         ]);
+        setIsAutoDemo(true);
       }, 50);
       return () => clearTimeout(timer);
     }
@@ -215,6 +220,9 @@ export default function DCFPage() {
         source={modelData.companyName || undefined}
         metrics={sheetRows.filter((r) => r.values[0]?.trim()).length}
       />
+      <div className="flex items-center gap-2 mb-2 mt-1">
+        <DataSourceBadge variant={isAutoDemo ? 'sample' : modelData.companyName ? 'imported' : 'manual'} />
+      </div>
 
       {/* ── Unified ToolSpreadsheet input — same UX as Filing page ── */}
       <Card>
@@ -255,6 +263,8 @@ export default function DCFPage() {
           priceVal={priceVal}
           discount={(() => { const r = sheetRows.find(r => r.metric === 'WACC (%)'); return r ? Number(r.values[0]) || 10 : 10; })()}
           years={(() => { const r = sheetRows.find(r => r.metric === 'Projection Years'); return r ? Number(r.values[0]) || 5 : 5; })()}
+          isAutoDemo={isAutoDemo}
+          companyName={modelData.companyName || ''}
         />
       )}
 
@@ -277,12 +287,16 @@ function DCFResults({
   priceVal,
   discount,
   years,
+  isAutoDemo,
+  companyName,
 }: {
   summary: NonNullable<ReturnType<typeof useDCFStore.getState>['summary']>;
   sens: ReturnType<typeof useDCFStore.getState>['sens'];
   priceVal: number;
   discount: number;
   years: number;
+  isAutoDemo: boolean;
+  companyName: string;
 }) {
   const iv = summary.iv;
   const isUndervalued = iv > priceVal;
@@ -384,7 +398,7 @@ function DCFResults({
 
       <CalcTimestamp />
       <div className="flex gap-2 flex-wrap mt-2">
-        <TrustBadge label="DCF - Gordon Growth" variant="source" />
+        <TrustBadge label={`Values from: ${isAutoDemo ? 'Sample data' : companyName || 'User entry'}`} variant="source" />
         <TrustBadge label="₹ Indian Market" />
       </div>
       <Disclaimer extra="Method: DCF with Gordon Growth terminal value" />

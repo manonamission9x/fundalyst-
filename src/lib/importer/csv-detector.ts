@@ -44,22 +44,18 @@ export function detectDelimiter(text: string): DelimiterResult {
   }
 
   const scores = new Map<CsvDelimiter, number>();
-  let totalLinesWithData = 0;
 
   for (const delimiter of DELIMITERS) {
     let consistentLines = 0;
-    let totalCount = 0;
 
     for (const line of lines) {
       const count = countDelimiterOutsideQuotes(line, delimiter);
       if (count > 0) {
         consistentLines++;
-        totalCount += count;
       }
     }
 
     if (consistentLines >= lines.length * 0.5) {
-      const avgCount = totalCount / consistentLines;
       // Prefer delimiters that produce consistent column counts
       scores.set(delimiter, consistentLines / lines.length);
     }

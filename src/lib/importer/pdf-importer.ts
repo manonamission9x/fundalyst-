@@ -20,24 +20,17 @@ import type {
   CanonicalFact,
   SourceType,
   StatementType,
-  Currency,
-  Unit,
-  FileMetadata,
 } from './types';
 import {
-  performOcr,
   extractPdfText,
   extractScannedPdfText,
-  cleanOcrText,
   detectFileType,
   isOCRAvailable,
   isPDFAvailable,
   type OcrProgress,
-  type OcrProgressStage,
   type OcrResult,
-  type FileTypeInfo,
 } from './ocr';
-import { findBestMetricMatch, canonicalDisplayName } from './metric-aliases';
+import { findBestMetricMatch } from './metric-aliases';
 import { normalizeValue, convertToOnes } from './normalizer';
 
 // ── Progress types ──────────────────────────────────────────────────────────

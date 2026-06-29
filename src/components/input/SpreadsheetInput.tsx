@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { METRIC_LABELS, METRIC_LIBRARY } from './metric-library';
-import type { MetricEntry } from './metric-library';
 
 /**
  * SpreadsheetInput — An Excel-like data entry grid for financial figures.
@@ -37,22 +36,6 @@ interface SpreadsheetInputProps {
 /** Column label for the metric name column */
 const METRIC_COL = 0;
 
-/** Get column letter (A, B, C... Z, AA, AB...) */
-function colLetter(n: number): string {
-  let s = '';
-  let x = n;
-  while (x >= 0) {
-    s = String.fromCharCode(65 + (x % 26)) + s;
-    x = Math.floor(x / 26) - 1;
-  }
-  return s;
-}
-
-/** Clamp a number between min and max */
-function clamp(v: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, v));
-}
-
 /** Deep clone rows for undo stack */
 function cloneRows(rows: SpreadsheetRow[]): SpreadsheetRow[] {
   return rows.map((r) => ({ ...r, values: [...r.values] }));
@@ -80,7 +63,7 @@ export default function SpreadsheetInput({
 
   // ── Range selection ──
   const [selectionStart, setSelectionStart] = useState<{ row: number; col: number } | null>(null);
-  const selectionEndRef = useRef<{ row: number; col: number } | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<{ row: number; col: number } | null>(null);
 
   // ── Clipboard (internal copy-paste) ──
   const clipboardRef = useRef<{ rows: number; cols: number; data: string[][] } | null>(null);
@@ -172,21 +155,21 @@ export default function SpreadsheetInput({
   const isInSelection = useCallback(
     (row: number, col: number): boolean => {
       if (!selectionStart) return false;
-      const end = selectionEndRef.current || selectionStart;
+      const end = selectionEnd || selectionStart;
       const r1 = Math.min(selectionStart.row, end.row);
       const r2 = Math.max(selectionStart.row, end.row);
       const c1 = Math.min(selectionStart.col, end.col);
       const c2 = Math.max(selectionStart.col, end.col);
       return row >= r1 && row <= r2 && col >= c1 && col <= c2;
     },
-    [selectionStart],
+    [selectionStart, selectionEnd],
   );
 
   // ── Read selected range as 2D array ──
   const readSelection = useCallback((): string[][] => {
     const start = selectionStart;
     if (!start) return [];
-    const end = selectionEndRef.current ?? start;
+    const end = selectionEnd ?? start;
     const r1 = Math.min(start.row, end.row);
     const r2 = Math.max(start.row, end.row);
     const c1 = Math.min(start.col, end.col);
@@ -204,7 +187,7 @@ export default function SpreadsheetInput({
       result.push(rowArr);
     }
     return result;
-  }, [selectionStart, rows]);
+  }, [selectionStart, selectionEnd, rows]);
 
   // ── Write a 2D array into the grid starting at a position ──
   const writeRange = useCallback(
@@ -292,7 +275,7 @@ export default function SpreadsheetInput({
       updateCell(activeRow, activeCol, '');
       return;
     }
-    const end = selectionEndRef.current || start;
+    const end = selectionEnd || start;
     pushUndo();
     const r1 = Math.min(start.row, end.row);
     const r2 = Math.max(start.row, end.row);
@@ -311,7 +294,7 @@ export default function SpreadsheetInput({
       }
       return next;
     });
-  }, [selectionStart, activeRow, activeCol, pushUndo, updateCell]);
+  }, [selectionStart, selectionEnd, activeRow, activeCol, pushUndo, updateCell]);
 
   // ── Keyboard navigation ──
   const handleKeyDown = useCallback(
@@ -375,7 +358,7 @@ export default function SpreadsheetInput({
           case 'a': {
             e.preventDefault();
             setSelectionStart({ row: 0, col: 0 });
-            selectionEndRef.current = { row: maxRow, col: maxCol };
+            setSelectionEnd({ row: maxRow, col: maxCol });
             return;
           }
           case 'arrowup': {
@@ -458,7 +441,7 @@ export default function SpreadsheetInput({
           setActiveRow(nextRow);
           setActiveCol(nextCol);
           setSelectionStart(null);
-          selectionEndRef.current = null;
+          setSelectionEnd(null);
           focusCell(nextRow, nextCol);
           break;
         }
@@ -471,7 +454,7 @@ export default function SpreadsheetInput({
           setActiveRow(rowIdx + 1);
           setActiveCol(colIdx);
           setSelectionStart(null);
-          selectionEndRef.current = null;
+          setSelectionEnd(null);
           focusCell(rowIdx + 1, colIdx);
           break;
         }
@@ -482,7 +465,7 @@ export default function SpreadsheetInput({
           setActiveRow(upRow);
           setActiveCol(colIdx);
           setSelectionStart(null);
-          selectionEndRef.current = null;
+          setSelectionEnd(null);
           focusCell(upRow, colIdx);
           break;
         }
@@ -495,7 +478,7 @@ export default function SpreadsheetInput({
           setActiveRow(rowIdx + 1);
           setActiveCol(colIdx);
           setSelectionStart(null);
-          selectionEndRef.current = null;
+          setSelectionEnd(null);
           focusCell(rowIdx + 1, colIdx);
           break;
         }
@@ -510,7 +493,7 @@ export default function SpreadsheetInput({
           const rightCol = Math.min(colIdx + 1, maxCol);
           setActiveCol(rightCol);
           setSelectionStart(null);
-          selectionEndRef.current = null;
+          setSelectionEnd(null);
           focusCell(rowIdx, rightCol);
           break;
         }
@@ -524,7 +507,7 @@ export default function SpreadsheetInput({
           const leftCol = Math.max(0, colIdx - 1);
           setActiveCol(leftCol);
           setSelectionStart(null);
-          selectionEndRef.current = null;
+          setSelectionEnd(null);
           focusCell(rowIdx, leftCol);
           break;
         }
@@ -532,7 +515,7 @@ export default function SpreadsheetInput({
           e.preventDefault();
           setActiveCol(0);
           setSelectionStart(null);
-          selectionEndRef.current = null;
+          setSelectionEnd(null);
           focusCell(rowIdx, 0);
           break;
         }
@@ -540,7 +523,7 @@ export default function SpreadsheetInput({
           e.preventDefault();
           setActiveCol(maxCol);
           setSelectionStart(null);
-          selectionEndRef.current = null;
+          setSelectionEnd(null);
           focusCell(rowIdx, maxCol);
           break;
         }
@@ -552,13 +535,13 @@ export default function SpreadsheetInput({
         }
         case 'Escape': {
           setSelectionStart(null);
-          selectionEndRef.current = null;
+          setSelectionEnd(null);
           setContextMenu(null);
           break;
         }
       }
     },
-    [rows, periods.length, addRow, focusCell, undo, redo, readSelection, clearSelection, writeRange, pushUndo],
+    [rows, periods.length, addRow, focusCell, undo, redo, readSelection, clearSelection, writeRange],
   );
 
   // ── Paste handling ──
@@ -652,7 +635,7 @@ export default function SpreadsheetInput({
       setSuggestionFilter('');
       setActiveCol(1);
       setSelectionStart(null);
-      selectionEndRef.current = null;
+      setSelectionEnd(null);
       focusCell(activeRow, 1);
     },
     [activeRow, updateCell, focusCell],
@@ -676,14 +659,14 @@ export default function SpreadsheetInput({
     (e: React.MouseEvent, row: number, col: number) => {
       if (e.shiftKey && selectionStart) {
         e.preventDefault();
-        selectionEndRef.current = { row, col };
+        setSelectionEnd({ row, col });
         setActiveRow(row);
         setActiveCol(col);
         // Force re-render by toggling selectionStart
         setSelectionStart({ ...selectionStart });
       } else {
         setSelectionStart({ row, col });
-        selectionEndRef.current = { row, col };
+        setSelectionEnd({ row, col });
       }
     },
     [selectionStart],
@@ -707,26 +690,40 @@ export default function SpreadsheetInput({
   // Reset internal state when resetKey changes
   useEffect(() => {
     if (resetKey === undefined) return;
-    setPeriods(initialPeriods);
-    setRows(
-      initialData && initialData.length > 0
-        ? initialData
-        : [
-            { metric: 'Revenue', values: initialPeriods.map(() => '') },
-            { metric: 'Net Profit', values: initialPeriods.map(() => '') },
-            { metric: 'Total Assets', values: initialPeriods.map(() => '') },
-          ],
-    );
-    setActiveRow(0);
-    setActiveCol(0);
-    setSelectionStart(null);
-    selectionEndRef.current = null;
-    setShowSuggestions(false);
-    setSuggestionFilter('');
-    setShowMetricBrowser(false);
-    undoStackRef.current = [];
-    redoStackRef.current = [];
-  }, [resetKey]);
+    const t1 = setTimeout(() => {
+      setPeriods(initialPeriods);
+    }, 0);
+    const t2 = setTimeout(() => {
+      setRows(
+        initialData && initialData.length > 0
+          ? initialData
+          : [
+              { metric: 'Revenue', values: initialPeriods.map(() => '') },
+              { metric: 'Net Profit', values: initialPeriods.map(() => '') },
+              { metric: 'Total Assets', values: initialPeriods.map(() => '') },
+            ],
+      );
+    }, 0);
+    const t3 = setTimeout(() => setActiveRow(0), 0);
+    const t4 = setTimeout(() => setActiveCol(0), 0);
+    const t5 = setTimeout(() => setSelectionStart(null), 0);
+    setTimeout(() => { setSelectionEnd(null); }, 0);
+    const t6 = setTimeout(() => setShowSuggestions(false), 0);
+    const t7 = setTimeout(() => setSuggestionFilter(''), 0);
+    const t8 = setTimeout(() => setShowMetricBrowser(false), 0);
+    setTimeout(() => { undoStackRef.current = []; }, 0);
+    setTimeout(() => { redoStackRef.current = []; }, 0);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+      clearTimeout(t5);
+      clearTimeout(t6);
+      clearTimeout(t7);
+      clearTimeout(t8);
+    };
+  }, [resetKey, initialPeriods, initialData]);
 
   // Notify parent
   useEffect(() => {

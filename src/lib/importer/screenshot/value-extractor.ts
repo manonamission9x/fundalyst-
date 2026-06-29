@@ -8,9 +8,9 @@
  *   4. Detects the statement type (P&L, Balance Sheet, Cash Flow)
  */
 
-import { findBestMetricMatch, canonicalDisplayName } from '../metric-aliases';
+import { findBestMetricMatch } from '../metric-aliases';
 import { normalizeValue, convertToOnes } from '../normalizer';
-import type { DetectedTable, DetectedRow } from './table-finder';
+import type { DetectedTable } from './table-finder';
 import type { CanonicalFact, StatementType, Currency, Unit } from '../types';
 
 export interface ExtractedValue {
@@ -91,27 +91,6 @@ function detectStatementType(
 }
 
 /**
- * Score OCR confidence based on OCR-level metrics.
- * This is a placeholder that gets populated from Tesseract's per-word confidence.
- */
-function scoreOcrConfidence(rawText: string): number {
-  // Heuristics based on raw text quality
-  const words = rawText.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return 0;
-
-  // Count non-alphanumeric artifacts (OCR noise)
-  const artifacts = words.filter(
-    (w) => /[^a-zA-Z0-9₹.,%/\-()\s]/.test(w) && w.length > 1,
-  ).length;
-
-  const artifactRatio = artifacts / words.length;
-
-  // Baseline: 0.8, penalized by artifacts
-  let score = 0.8 - artifactRatio * 2;
-  return Math.max(0.15, Math.min(0.95, score));
-}
-
-/**
  * Score the plausibility of a value for a given metric.
  * Returns 0-1 where 1 = very plausible.
  */
@@ -128,21 +107,6 @@ function scorePlausibility(metric: string, value: number): number {
   }
 
   return 0.2; // Outside plausible range
-}
-
-/**
- * Try to detect the unit (crores/lakhs/etc.) from metric label context.
- */
-function detectUnitFromLabel(
-  label: string,
-): Unit {
-  const lower = label.toLowerCase();
-  if (/cr\.?$|crore/i.test(lower)) return 'crores';
-  if (/lakhs?$|lacs?$/i.test(lower)) return 'lakhs';
-  if (/mn$|million/i.test(lower)) return 'millions';
-  if (/bn$|billion/i.test(lower)) return 'billions';
-  if (/thousand/i.test(lower)) return 'thousands';
-  return 'ones';
 }
 
 /**

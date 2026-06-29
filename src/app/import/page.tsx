@@ -1,11 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePageTitle } from '@/lib/use-page-title';
-import { PageHeader, Card, Disclaimer, DataQualityBar, TrustBadge } from '@/components/ui';
+import { PageHeader, Card, Disclaimer, DataQualityBar, TrustBadge, DataSourceBadge } from '@/components/ui';
 import { useImporterStore } from '@/store/importer-store';
-import { useGlobalDataStore } from '@/store/global-data-store';
 import { canonicalDisplayName } from '@/lib/importer/metric-aliases';
 import { validatePdfFile, deepValidatePdf } from '@/lib/importer/pdf-validator';
 import type { MetricMapping } from '@/lib/importer/types';
@@ -25,6 +24,12 @@ export default function ImportPage() {
     startImport, updateMapping, confirmImport, cancelImport,
     saveMappingTemplate, clearLastDataset,
   } = useImporterStore();
+
+  // Clipboard paste support for screenshots
+  const [pastedFile, setPastedFile] = useState<File | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [pdfValidation, setPdfValidation] = useState<PdfValidationResult | null>(null);
+  const [pdfValidating, setPdfValidating] = useState(false);
 
   const handleFileUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,13 +67,6 @@ export default function ImportPage() {
     [startImport]
   );
 
-  // Clipboard paste support for screenshots
-  const [pastedFile, setPastedFile] = useState<File | null>(null);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [pdfValidation, setPdfValidation] = useState<PdfValidationResult | null>(null);
-  const [pdfValidating, setPdfValidating] = useState(false);
-  const dropZoneRef = useRef<HTMLLabelElement>(null);
-
   // ── Sample data import for demo ──
   const handleSampleImport = useCallback(async () => {
     const sampleCSV = `Metric, FY24, FY25, FY26
@@ -89,7 +87,7 @@ Interest Expense, 45, 52, 60`;
     const file = new File([blob], 'sample-financial-data.csv', { type: 'text/csv' });
     setUploadedFile(file);
     await startImport(file);
-  }, [startImport]);
+  }, [startImport, setUploadedFile]);
 
   useEffect(() => {
     const handlePaste = async (e: ClipboardEvent) => {
@@ -564,8 +562,6 @@ function ImportResult({
     groupedByMetric.set(key, (groupedByMetric.get(key) || 0) + 1);
   }
   const periods = [...new Set(dataset.facts.map((f) => f.periodLabel))];
-  const globalDatasets = useGlobalDataStore((s) => s.datasets);
-  const globalCount = globalDatasets.length;
 
   return (
     <div>
@@ -590,6 +586,9 @@ function ImportResult({
             periods={`${periods.length} periods`}
             metrics={groupedByMetric.size}
           />
+          <div className="flex items-center gap-2 mt-2">
+            <DataSourceBadge variant="imported" />
+          </div>
           <div className="flex gap-2 flex-wrap mt-2">
             <TrustBadge label="Import" variant="source" />
             <TrustBadge label="Data Ready for Analysis" variant="good" />

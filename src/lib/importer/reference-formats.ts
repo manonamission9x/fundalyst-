@@ -1068,7 +1068,7 @@ export function calculateStatementConfidence(
     (f) =>
       f.statement === statementType ||
       f.statement === 'unknown' ||
-      (f as any).statement === statementType
+      f.statement === statementType
   );
 
   if (relevantFacts.length === 0) return 0.1; // At least something exists
@@ -1076,7 +1076,7 @@ export function calculateStatementConfidence(
   // 1. Required metrics coverage (40% weight)
   const presentMetricKeys = new Set(
     relevantFacts
-      .map((f) => (f as any).canonicalMetric || (f as any).metric)
+      .map((f) => f.canonicalMetric || f.metric)
       .filter(Boolean)
   );
 

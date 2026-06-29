@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useGlobalDataStore } from '@/store/global-data-store';
@@ -28,6 +28,24 @@ const steps = [
 
 type StepId = (typeof steps)[number]['id'];
 
+// ── Quick link definitions with status indicators ──
+interface QuickLink {
+  id: string;
+  label: string;
+  href: string;
+  desc: string;
+}
+
+const quickLinks: QuickLink[] = [
+  { id: 'dcf', label: 'DCF Valuation', href: '/tools/dcf', desc: 'Intrinsic value estimation' },
+  { id: 'filing', label: 'Filing Comparison', href: '/research/filing', desc: 'Period-over-period analysis' },
+  { id: 'ratios', label: 'Financial Ratios', href: '/tools/ratios', desc: 'Health check metrics' },
+  { id: 'peer', label: 'Peer Comparison', href: '/tools/peer', desc: 'Industry benchmark' },
+  { id: 'wc', label: 'Cash Efficiency', href: '/tools/wc', desc: 'Working capital analysis' },
+  { id: 'trends', label: 'Trend Charts', href: '/research/trends', desc: 'Revenue & margin trends' },
+  { id: 'growth', label: 'Growth Rates', href: '/research/growth', desc: 'CAGR & YoY growth' },
+];
+
 export default function WorkspacePage() {
   usePageTitle('Workspace');
   const [activeStep, setActiveStep] = useState<StepId>('overview');
@@ -35,6 +53,13 @@ export default function WorkspacePage() {
   const lastDataset = useImporterStore((s) => s.lastDataset);
   const companyName = lastDataset?.companyName || datasets[0]?.companyName || 'No company selected';
   const hasData = datasets.length > 0 || lastDataset !== null;
+  const totalFacts = datasets.reduce((sum, d) => sum + d.facts.length, 0);
+
+  // Track completed steps based on actual state
+  const completedSteps: Set<StepId> = new Set();
+  if (hasData) completedSteps.add('import');
+  if (hasData) completedSteps.add('data');
+  if (totalFacts > 0) completedSteps.add('filing');
 
   return (
     <div className="workspace">
@@ -62,25 +87,42 @@ export default function WorkspacePage() {
       </div>
 
       <div className="workspace-body">
-        {/* ── Sidebar ── */}
+        {/* ── Sidebar with workflow checklist ── */}
         <nav className="workspace-sidebar" aria-label="Research steps">
-          <div className="workspace-sidebar-label">Steps</div>
-          {steps.map((step) => (
-            <button
-              key={step.id}
-              className={`workspace-step ${activeStep === step.id ? 'active' : ''}`}
-              onClick={() => setActiveStep(step.id)}
-              aria-current={activeStep === step.id ? 'step' : undefined}
-            >
-              <span className="workspace-step-icon">{step.icon}</span>
-              <span className="workspace-step-label">{step.label}</span>
-            </button>
-          ))}
+          <div className="workspace-sidebar-label">Research Workflow</div>
+          {steps.map((step) => {
+            const isCompleted = completedSteps.has(step.id as StepId);
+            return (
+              <button
+                key={step.id}
+                className={`workspace-step ${activeStep === step.id ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
+                onClick={() => setActiveStep(step.id)}
+                aria-current={activeStep === step.id ? 'step' : undefined}
+              >
+                <span className="workspace-step-icon">
+                  {isCompleted ? (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--green)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="7" cy="7" r="5" /><path d="M5 7l2 2 3-3" />
+                    </svg>
+                  ) : step.icon}
+                </span>
+                <span className="workspace-step-label">{step.label}</span>
+              </button>
+            );
+          })}
         </nav>
 
         {/* ── Main content ── */}
         <main className="workspace-content" role="main">
-          {activeStep === 'overview' && <OverviewPanel hasData={hasData} companyName={companyName} datasets={datasets} />}
+          {activeStep === 'overview' && (
+            <OverviewPanel
+              hasData={hasData}
+              companyName={companyName}
+              datasets={datasets}
+              totalFacts={totalFacts}
+              quickLinks={quickLinks}
+            />
+          )}
           {activeStep === 'import' && <ImportPanel />}
           {activeStep === 'data' && <DataPanel datasets={datasets} />}
           {activeStep === 'filing' && <FilingPanel />}
@@ -94,14 +136,63 @@ export default function WorkspacePage() {
 }
 
 // ── Overview Panel ──
-function OverviewPanel({ hasData, companyName, datasets }: { hasData: boolean; companyName: string; datasets: FundalystDataset[] }) {
-  const totalFacts = datasets.reduce((sum, d) => sum + d.facts.length, 0);
+function OverviewPanel({
+  hasData, companyName, datasets, totalFacts, quickLinks,
+}: {
+  hasData: boolean; companyName: string; datasets: FundalystDataset[]; totalFacts: number;
+  quickLinks: QuickLink[];
+}) {
   const stepItems = [
     { num: '01', label: 'Import', desc: 'Upload CSV, Excel, or PDF with financial statements.', action: '/import', cta: 'Import data' },
     { num: '02', label: 'Review', desc: 'Check extracted metrics and periods. Correct any issues.', action: '', cta: '' },
     { num: '03', label: 'Analyze', desc: 'Use Filing, DCF, Ratios, and other tools to evaluate.', action: '/research/filing', cta: 'Start analysis' },
     { num: '04', label: 'Conclude', desc: 'Write your investment thesis based on the evidence.', action: '', cta: '' },
   ];
+
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  function handleExport() {
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('fundalyst-'));
+    const data: Record<string, unknown> = {};
+    for (const key of keys) {
+      try { data[key] = JSON.parse(localStorage.getItem(key)!); } catch {}
+    }
+    data._exportedAt = new Date().toISOString();
+    data._version = '1.0';
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `fundalyst-workspace-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleImportClick() {
+    importInputRef.current?.click();
+  }
+
+  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const imported = JSON.parse(evt.target?.result as string);
+        for (const key of Object.keys(imported)) {
+          if (key.startsWith('fundalyst-') && key !== '_exportedAt' && key !== '_version') {
+            localStorage.setItem(key, JSON.stringify(imported[key]));
+          }
+        }
+        setImportMsg('Workspace restored. Reloading page...');
+        setTimeout(() => window.location.reload(), 1000);
+      } catch {
+        setImportMsg('Invalid workspace file. No changes made.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
 
   return (
     <div>
@@ -124,6 +215,11 @@ function OverviewPanel({ hasData, companyName, datasets }: { hasData: boolean; c
               <div className="ws-metric-value">{totalFacts}</div>
             </div>
           </div>
+          {!hasData && (
+            <div className="p-4 border-t border-[var(--border-light)] text-xs text-muted">
+              No data imported yet. Start by importing financial statements.
+            </div>
+          )}
         </div>
 
         {/* Workflow steps */}
@@ -146,12 +242,80 @@ function OverviewPanel({ hasData, companyName, datasets }: { hasData: boolean; c
           ))}
         </div>
 
-        {/* Quick links */}
-        <div className="grid grid-cols-2 gap-3">
-          <Link href="/tools/dcf" className="workspace-quick-link">DCF Valuation →</Link>
-          <Link href="/research/filing" className="workspace-quick-link">Filing Comparison →</Link>
-          <Link href="/tools/ratios" className="workspace-quick-link">Financial Ratios →</Link>
-          <Link href="/tools/peer" className="workspace-quick-link">Peer Comparison →</Link>
+        {/* Quick links with status indicators */}
+        <div className="workspace-card">
+          <div className="workspace-card-header">Tool Quick Links</div>
+          <div className="p-4">
+            <div className="grid grid-cols-2 gap-3">
+              {quickLinks.map((link) => (
+                <Link
+                  key={link.id}
+                  href={link.href}
+                  className="workspace-quick-link"
+                >
+                  <div className="flex items-center justify-between">
+                    <span>{link.label}</span>
+                    <span className="workspace-link-status" aria-label="Available">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
+                        <path d="M3 5l2 2 3-4" />
+                      </svg>
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted font-mono mt-1">{link.desc}</div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Export / Import */}
+        <div className="workspace-card">
+          <div className="workspace-card-header">Data Backup &amp; Restore</div>
+          <div className="p-4">
+            <div className="text-xs text-tertiary mb-3">
+              All Fundalyst data is stored in browser localStorage. Export your workspace for safekeeping, or restore from a previous export.
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <button type="button" className="btn-ghost btn-sm" onClick={handleExport}>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 2v6M4 6l2 2 2-2" /><path d="M2 9v1h8V9" />
+                </svg>
+                Export workspace
+              </button>
+              <button type="button" className="btn-ghost btn-sm" onClick={handleImportClick}>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 2v6M4 6l2 2 2-2" /><path d="M2 9v1h8V9" />
+                </svg>
+                Import workspace
+              </button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".json"
+                style={{ display: 'none' }}
+                onChange={handleImportFile}
+              />
+            </div>
+            {importMsg && (
+              <div className="text-xs text-primary font-mono mt-2">{importMsg}</div>
+            )}
+          </div>
+        </div>
+
+        {/* Enterprise */}
+        <div className="workspace-card">
+          <div className="workspace-card-header">Enterprise</div>
+          <div className="p-4 text-xs text-tertiary leading-normal">
+            <p className="p-0" style={{ margin: 0 }}>
+              <strong>Current:</strong> Fundalyst is a client-only research tool. All data is stored in browser localStorage — unencrypted, per-browser, and cleared on cache wipe.
+            </p>
+            <p className="p-0 mt-2" style={{ margin: 0 }}>
+              <strong>Enterprise deployment would require:</strong> authentication, encrypted persisted storage, audit logs, admin retention controls, and team workspaces.
+            </p>
+            <p className="p-0 mt-2" style={{ margin: 0 }}>
+              Contact us for enterprise deployment options.
+            </p>
+          </div>
         </div>
 
         <div className="flex gap-2 flex-wrap mt-2">
@@ -364,9 +528,19 @@ function ThesisPanel() {
   const [notes, setNotes] = useState('');
   const [verdict, setVerdict] = useState<'positive' | 'negative' | 'neutral' | ''>('');
   const saved = typeof window !== 'undefined' ? localStorage.getItem('fundalyst-thesis') : null;
+  const [savedStatus, setSavedStatus] = useState<string | null>(() => {
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.notes || data.verdict) return 'Previous thesis found';
+      } catch {}
+    }
+    return null;
+  });
 
   function handleSave() {
     localStorage.setItem('fundalyst-thesis', JSON.stringify({ notes, verdict, updatedAt: new Date().toISOString() }));
+    setSavedStatus('Saved at ' + new Date().toLocaleTimeString());
   }
 
   function handleLoad() {
@@ -374,6 +548,7 @@ function ThesisPanel() {
       const data = JSON.parse(saved || '{}');
       setNotes(data.notes || '');
       setVerdict(data.verdict || '');
+      setSavedStatus(null);
     } catch {}
   }
 
@@ -426,10 +601,8 @@ function ThesisPanel() {
               )}
             </div>
 
-            {saved && (
-              <div className="text-xs text-muted font-mono">
-                Previous thesis found — click &quot;Load saved&quot; to restore
-              </div>
+            {savedStatus && (
+              <div className="text-xs text-muted font-mono">{savedStatus}</div>
             )}
           </div>
         </div>

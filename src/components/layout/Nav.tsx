@@ -5,28 +5,66 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import {
-  LayoutDashboard, Upload, FileText, TrendingUp, BarChart3,
-  Calculator, DollarSign, PieChart, Users, FolderKanban, Info,
-  ArrowUpFromLine,
-} from 'lucide-react';
+  IconNavImport,
+  IconNavFiling,
+  IconNavTrends,
+  IconNavGrowth,
+  IconNavDCF,
+  IconNavCash,
+  IconNavRatios,
+  IconNavPeer,
+  IconNavWorkspace,
+  IconNavAbout,
+} from '@/components/ui';
 
-const items: { id: string; label: string; href: string; group?: string; icon: React.ReactNode }[] = [
-  { id: 'home', label: 'Home', href: '/', icon: <LayoutDashboard size={14} /> },
-  { id: 'import', label: 'Import', href: '/import', icon: <Upload size={14} /> },
-  { id: 'filing', label: 'Filing', href: '/research/filing', group: 'Research', icon: <FileText size={14} /> },
-  { id: 'trends', label: 'Trends', href: '/research/trends', group: 'Research', icon: <TrendingUp size={14} /> },
-  { id: 'growth', label: 'Growth', href: '/research/growth', group: 'Research', icon: <BarChart3 size={14} /> },
-  { id: 'dcf', label: 'Valuation', href: '/tools/dcf', group: 'Analysis', icon: <Calculator size={14} /> },
-  { id: 'wc', label: 'Cash Eff.', href: '/tools/wc', group: 'Analysis', icon: <DollarSign size={14} /> },
-  { id: 'ratios', label: 'Ratios', href: '/tools/ratios', group: 'Analysis', icon: <PieChart size={14} /> },
-  { id: 'peer', label: 'Peer Comp.', href: '/tools/peer', group: 'Analysis', icon: <Users size={14} /> },
-  { id: 'workspace', label: 'Workspace', href: '/workspace', icon: <FolderKanban size={14} /> },
-  { id: 'about', label: 'About', href: '/about', icon: <Info size={14} /> },
+interface NavItem {
+  id: string;
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+}
+
+interface NavSection {
+  label: string;
+  items: NavItem[];
+}
+
+const sections: NavSection[] = [
+  {
+    label: 'Research',
+    items: [
+      { id: 'filing', label: 'Filing Comparison', href: '/research/filing', icon: <IconNavFiling /> },
+      { id: 'trends', label: 'Trend Charts', href: '/research/trends', icon: <IconNavTrends /> },
+      { id: 'growth', label: 'Growth Rates', href: '/research/growth', icon: <IconNavGrowth /> },
+    ],
+  },
+  {
+    label: 'Valuation',
+    items: [
+      { id: 'dcf', label: 'DCF Valuation', href: '/tools/dcf', icon: <IconNavDCF /> },
+      { id: 'wc', label: 'Cash Efficiency', href: '/tools/wc', icon: <IconNavCash /> },
+      { id: 'ratios', label: 'Financial Ratios', href: '/tools/ratios', icon: <IconNavRatios /> },
+      { id: 'peer', label: 'Peer Comparison', href: '/tools/peer', icon: <IconNavPeer /> },
+    ],
+  },
+  {
+    label: 'Data',
+    items: [
+      { id: 'import', label: 'Import Financials', href: '/import', icon: <IconNavImport /> },
+    ],
+  },
+  {
+    label: 'Tools',
+    items: [
+      { id: 'workspace', label: 'Workspace', href: '/workspace', icon: <IconNavWorkspace /> },
+    ],
+  },
 ];
+
+const aboutItem: NavItem = { id: 'about', label: 'About', href: '/about', icon: <IconNavAbout /> };
 
 export default function Nav() {
   const pathname = usePathname();
-  const datasets = useGlobalDataStore((s) => s.datasets);
   const activeDataset = useGlobalDataStore((s) => {
     if (!s.activeDatasetId && s.datasets.length === 0) return null;
     const active = s.datasets.find((d) => d.id === s.activeDatasetId);
@@ -48,13 +86,13 @@ export default function Nav() {
           </svg>
           <span>Fundalyst</span>
         </Link>
-        {items.map((item, i) => {
-          const prevGroup = i > 0 ? items[i - 1].group : null;
-          const showSep = item.group && prevGroup && item.group !== prevGroup;
-          return (
-            <React.Fragment key={item.id}>
-              {showSep && <span className="nav-sep" />}
+
+        {sections.map((section) => (
+          <React.Fragment key={section.label}>
+            <span className="nav-section-label">{section.label}</span>
+            {section.items.map((item) => (
               <Link
+                key={item.id}
                 href={item.href}
                 className={`nav-tab${isActive(item.href) ? ' active' : ''}`}
                 id={`${item.id}-tab`}
@@ -64,9 +102,22 @@ export default function Nav() {
                 {item.icon}
                 <span>{item.label}</span>
               </Link>
-            </React.Fragment>
-          );
-        })}
+            ))}
+          </React.Fragment>
+        ))}
+
+        <span className="nav-sep" />
+        <Link
+          href={aboutItem.href}
+          className={`nav-tab${isActive(aboutItem.href) ? ' active' : ''}`}
+          id={`${aboutItem.id}-tab`}
+          role="tab"
+          aria-selected={isActive(aboutItem.href)}
+        >
+          {aboutItem.icon}
+          <span>{aboutItem.label}</span>
+        </Link>
+
         <div className="nav-right">
           {activeDataset && activeDataset.facts.length > 0 && (
             <span
@@ -78,7 +129,9 @@ export default function Nav() {
             </span>
           )}
           <Link href="/import" className="nav-cta">
-            <ArrowUpFromLine size={12} />
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 2v7M4 6l3 3 3-3" /><path d="M2 11v1h10v-1" />
+            </svg>
             Import financials
           </Link>
           {activeDataset && (

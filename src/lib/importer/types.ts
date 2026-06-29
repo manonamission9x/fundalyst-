@@ -16,6 +16,10 @@ export interface CanonicalFact {
   canonicalMetric?: string;
   labelOriginal: string;
   value: number;
+  /** Original unnormalized value from the source before normalization */
+  rawValue?: string | number;
+  /** True if user manually edited this value after import */
+  userOverridden?: boolean;
   periodLabel: string;
   periodEnd?: string;
   fiscalYear?: string;

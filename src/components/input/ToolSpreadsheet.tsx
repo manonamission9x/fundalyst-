@@ -56,7 +56,6 @@ export default function ToolSpreadsheet({
   initialData,
   singleColumnLabel,
   hint,
-  multiColumn,
   resetKey,
 }: ToolSpreadsheetProps) {
   const defaults = TOOL_DEFAULTS[tool];

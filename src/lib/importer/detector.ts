@@ -1,6 +1,4 @@
 import type { RawRow, FileMetadata, Currency, StatementType, Unit } from './types';
-import { canonicalDisplayName } from './metric-aliases';
-import { normalizeValue } from './normalizer';
 
 /**
  * Detect period labels from column headers.

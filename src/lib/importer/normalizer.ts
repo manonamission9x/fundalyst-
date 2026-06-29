@@ -35,18 +35,6 @@ function isIndianCommaFormat(s: string): boolean {
 }
 
 /**
- * Remove commas from a number string, handling both Indian and International formats.
- */
-function removeCommas(s: string): string {
-  const cleaned = s.replace(/^[₹$£€¥\s]*/, '').replace(/[₹$£€¥\s]*$/, '');
-  if (cleaned.includes(',')) {
-    const noCommas = cleaned.replace(/,/g, '');
-    return noCommas;
-  }
-  return cleaned;
-}
-
-/**
  * Parse a raw cell value into a normalized number.
  */
 export function normalizeValue(raw: string | number | null | undefined): NormalizedValue {
@@ -68,10 +56,6 @@ export function normalizeValue(raw: string | number | null | undefined): Normali
   s = s.replace(/%/g, '').trim();
 
   // Detect and remove currency symbols
-  const hasINR = s.includes('₹') || /^Rs\b/i.test(s) || s.includes('INR');
-  const hasUSD = s.includes('$');
-  const hasGBP = s.includes('£');
-
   s = s.replace(/[₹$£€¥]/g, '').trim();
   s = s.replace(/^Rs\.?\s*/i, '').trim();
   s = s.replace(/^INR\s*/i, '').trim();

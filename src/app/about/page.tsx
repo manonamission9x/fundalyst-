@@ -123,6 +123,46 @@ export default function AboutPage() {
         </div>
       </Card>
 
+      {/* Privacy & Data */}
+      <Card label="Privacy &amp; Data" className="mt-3">
+        <div className="card-body text-sm text-tertiary leading-normal">
+          <p className="p-0">
+            All data you import or enter in Fundalyst stays entirely in your browser&apos;s <strong>localStorage</strong> — a client-side storage mechanism built into every modern browser. <strong>No data is ever transmitted to any server, API, or third party.</strong>
+          </p>
+          <ul className="about-methodology-list mt-3">
+            <li><strong>Per-browser only:</strong> localStorage is tied to the specific browser and device you are using. Data is not shared across browsers, devices, or profiles.</li>
+            <li><strong>Not encrypted:</strong> localStorage data is stored in plain text in your browser&apos;s profile directory. It is not encrypted at rest.</li>
+            <li><strong>Cleared on cache wipe:</strong> Clearing your browser cache, cookies, or site data will delete all Fundalyst workspace data.</li>
+            <li><strong>Manual backup recommended:</strong> Use the <strong>Export workspace</strong> feature on the Workspace page to download a backup JSON file. No automatic backup is available.</li>
+          </ul>
+        </div>
+      </Card>
+
+      {/* Enterprise */}
+      <Card label="Enterprise" className="mt-3">
+        <div className="card-body text-sm text-tertiary leading-normal">
+          <p className="p-0">
+            Fundalyst is currently a <strong>client-only research tool</strong> with all data persisted in browser localStorage. This architecture is designed for individual use and does not meet enterprise requirements for:
+          </p>
+          <ul className="about-methodology-list mt-3">
+            <li><strong>Authentication &amp; access control</strong> — no user accounts, roles, or permissions</li>
+            <li><strong>Encrypted persisted storage</strong> — localStorage is unencrypted and browser-scoped</li>
+            <li><strong>Audit logs</strong> — no tracking of data access or changes</li>
+            <li><strong>Admin retention controls</strong> — no data lifecycle management or policy enforcement</li>
+            <li><strong>Team workspaces</strong> — no shared spaces, collaboration, or conflict resolution</li>
+          </ul>
+          <p className="p-0 mt-3">
+            <strong>Current:</strong> Client-side localStorage. All computation happens in-browser. No server uploads.
+          </p>
+          <p className="p-0">
+            <strong>Enterprise:</strong> Would require a server-backed deployment with authenticated access, encrypted database storage, audit trail logging, admin retention policies, and team workspace management.
+          </p>
+          <p className="p-0 mt-3">
+            Contact us for enterprise deployment options.
+          </p>
+        </div>
+      </Card>
+
       {/* CTA */}
       <div className="mt-6 text-center">
         <Link href="/import" className="about-cta-btn">
@@ -133,7 +173,7 @@ export default function AboutPage() {
         </Link>
       </div>
 
-      <Disclaimer />
+      <Disclaimer extra="All data stays in browser localStorage — not encrypted, per-browser only. Export your workspace for backup." />
     </div>
   );
 }

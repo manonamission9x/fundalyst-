@@ -22,9 +22,13 @@ export function useGlobalImportFill<T>(
   const lastFilledRef = useRef<string | null>(null);
   const setterRef = useRef(setter);
   const extractRef = useRef(extract);
-  // Keep refs current without triggering re-renders
-  setterRef.current = setter;
-  extractRef.current = extract;
+  // Keep refs current without triggering re-renders — in effect, not render body
+  useEffect(() => {
+    setterRef.current = setter;
+  }, [setter]);
+  useEffect(() => {
+    extractRef.current = extract;
+  }, [extract]);
 
   const [state, setState] = useState<{ dataSource: SourceType | 'none'; companyName?: string; lastFilledId: string | null }>({
     dataSource: 'none',
@@ -32,39 +36,40 @@ export function useGlobalImportFill<T>(
   });
 
   useEffect(() => {
-    if (!activeDataset) {
-      setState({ dataSource: 'none', lastFilledId: null });
-      return;
-    }
-    // Only fill if dataset changed (new ID or first fill)
-    if (activeDataset.id === lastFilledRef.current) {
-      // Still update state if company name changed
+    const timer = setTimeout(() => {
+      if (!activeDataset) {
+        setState({ dataSource: 'none', lastFilledId: null });
+        return;
+      }
+      // Only fill if dataset changed (new ID or first fill)
+      if (activeDataset.id === lastFilledRef.current) {
+        // Still update state if company name changed
+        setState({
+          dataSource: activeDataset.sourceType,
+          companyName: activeDataset.companyName,
+          lastFilledId: activeDataset.id,
+        });
+        return;
+      }
+
+      const values = extractRef.current(activeDataset);
+      if (values !== null && values !== undefined) {
+        const hasData = typeof values === 'string'
+          ? values.trim().length > 0
+          : Object.values(values as Record<string, unknown>).some((v) => v !== null && v !== '' && v !== undefined);
+        if (hasData) {
+          setterRef.current(values);
+          lastFilledRef.current = activeDataset.id;
+        }
+      }
+
       setState({
         dataSource: activeDataset.sourceType,
         companyName: activeDataset.companyName,
         lastFilledId: activeDataset.id,
       });
-      return;
-    }
-
-    const values = extractRef.current(activeDataset);
-    if (values !== null && values !== undefined) {
-      const hasData = typeof values === 'string'
-        ? values.trim().length > 0
-        : Object.values(values as any).some((v) => v !== null && v !== '' && v !== undefined);
-      if (hasData) {
-        setterRef.current(values);
-        lastFilledRef.current = activeDataset.id;
-      }
-    }
-
-    setState({
-      dataSource: activeDataset.sourceType,
-      companyName: activeDataset.companyName,
-      lastFilledId: activeDataset.id,
-    });
-    // Only depend on activeDataset identity — setter/extract via refs
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, 0);
+    return () => clearTimeout(timer);
   }, [activeDataset]);
 
   return state;
@@ -82,8 +87,9 @@ export function useImportFill<T>(
   const filledRef = useRef(false);
   const setterRef = useRef(setter);
   const extractRef = useRef(extract);
-  setterRef.current = setter;
-  extractRef.current = extract;
+  // Keep refs current without triggering re-renders — in effect, not render body
+  useEffect(() => { setterRef.current = setter; }, [setter]);
+  useEffect(() => { extractRef.current = extract; }, [extract]);
 
   useEffect(() => {
     if (!lastDataset || filledRef.current) return;
@@ -91,12 +97,12 @@ export function useImportFill<T>(
     if (values === null || values === undefined) return;
     const hasData = typeof values === 'string'
       ? values.trim().length > 0
-      : Object.values(values as any).some((v) => v !== null && v !== '' && v !== undefined);
+      : Object.values(values as Record<string, unknown>).some((v) => v !== null && v !== '' && v !== undefined);
     if (hasData) {
       setterRef.current(values);
       filledRef.current = true;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [lastDataset]);
 }
 
@@ -296,9 +302,9 @@ export function confirmAndPushToGlobal(
  * Get human-readable data source label.
  */
 export function getDataSourceLabel(sourceType: SourceType | 'none' | undefined, companyName?: string): string {
-  if (!sourceType || sourceType === 'none') return 'Manual mode';
+  if (!sourceType || sourceType === 'none') return 'Manual entry';
   if (sourceType === 'sample') return 'Using sample data';
-  if (sourceType === 'manual') return 'Manual mode';
+  if (sourceType === 'manual') return 'Manual entry';
   if (companyName) return `Using imported data: ${companyName}`;
   return 'Using imported data';
 }

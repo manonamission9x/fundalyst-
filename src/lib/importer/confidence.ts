@@ -26,7 +26,6 @@ export function classifyConfidence(
   metricConfidence: number,
   hasValue: boolean,
   isPlausible: boolean,
-  sourceType: string,
 ): ConfidenceResult {
   if (!hasValue) {
     return { tier: 'low', score: 0, label: 'No value extracted' };

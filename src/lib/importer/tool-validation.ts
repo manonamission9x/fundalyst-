@@ -185,7 +185,6 @@ export function runValidationChecks(dataset: FundalystDataset): ValidationCheck[
   const cogs = g('cogs');
   const interest = g('interestExpense');
   const depr = g('depreciation');
-  const ebit = g('ebit');
   if (rev !== undefined && np !== undefined) {
     const estExpenses = (cogs || 0) + (interest || 0) + (depr || 0);
     const estPbt = rev - estExpenses;
@@ -212,7 +211,6 @@ export function runValidationChecks(dataset: FundalystDataset): ValidationCheck[
   const fcf = g('financingCashFlow');
   const cash = g('cash');
   if (ocf !== undefined && icf !== undefined && cash !== undefined) {
-    const netChange = (ocf || 0) + (icf || 0) + (fcf || 0);
     // Can't check opening balance without it, just note it
     checks.push({
       label: 'Cash Flow Data',

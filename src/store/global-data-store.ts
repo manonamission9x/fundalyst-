@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { FundalystDataset, ToolReadiness, ValidationCheck } from '@/lib/importer/types';
 import { TOOL_METRICS } from '@/lib/importer/types';
-import { canonicalDisplayName } from '@/lib/importer/metric-aliases';
 import { runValidationChecks } from '@/lib/importer/tool-validation';
 import { usePipelineStore } from './pipeline-store';
 

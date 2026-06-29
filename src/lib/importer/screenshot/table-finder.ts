@@ -10,8 +10,6 @@
  *   - Statement type hints
  */
 
-import type { ImportedTable } from '../types';
-
 /** A single detected cell with position metadata */
 export interface DetectedCell {
   text: string;
@@ -54,14 +52,6 @@ const NOISE_PATTERNS = [
 ];
 
 /** Labels that signal a row is a section header (not a data row) */
-const SECTION_HEADERS = [
-  /^(revenue|income|expenses|assets|liabilities|equity|cash\s*flow)/i,
-  /^(operating|investing|financing)/i,
-  /^(current|non-current|total|net|gross)/i,
-  /^(particulars|notes|refer)/i,
-  /^(year|period|quarter|half.?year)/i,
-  /^(standalone|consolidated)/i,
-];
 
 /**
  * Detect whether raw OCR text contains a multi-column table.
@@ -153,16 +143,6 @@ function alignToColumns(
   }
 
   return rows;
-}
-
-/**
- * Detect whether a value string is numeric (could be a financial number).
- */
-function isNumericValue(s: string): boolean {
-  const cleaned = s.replace(/[₹$£€¥,\s%()]/g, '').trim();
-  if (!cleaned) return false;
-  if (cleaned === '-' || cleaned === '—' || cleaned === '–') return false;
-  return !isNaN(parseFloat(cleaned)) && /[0-9]/.test(cleaned);
 }
 
 /**

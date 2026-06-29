@@ -11,6 +11,22 @@
 
 import { isPDFAvailable } from './ocr';
 
+// ── Minimal interfaces for libraries without @types ─────────────────────────
+
+/** pdfjs-dist text content item (partial) */
+interface PdfTextItem {
+  str?: string;
+  transform?: number[];
+}
+
+/** pdfjs-dist PDF document proxy (minimal) */
+interface PdfDoc {
+  numPages: number;
+  getPage(num: number): Promise<{
+    getTextContent(): Promise<{ items: PdfTextItem[] }>;
+  }>;
+}
+
 export interface PdfValidationResult {
   /** Overall validity */
   valid: boolean;
@@ -30,13 +46,6 @@ export interface PdfValidationResult {
 
 /** Maximum allowed PDF size: 50 MB */
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
-/** Minimum PDF magic bytes length to check */
-const MAGIC_BYTES_LENGTH = 5;
-/** PDF "magic bytes" — the file must start with %PDF */
-const PDF_HEADER = /^%PDF/;
-
-/** Known encrypted PDF marker in the linearized header */
-const ENCRYPT_MARKER = /\/Encrypt\s+\d+\s+\d+\s+R/;
 
 /**
  * Quick synchronous validation — checks extension, magic bytes, file size.
@@ -124,7 +133,7 @@ export async function deepValidatePdf(
     return { ...base, warnings, isScanned: null };
   }
 
-  let pdfjsModule: any;
+  let pdfjsModule: unknown;
   try {
     pdfjsModule = await import('pdfjs-dist');
   } catch {
@@ -132,25 +141,27 @@ export async function deepValidatePdf(
     return { ...base, warnings, isScanned: null };
   }
 
-  const pdfjsLib = pdfjsModule.default || pdfjsModule;
+  const pdfjsLib =
+    (pdfjsModule as { default?: { GlobalWorkerOptions?: { workerSrc?: string }; getDocument: (params: { data: ArrayBuffer }) => { promise: Promise<unknown> } } }).default ??
+    (pdfjsModule as { GlobalWorkerOptions?: { workerSrc?: string }; getDocument: (params: { data: ArrayBuffer }) => { promise: Promise<unknown> } });
   const arrayBuffer = await file.arrayBuffer();
 
   // Set worker source (needed for encrypted PDF detection in some versions)
   if (!pdfjsLib.GlobalWorkerOptions?.workerSrc) {
     try {
       const version = '5.4.149';
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
+      pdfjsLib.GlobalWorkerOptions!.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
     } catch {
       // best-effort
     }
   }
 
   // Try loading the document
-  let doc: any;
+  let doc: PdfDoc;
   try {
-    doc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  } catch (err: any) {
-    const msg = (err?.message || '').toLowerCase();
+    doc = (await pdfjsLib.getDocument({ data: arrayBuffer }).promise) as PdfDoc;
+  } catch (err: unknown) {
+    const msg = ((err as { message?: string })?.message || '').toLowerCase();
 
     if (msg.includes('password') || msg.includes('encrypt') || msg.includes('protected')) {
       return {
@@ -175,7 +186,7 @@ export async function deepValidatePdf(
     return {
       ...base,
       valid: false,
-      error: `Could not read PDF: ${err?.message || 'Unknown error'}. If the file opens in other PDF readers, try re-saving it.`,
+      error: `Could not read PDF: ${(err as { message?: string })?.message || 'Unknown error'}. If the file opens in other PDF readers, try re-saving it.`,
       isEncrypted: false,
     };
   }
@@ -201,7 +212,7 @@ export async function deepValidatePdf(
       const page = await doc.getPage(i);
       const tc = await page.getTextContent();
       for (const item of tc.items) {
-        totalTextLength += ((item as any).str || '').length;
+        totalTextLength += ((item as PdfTextItem).str || '').length;
       }
     } catch {
       // Page might be image-only — fine

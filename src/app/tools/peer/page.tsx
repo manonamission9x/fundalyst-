@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, useRef, useMemo } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { fmtNum } from '@/lib/calculations';
 import { usePeerStore } from '@/store';
 import { usePageTitle } from '@/lib/use-page-title';
@@ -18,6 +18,7 @@ import {
   DataQualityBar,
   CalcTimestamp,
   TrustBadge,
+  DataSourceBadge,
 } from '@/components/ui';
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
@@ -25,7 +26,6 @@ import { useGlobalDataStore } from '@/store/global-data-store';
 import type { PeerRow } from '@/types/financial';
 
 const LABELS = ['Revenue', 'Profit', 'Assets', 'Debt'];
-const COL_LABELS = ['Revenue', 'Net Profit', 'Total Assets', 'Total Debt'];
 
 const LOWER_IS_BETTER = [false, false, false, true]; // Revenue, Profit, Assets, Debt
 
@@ -67,16 +67,17 @@ function sheetToPeerRows(rows: SpreadsheetRow[], periods: string[]): PeerRow[] {
 export default function PeerPage() {
   usePageTitle('Peer Comparison');
   const showToast = useToast();
-  const { rows, clear: clearStore } = usePeerStore();
-  const datasets = useGlobalDataStore((s) => s.datasets);
-  const dsCount = datasets.length;
+  const { clear: clearStore } = usePeerStore();
+  const dsCount = useGlobalDataStore((s) => s.datasets.length);
 
   const [clearVersion, setClearVersion] = useState(0);
   const clearedRef = useRef(false);
+  const [cleared, setCleared] = useState(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
   const [sheetPeriods, setSheetPeriods] = useState<string[]>([]);
   const [peerResults, setPeerResults] = useState<PeerRow[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const [isSampleLoaded, setIsSampleLoaded] = useState(false);
 
   async function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -133,10 +134,11 @@ Infosys, 156000, 28700, 172000, 24000`;
     })));
     setPeerResults(parsed);
     setShowResults(true);
+    setIsSampleLoaded(true);
     showToast('Loaded 4 sample companies');
   }
 
-  function handleClear() { clearedRef.current = true; setClearVersion(v => v + 1); clearStore(); setSheetRows([]); setSheetPeriods([]); setPeerResults([]); setShowResults(false); }
+  function handleClear() { clearedRef.current = true; setCleared(true); setClearVersion(v => v + 1); clearStore(); setSheetRows([]); setSheetPeriods([]); setPeerResults([]); setShowResults(false); setIsSampleLoaded(false); }
 
   // ── Insight helpers ──
   const bestRevenue = findBestRow(peerResults, 0, true);
@@ -160,6 +162,9 @@ Infosys, 156000, 28700, 172000, 24000`;
       />
 
       <DataQualityBar source={dsCount > 0 ? `${dsCount} dataset(s) loaded` : undefined} metrics={dsCount} />
+      <div className="flex items-center gap-2 mb-2 mt-1">
+        <DataSourceBadge variant={isSampleLoaded ? 'sample' : dsCount > 0 ? 'imported' : 'none'} />
+      </div>
 
       <UploadBar onUpload={handleCsvFile} hint="Company, Revenue, Profit, Assets, Debt" />
 
@@ -175,7 +180,7 @@ Infosys, 156000, 28700, 172000, 24000`;
           <ToolSpreadsheet
             tool="peer"
             multiColumn
-            initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : (clearedRef.current ? ['', ''] : ['Company A', 'Company B', 'Company C'])}
+            initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : (cleared ? ['', ''] : ['Company A', 'Company B', 'Company C'])}
             resetKey={clearVersion}
             initialData={
               sheetRows.length > 0
@@ -257,7 +262,7 @@ Infosys, 156000, 28700, 172000, 24000`;
           <div className="mt-4">
             <NextLinks links={[{ label: 'Cash efficiency', href: '/tools/wc' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
             <CalcTimestamp />
-            <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label="Peer Comparison" variant="source" /><TrustBadge label="₹ Indian Market" /></div>
+            <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label={`Values from: ${isSampleLoaded ? 'Sample data' : dsCount > 0 ? 'Imported data' : 'User entry'}`} variant="source" /><TrustBadge label="₹ Indian Market" /></div>
             <Disclaimer />
           </div>
         </>

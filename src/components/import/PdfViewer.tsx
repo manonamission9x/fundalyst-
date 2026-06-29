@@ -32,7 +32,7 @@ export default function PdfViewer({
   height = 500,
 }: PdfViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const [pdfDoc, setPdfDoc] = useState<import('pdfjs-dist').PDFDocumentProxy | null>(null);
   const [pageNum, setPageNum] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -42,14 +42,14 @@ export default function PdfViewer({
   const [zoom, setZoom] = useState(1);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-  const renderTaskRef = useRef<any>(null);
-  const pdfDocRef = useRef<any>(null);
+  const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
+  const pdfDocRef = useRef<import('pdfjs-dist').PDFDocumentProxy | null>(null);
 
   // Load the PDF document
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    const t1 = setTimeout(() => setLoading(true), 0);
+    const t2 = setTimeout(() => setError(null), 0);
 
     (async () => {
       try {
@@ -85,7 +85,7 @@ export default function PdfViewer({
             thumbCanvas.width = viewport.width;
             thumbCanvas.height = viewport.height;
             const ctx = thumbCanvas.getContext('2d')!;
-            await page.render({ canvas: thumbCanvas, viewport, canvasContext: ctx as any }).promise;
+            await page.render({ canvas: thumbCanvas, viewport, canvasContext: ctx }).promise;
             thumbs.push(thumbCanvas.toDataURL('image/png'));
           } catch {
             thumbs.push('');
@@ -93,15 +93,19 @@ export default function PdfViewer({
         }
         if (!cancelled) setThumbnails(thumbs);
         setLoading(false);
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!cancelled) {
-          setError(err?.message || 'Failed to load PDF');
+          setError(err instanceof Error ? err.message : 'Failed to load PDF');
           setLoading(false);
         }
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [file, initialPage]);
 
   // Render the current page
@@ -150,9 +154,9 @@ export default function PdfViewer({
       renderTaskRef.current = renderTask;
       await renderTask.promise;
       renderTaskRef.current = null;
-    } catch (err: any) {
-      if (err?.name !== 'CancellationException') {
-        console.warn('[PdfViewer] Render error:', err?.message);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name !== 'CancellationException') {
+        console.warn('[PdfViewer] Render error:', err.message);
       }
     }
     setRendering(false);

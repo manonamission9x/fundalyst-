@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { computeWC, fmtNum } from '@/lib/calculations';
+import { computeWC } from '@/lib/calculations';
 import { useWCStore } from '@/store';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useToast } from '@/components/shared/ToastProvider';
@@ -18,13 +18,12 @@ import {
   DataQualityBar,
   CalcTimestamp,
   TrustBadge,
+  DataSourceBadge,
 } from '@/components/ui';
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
-import { useActiveDataset, extractWCFromModel } from '@/store/financial-model-selectors';
+import { extractWCFromModel } from '@/store/financial-model-selectors';
 import { useModelData } from '@/store/use-model-data';
-
-const WC_METRICS = ['Revenue (annual)', 'Cost of Goods Sold', 'Trade Receivables', 'Inventory', 'Payables', 'Cash & Equivalents'];
 
 function rowsToWCInputs(rows: SpreadsheetRow[]) {
   const result: Record<string, number | null> = {};
@@ -48,6 +47,7 @@ export default function WCPage() {
   const { res, setRes, clear: clearStore } = useWCStore();
   const [clearVersion, setClearVersion] = useState(0);
   const clearedRef = useRef(false);
+  const [cleared, setCleared] = useState(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
   const [showResults, setShowResults] = useState(false);
 
@@ -60,15 +60,18 @@ export default function WCPage() {
     if (!modelData.data || sheetRows.length > 0) return;
     const { revenue, cogs, receivables, inventory, payables, cash } = modelData.data;
     if (revenue !== null || cogs !== null || receivables !== null) {
-      setSheetRows([
-        { metric: 'Revenue (annual)', values: [revenue !== null ? String(revenue) : ''] },
-        { metric: 'Cost of Goods Sold', values: [cogs !== null ? String(cogs) : ''] },
-        { metric: 'Trade Receivables', values: [receivables !== null ? String(receivables) : ''] },
-        { metric: 'Inventory', values: [inventory !== null ? String(inventory) : ''] },
-        { metric: 'Payables', values: [payables !== null ? String(payables) : ''] },
-        { metric: 'Cash & Equivalents', values: [cash !== null ? String(cash) : ''] },
-      ]);
+      const timer = setTimeout(() => {
+        setSheetRows([
+          { metric: 'Revenue (annual)', values: [revenue !== null ? String(revenue) : ''] },
+          { metric: 'Cost of Goods Sold', values: [cogs !== null ? String(cogs) : ''] },
+          { metric: 'Trade Receivables', values: [receivables !== null ? String(receivables) : ''] },
+          { metric: 'Inventory', values: [inventory !== null ? String(inventory) : ''] },
+          { metric: 'Payables', values: [payables !== null ? String(payables) : ''] },
+          { metric: 'Cash & Equivalents', values: [cash !== null ? String(cash) : ''] },
+        ]);
+      }, 0);
       prefilledRef.current = true;
+      return () => clearTimeout(timer);
     }
   }, [modelData.data, sheetRows.length]);
 
@@ -81,6 +84,7 @@ export default function WCPage() {
 
   const handleClear = useCallback(() => {
     clearedRef.current = true;
+    setCleared(true);
     setClearVersion(v => v + 1);
     clearStore();
     setSheetRows([]);
@@ -99,13 +103,16 @@ export default function WCPage() {
         source={modelData.companyName || undefined}
         periods={modelData.companyName ? `Company: ${modelData.companyName}` : undefined}
       />
+      <div className="flex items-center gap-2 mb-2 mt-1">
+        <DataSourceBadge variant={modelData.companyName ? 'imported' : 'none'} />
+      </div>
 
       <Card label="Cash Efficiency Inputs">
         <div className="card-body">
           <ToolSpreadsheet
             tool="wc"
             singleColumnLabel="₹ Crores"
-            initialData={clearedRef.current ? undefined : (sheetRows.length > 0 ? sheetRows : undefined)}
+            initialData={cleared ? undefined : (sheetRows.length > 0 ? sheetRows : undefined)}
             resetKey={clearVersion}
             onDataChange={(rows) => setSheetRows(rows)}
             hint="Enter annual values in ₹ Cr. Tab to navigate."
@@ -142,7 +149,7 @@ export default function WCPage() {
           <NextLinks links={[{ label: 'Financial ratios', href: '/tools/ratios' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
           <CalcTimestamp />
           <div className="flex gap-2 flex-wrap mt-2">
-            <TrustBadge label="Cash Conversion Cycle" variant="source" />
+            <TrustBadge label={`Values from: ${modelData.companyName || 'User entry'}`} variant="source" />
             <TrustBadge label="₹ Indian Market" />
           </div>
           <Disclaimer extra="CCC = DSO + DIO − DPO" />

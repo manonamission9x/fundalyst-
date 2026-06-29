@@ -11,11 +11,10 @@
  * All client-side. Feeds into the existing ImportReviewState flow.
  */
 
-import type { OcrProgress } from '../ocr';
 import { preprocessImage, estimateImageQuality } from './preprocessor';
 import { detectTableStructure, type DetectedTable } from './table-finder';
 import { extractValues, type ExtractionResult } from './value-extractor';
-import type { FundalystDataset, MetricMapping, ImportReviewState, FileMetadata, SourceType } from '../types';
+import type { FundalystDataset, MetricMapping, ImportReviewState, FileMetadata } from '../types';
 
 // ── Public types ──
 
@@ -90,7 +89,7 @@ export async function processScreenshot(
   // ═══ Stage 2: OCR ═══
   emit('ocr', 'Running text recognition…', 20);
 
-  let tessModule: any;
+  let tessModule: typeof import('tesseract.js');
   try {
     tessModule = await import('tesseract.js');
   } catch {
@@ -100,12 +99,12 @@ export async function processScreenshot(
     );
   }
 
-  const Tesseract = tessModule.default || tessModule;
+  const Tesseract = (tessModule as typeof import('tesseract.js') & { default?: typeof import('tesseract.js') }).default || tessModule;
 
   let ocrText = '';
   try {
     const result = await Tesseract.recognize(preprocessed.blob, 'eng', {
-      logger: (m: any) => {
+      logger: (m: { jobId: string; progress: number; status: string; userJobId: string; workerId: string }) => {
         if (m.status === 'recognizing text') {
           const pct = 20 + Math.round(m.progress * 55);
           emit('ocr', `Reading text: ${Math.round(m.progress * 100)}%`, pct);
@@ -151,17 +150,6 @@ export async function processScreenshot(
       detectedTables.push(table);
     }
   }
-
-  // Convert to ImportedTable format for backward compat
-  const importedTables = detectedTables.map((dt) => ({
-    id: dt.id,
-    sourceName: file.name,
-    rows: dt.rows.map((r) => r.cells.map((c) => c.text)),
-    cleanedRows: dt.rows
-      .filter((r) => !r.isHeader)
-      .map((r) => r.cells.map((c) => c.text)),
-    confidence: dt.confidence,
-  }));
 
   emit('mapping', 'Mapping values to known metrics…', 90);
 

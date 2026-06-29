@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useYoyStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
@@ -16,6 +16,7 @@ import {
   InsightCard,
   DataQualityBar,
   TrustBadge,
+  DataSourceBadge,
 } from '@/components/ui';
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
@@ -31,6 +32,7 @@ export default function YoyPage() {
   const { years, csv, rows, setYears, setCsv, setRows, clear: clearStore } = useYoyStore();
   const [clearVersion, setClearVersion] = useState(0);
   const clearedRef = useRef(false);
+  const [cleared, setCleared] = useState(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
 
   const dataInfo = useGlobalImportFill(
@@ -39,6 +41,17 @@ export default function YoyPage() {
   );
 
   const modelData = useModelData((ds) => extractTrendData(ds));
+
+  // parseWithText: plain function (not useCallback) so it can be used before the effect
+  function parseWithText(text: string) {
+    const lines = text.split('\n').filter(Boolean);
+    setRows(lines.map((l) => {
+      const cols = l.split(',').map((s) => s.trim());
+      const vals = cols.slice(1).map(Number);
+      const growth = vals.map((v, i) => i > 0 && vals[i - 1] ? ((v - vals[i - 1]) / Math.abs(vals[i - 1])) * 100 : null);
+      return { label: cols[0], vals, growth };
+    }));
+  }
 
   // Pre-fill from canonical model when available
   const prefilledRef = useRef(false);
@@ -53,15 +66,18 @@ export default function YoyPage() {
       metric,
       values: vals.map(v => v !== null ? String(v) : ''),
     }));
-    setSheetRows(rows);
-    setYears(periods.join(','));
-    const csvText = rows.map((r) => `${r.metric},${r.values.join(',')}`).join('\n');
-    setCsv(csvText);
-    parseWithText(csvText);
+    const timer = setTimeout(() => {
+      setSheetRows(rows);
+      setYears(periods.join(','));
+      const csvText = rows.map((r) => `${r.metric},${r.values.join(',')}`).join('\n');
+      setCsv(csvText);
+      parseWithText(csvText);
+    }, 0);
     prefilledRef.current = true;
+    return () => clearTimeout(timer);
   }, [modelData.data, modelData.isLoaded]);
 
-  const handleDataChange = useCallback((newRows: SpreadsheetRow[], newPeriods: string[]) => {
+  const handleDataChange = (newRows: SpreadsheetRow[], newPeriods: string[]) => {
     setSheetRows(newRows);
     // Convert to growth format
     const labels = newPeriods.join(',');
@@ -69,17 +85,7 @@ export default function YoyPage() {
     const csvText = newRows.map((r) => `${r.metric},${r.values.join(',')}`).join('\n');
     setCsv(csvText);
     parseWithText(csvText);
-  }, [setYears, setCsv]);
-
-  const parseWithText = useCallback((text: string) => {
-    const lines = text.split('\n').filter(Boolean);
-    setRows(lines.map((l) => {
-      const cols = l.split(',').map((s) => s.trim());
-      const vals = cols.slice(1).map(Number);
-      const growth = vals.map((v, i) => i > 0 && vals[i - 1] ? ((v - vals[i - 1]) / Math.abs(vals[i - 1])) * 100 : null);
-      return { label: cols[0], vals, growth };
-    }));
-  }, [setRows]);
+  };
 
   async function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -114,7 +120,7 @@ export default function YoyPage() {
     }
   }
 
-  function handleClear() { clearedRef.current = true; setClearVersion(v => v + 1); clearStore(); setSheetRows([]); }
+  function handleClear() { clearedRef.current = true; setCleared(true); setClearVersion(v => v + 1); clearStore(); setSheetRows([]); }
 
   const yearList = years.split(',').map((s) => s.trim()).filter(Boolean);
   const colLabels = rows.length > 0
@@ -144,6 +150,9 @@ export default function YoyPage() {
       />
 
       <DataQualityBar source={getDataSourceLabel(dataInfo.dataSource, dataInfo.companyName)} />
+      <div className="flex items-center gap-2 mb-2 mt-1">
+        <DataSourceBadge variant={dataInfo.dataSource === 'sample' ? 'sample' : dataInfo.dataSource === 'manual' ? 'manual' : dataInfo.dataSource && dataInfo.dataSource !== 'none' ? 'imported' : 'none'} />
+      </div>
       <UploadBar onUpload={handleCsvFile} hint="CSV: Metric, Year1, Year2, Year3, ..." />
 
       <Card label="Data">
@@ -151,9 +160,9 @@ export default function YoyPage() {
           <ToolSpreadsheet
             tool="growth"
             multiColumn
-            initialData={clearedRef.current ? undefined : (sheetRows.length > 0 ? sheetRows : undefined)}
+            initialData={cleared ? undefined : (sheetRows.length > 0 ? sheetRows : undefined)}
             resetKey={clearVersion}
-            initialPeriods={clearedRef.current ? ['', '', ''] : (yearList.length >= 3 ? yearList : ['FY22', 'FY23', 'FY24'])}
+            initialPeriods={cleared ? ['', '', ''] : (yearList.length >= 3 ? yearList : ['FY22', 'FY23', 'FY24'])}
             onDataChange={handleDataChange}
             hint="Add rows for each metric. Tab to navigate between cells."
           />
@@ -196,7 +205,7 @@ export default function YoyPage() {
           <div className="mt-4">
             <NextLinks links={[{ label: 'Trend charts', href: '/research/trends' }, { label: 'Review filings', href: '/research/filing' }]} />
             <CalcTimestamp />
-            <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label="Growth Rate Analysis" variant="source" /><TrustBadge label="₹ Indian Market" /></div>
+            <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label={`Values from: ${getDataSourceLabel(dataInfo.dataSource, dataInfo.companyName)}`} variant="source" /><TrustBadge label="₹ Indian Market" /></div>
             <Disclaimer />
           </div>
         </div>

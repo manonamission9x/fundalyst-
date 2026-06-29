@@ -1,11 +1,8 @@
 import * as XLSX from 'xlsx';
-import type { RawRow, FundalystDataset, CanonicalFact, FileMetadata, ImportReviewState, MetricMapping, SourceType, Currency, Unit, ImportedTable } from './types';
+import type { RawRow, FundalystDataset, CanonicalFact, FileMetadata, ImportReviewState, MetricMapping, SourceType, StatementType } from './types';
 import { detectMetadata } from './detector';
 import { normalizeValue, convertToOnes } from './normalizer';
-import { findBestMetricMatch, canonicalDisplayName } from './metric-aliases';
-import { detectFileType, cleanOcrText } from './ocr';
-import { importPdf } from './pdf-importer';
-
+import { findBestMetricMatch } from './metric-aliases';
 import { parseCsvWithDetection } from './csv-detector';
 
 // ── Parse raw file content into rows ──
@@ -94,7 +91,7 @@ export function rowsToFacts(
       const fact: CanonicalFact = {
         company: metadata.company || undefined,
         sourceType,
-        statement: match?.statement as any || 'unknown',
+        statement: match?.statement as StatementType || 'unknown',
         metric: match?.canonical || 'unknown',
         labelOriginal,
         value: valueInOnes,
@@ -172,7 +169,7 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
     const warnings: string[] = ocrResult.warnings || [];
     let companyName: string | undefined;
 
-    for (const table of (ocrResult as any).tables || []) {
+    for (const table of ocrResult.tables || []) {
       // Use cleanedRows (filtered by cleanOcrText) instead of raw rows
       const sourceRows = (table.cleanedRows && table.cleanedRows.length > 0)
         ? table.cleanedRows
@@ -215,7 +212,7 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
           facts.push({
             company: companyName,
             sourceType,
-            statement: (match?.statement as any) || 'unknown',
+            statement: (match?.statement as StatementType) || 'unknown',
             metric: match?.canonical || 'unknown',
             labelOriginal: label,
             value,
@@ -246,7 +243,7 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
       unit: 'ones',
       periods: ['Period 1'],
       facts,
-      tables: (ocrResult as any).tables || [],
+      tables: ocrResult.tables || [],
       warnings,
       missingFields,
       confidence: facts.length > 0
@@ -407,7 +404,7 @@ export function applyMappingOverrides(
       return {
         ...f,
         metric: override.canonical,
-        statement: override.statement as any,
+        statement: override.statement as StatementType,
       };
     }
     return f;

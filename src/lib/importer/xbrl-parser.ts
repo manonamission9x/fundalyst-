@@ -15,7 +15,6 @@
 import type {
   FundalystDataset,
   CanonicalFact,
-  SourceType,
   Currency,
   Unit,
   StatementType,
@@ -427,9 +426,6 @@ export async function parseIXBRL(htmlText: string): Promise<XBRLResult> {
 
   // ── Extract Contexts (from hidden ix:hidden elements) ──
   const contexts = new Map<string, XBRLContext>();
-  const contextElements = doc.querySelectorAll(
-    'ix\\:context, [ix\\:context], context, [context]'
-  );
   // Also try finding context-like definitions in script tags or hidden spans
 
   // Common iXBRL pattern: contexts are embedded as XML in hidden divs
@@ -530,9 +526,8 @@ export async function parseIXBRL(htmlText: string): Promise<XBRLResult> {
 
   for (const el of ixElements) processElement(el);
   for (const el of fallbackElements) {
-    const local = localTagName(el.tagName);
     // Skip elements we already processed via ix: namespace
-    if (el.matches('ix\\:nonFraction, ix\\:nonNumeric, ix\\:fraction')) continue;
+    if (el.matches('ix\\\\:nonFraction, ix\\\\:nonNumeric, ix\\\\:fraction')) continue;
     processElement(el);
   }
 

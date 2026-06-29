@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useMemo, type ReactNode } from 'react';
 import { Card, MetricGrid } from '@/components/ui';
-import { FileText, TrendingUp, BarChart3, Calculator, DollarSign, PieChart, Users, Upload, Search } from 'lucide-react';
+import { FileText, TrendingUp, BarChart3, Calculator, DollarSign, PieChart, Users } from 'lucide-react';
 import { useGlobalDataStore } from '@/store/global-data-store';
 
 // ── Quick Company Check (inline tool) ──
@@ -176,7 +176,6 @@ import { usePageTitle } from '@/lib/use-page-title';
 
 export default function HomePage() {
   usePageTitle('Home');
-  const datasets = useGlobalDataStore((s) => s.datasets);
   const activeDataset = useGlobalDataStore((s) => {
     if (!s.activeDatasetId && s.datasets.length === 0) return null;
     return s.datasets.find((d) => d.id === s.activeDatasetId) || s.datasets[0] || null;

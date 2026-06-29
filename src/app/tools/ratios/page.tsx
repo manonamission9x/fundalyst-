@@ -6,7 +6,7 @@ import { useRatiosStore } from '@/store';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV } from '@/lib/helpers';
-import { useActiveDataset, extractRatiosFromModel } from '@/store/financial-model-selectors';
+import { extractRatiosFromModel } from '@/store/financial-model-selectors';
 import {
   PageHeader,
   Card,
@@ -21,6 +21,7 @@ import {
   EmptyState,
   DataQualityBar,
   TrustBadge,
+  DataSourceBadge,
 } from '@/components/ui';
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
@@ -107,6 +108,7 @@ export default function RatiosPage() {
   const { res, setRes, clear: clearStore } = useRatiosStore();
   const [clearVersion, setClearVersion] = useState(0);
   const clearedRef = useRef(false);
+  const [cleared, setCleared] = useState(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
   const [showResults, setShowResults] = useState(false);
 
@@ -119,15 +121,18 @@ export default function RatiosPage() {
     if (!modelData.data || sheetRows.length > 0) return;
     const { revenue, netProfit, totalAssets, totalEquity, totalDebt, ebit } = modelData.data;
     if (revenue !== null || netProfit !== null || totalAssets !== null) {
-      setSheetRows([
-        { metric: 'Revenue', values: [revenue !== null ? String(revenue) : ''] },
-        { metric: 'Net Profit', values: [netProfit !== null ? String(netProfit) : ''] },
-        { metric: 'EBIT', values: [ebit !== null ? String(ebit) : ''] },
-        { metric: 'Total Assets', values: [totalAssets !== null ? String(totalAssets) : ''] },
-        { metric: 'Total Equity', values: [totalEquity !== null ? String(totalEquity) : ''] },
-        { metric: 'Total Debt', values: [totalDebt !== null ? String(totalDebt) : ''] },
-      ]);
+      const timer = setTimeout(() => {
+        setSheetRows([
+          { metric: 'Revenue', values: [revenue !== null ? String(revenue) : ''] },
+          { metric: 'Net Profit', values: [netProfit !== null ? String(netProfit) : ''] },
+          { metric: 'EBIT', values: [ebit !== null ? String(ebit) : ''] },
+          { metric: 'Total Assets', values: [totalAssets !== null ? String(totalAssets) : ''] },
+          { metric: 'Total Equity', values: [totalEquity !== null ? String(totalEquity) : ''] },
+          { metric: 'Total Debt', values: [totalDebt !== null ? String(totalDebt) : ''] },
+        ]);
+      }, 0);
       prefilledRef.current = true;
+      return () => clearTimeout(timer);
     }
   }, [modelData.data, sheetRows.length]);
 
@@ -140,6 +145,7 @@ export default function RatiosPage() {
 
   const handleClear = useCallback(() => {
     clearedRef.current = true;
+    setCleared(true);
     setClearVersion(v => v + 1);
     clearStore();
     setSheetRows([]);
@@ -157,13 +163,16 @@ export default function RatiosPage() {
       />
 
       <DataQualityBar source={modelData.companyName || undefined} />
+      <div className="flex items-center gap-2 mb-2 mt-1">
+        <DataSourceBadge variant={modelData.companyName ? 'imported' : 'none'} />
+      </div>
 
       <Card label="Required (6 fields)">
         <div className="card-body">
           <ToolSpreadsheet
             tool="ratios"
             singleColumnLabel="₹ Cr"
-            initialData={clearedRef.current ? undefined : (sheetRows.length > 0 ? sheetRows : undefined)}
+            initialData={cleared ? undefined : (sheetRows.length > 0 ? sheetRows : undefined)}
             resetKey={clearVersion}
             onDataChange={(rows) => setSheetRows(rows)}
             hint="Enter values in ₹ Cr. These 6 fields unlock: Net Profit Margin, ROE, Debt/Equity, Debt/Assets, Asset Turnover."
@@ -206,7 +215,7 @@ export default function RatiosPage() {
             <NextLinks links={[{ label: 'Cash efficiency', href: '/tools/wc' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
             <CalcTimestamp />
             <div className="flex gap-2 flex-wrap mt-2">
-              <TrustBadge label="Ratio Analysis" variant="source" />
+              <TrustBadge label={`Values from: ${modelData.companyName || 'User entry'}`} variant="source" />
               <TrustBadge label="₹ Indian Market" />
             </div>
             <Disclaimer />

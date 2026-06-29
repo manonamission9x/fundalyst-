@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useState } from 'react';
 
 // ── Premium SVG Icon Components ──
 // All icons: 20×20 viewBox, 1.5px stroke, round caps/joins, currentColor
@@ -418,6 +418,132 @@ export function ConfidenceBadge({ confidence, size = 'sm' }: ConfidenceBadgeProp
   );
 }
 
+// ── ProvenancePopover ──
+interface ProvenancePopoverProps {
+  sourceType?: string;
+  originalLabel?: string;
+  period?: string;
+  rawValue?: string;
+  normalizedValue?: string;
+  confidence?: number;
+  userOverridden?: boolean;
+}
+export function ProvenancePopover({
+  sourceType,
+  originalLabel,
+  period,
+  rawValue,
+  normalizedValue,
+  confidence,
+  userOverridden,
+}: ProvenancePopoverProps) {
+  const [open, setOpen] = useState(false);
+  const label = sourceType === 'csv' ? 'CSV' :
+    sourceType === 'xlsx' ? 'XLSX' :
+    sourceType === 'pdf-text' || sourceType === 'ocr' ? 'PDF' :
+    sourceType === 'manual' ? 'Manual' :
+    sourceType === 'sample' ? 'Sample' : sourceType || 'Data';
+  const variant = !sourceType || sourceType === 'manual' ? 'muted' :
+    sourceType === 'sample' ? 'warn' : 'good';
+  return (
+    <span className="provenance-badge-wrapper" style={{ position: 'relative', display: 'inline-block' }}>
+      <span
+        className={`provenance-badge-trigger ${variant}`}
+        onClick={() => setOpen(!open)}
+        style={{
+          fontSize: 9, cursor: 'pointer', padding: '1px 6px', borderRadius: '3px',
+          fontFamily: 'var(--font-mono)', border: '1px solid var(--border)',
+          background: 'var(--bg-field)', color: 'var(--text-muted)',
+          whiteSpace: 'nowrap', userSelect: 'none',
+        }}
+      >
+        {label}
+      </span>
+      {open && (
+        <div
+          className="provenance-popover"
+          onClick={() => setOpen(false)}
+          style={{
+            position: 'absolute', top: '100%', left: 0, zIndex: 50,
+            marginTop: 4, minWidth: 200, maxWidth: 260,
+            background: 'var(--bg-surface)', border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            padding: '8px 10px', fontSize: 10, fontFamily: 'var(--font-mono)',
+            lineHeight: 1.6, color: 'var(--text)',
+          }}
+        >
+          {sourceType && (
+            <div style={{ marginBottom: 4 }}>
+              <span className={`confidence-badge ${variant}`} style={{ fontSize: 8 }}>
+                {label}
+              </span>
+            </div>
+          )}
+          {originalLabel && <div><span style={{ color: 'var(--text-muted)' }}>Original: </span>{originalLabel}</div>}
+          {period && <div><span style={{ color: 'var(--text-muted)' }}>Period: </span>{period}</div>}
+          {rawValue && normalizedValue && rawValue !== normalizedValue && (
+            <div><span style={{ color: 'var(--text-muted)' }}>Raw: </span>{rawValue} <span style={{ color: 'var(--text-tertiary)' }}>→</span> {normalizedValue}</div>
+          )}
+          {rawValue && (!normalizedValue || rawValue === normalizedValue) && (
+            <div><span style={{ color: 'var(--text-muted)' }}>Value: </span>{rawValue}</div>
+          )}
+          {confidence !== undefined && (
+            <div>
+              <span style={{ color: 'var(--text-muted)' }}>Confidence: </span>
+              <span className={`confidence-badge ${confidence >= 0.9 ? 'good' : confidence >= 0.7 ? '' : 'warn'}`} style={{ fontSize: 8 }}>
+                {Math.round(confidence * 100)}%
+              </span>
+            </div>
+          )}
+          {userOverridden && (
+            <div style={{ color: 'var(--amber)', marginTop: 2 }}>✦ User override</div>
+          )}
+        </div>
+      )}
+    </span>
+  );
+}
+
+// ── DataSourceBadge ──
+interface DataSourceBadgeProps {
+  variant: 'sample' | 'imported' | 'manual' | 'none';
+}
+export function DataSourceBadge({ variant }: DataSourceBadgeProps) {
+  if (variant === 'none') return null;
+  const config: Record<string, { label: string; cls: string }> = {
+    sample: { label: 'Sample data', cls: 'warn' },
+    imported: { label: 'Imported', cls: 'good' },
+    manual: { label: 'Entered manually', cls: 'muted' },
+  };
+  const c = config[variant];
+  return (
+    <span
+      className={`data-source-badge ${c.cls}`}
+      style={{
+        fontSize: 9, padding: '1px 7px', borderRadius: '10px',
+        fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap',
+        display: 'inline-flex', alignItems: 'center', gap: 3,
+        border: '1px solid var(--border)',
+        background: variant === 'sample' ? 'rgba(245,158,11,0.12)' :
+                    variant === 'imported' ? 'rgba(34,197,94,0.12)' :
+                    'rgba(148,163,184,0.12)',
+        color: variant === 'sample' ? 'var(--amber)' :
+               variant === 'imported' ? 'var(--green)' :
+               'var(--text-muted)',
+      }}
+    >
+      <span style={{
+        width: 5, height: 5, borderRadius: '50%',
+        background: variant === 'sample' ? 'var(--amber)' :
+                    variant === 'imported' ? 'var(--green)' :
+                    'var(--text-muted)',
+        display: 'inline-block',
+      }} />
+      {c.label}
+    </span>
+  );
+}
+
 // ── StatRow (Bloomberg-style compact data row) ──
 interface StatRowProps {
   label: string;
@@ -589,7 +715,7 @@ interface DataQualityBarProps {
 }
 export function DataQualityBar({ source, periods, metrics, missing }: DataQualityBarProps) {
   if (!source) return null;
-  const dotClass = source === 'Manual mode' ? 'muted' : source.includes('sample') ? 'warn' : 'good';
+  const dotClass = source === 'Manual entry' ? 'muted' : source.includes('sample') ? 'warn' : 'good';
   return (
     <div className="data-quality">
       <span className="data-quality-item">
@@ -639,11 +765,11 @@ export function SectionTitle({ children }: { children: React.ReactNode }) {
 
 // ── CalcTimestamp ──
 export function CalcTimestamp() {
-  const timeRef = useRef(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }));
+  const [timeStr] = useState(() => new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }));
   return (
     <div className="calc-timestamp">
       <IconClock />
-      Calculated {timeRef.current}
+      Calculated {timeStr}
     </div>
   );
 }

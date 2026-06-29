@@ -17,7 +17,8 @@ export function useModelData<T>(
 ): { data: T | null; isLoaded: boolean; companyName: string } {
   const dataset = useActiveDataset();
   const extractorRef = useRef(extractor);
-  extractorRef.current = extractor;
+  // Keep ref current in effect, not render body
+  useEffect(() => { extractorRef.current = extractor; }, [extractor]);
   const [data, setData] = useState<T | null>(null);
 
   const isLoaded = dataset !== null && dataset.facts.length > 0;
@@ -39,7 +40,8 @@ export function useModelData<T>(
 
   // Extract on mount and when dataset changes
   useEffect(() => {
-    extract();
+    const timer = setTimeout(() => extract(), 0);
+    return () => clearTimeout(timer);
   }, [extract]);
 
   // Subscribe to pipeline notifications (import, spreadsheet write, etc.)

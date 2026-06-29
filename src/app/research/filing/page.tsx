@@ -9,12 +9,13 @@ import {
   PageHeader, Card, Toolbar, NextLinks, Disclaimer,
   EmptyState, InsightCard, WarningCard, SectionTitle,
   DataQualityBar, CalcTimestamp, TrustBadge,
+  DataSourceBadge,
 } from '@/components/ui';
 import { SpreadsheetInput } from '@/components/input';
 import type { SpreadsheetRow } from '@/components/input';
-import { useActiveDataset, extractFilingData, getPeriods, datasetToSpreadsheetRows } from '@/store/financial-model-selectors';
+import { useActiveDataset, getPeriods, datasetToSpreadsheetRows } from '@/store/financial-model-selectors';
 import { writeSpreadsheetToModel } from '@/store/canonical-helpers';
-import { useGlobalImportFill, getDataSourceLabel, extractFilingInputs } from '@/lib/importer/import-hooks';
+import { useGlobalImportFill, extractFilingInputs } from '@/lib/importer/import-hooks';
 import { useGlobalDataStore } from '@/store/global-data-store';
 
 import { usePageTitle } from '@/lib/use-page-title';
@@ -29,8 +30,10 @@ export default function FilingPage() {
   const { setFiling } = useAnalysisStore();
   const [clearVersion, setClearVersion] = useState(0);
   const clearedRef = useRef(false);
+  const [cleared, setCleared] = useState(false);
   const [loading, setLoading] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const [isSampleLoaded, setIsSampleLoaded] = useState(false);
 
   // Spreadsheet state (source of truth for data entry)
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
@@ -89,9 +92,11 @@ export default function FilingPage() {
       const periods = getPeriods(activeDataset);
       if (periods.length >= 2) {
         const rows = datasetToSpreadsheetRows(activeDataset);
-        setSheetPeriods(periods);
-        setSheetRows(rows.map((r) => ({ metric: r.metric, values: r.values })));
-        return;
+        const timer = setTimeout(() => {
+          setSheetPeriods(periods);
+          setSheetRows(rows.map((r) => ({ metric: r.metric, values: r.values })));
+        }, 0);
+        return () => clearTimeout(timer);
       }
     }
 
@@ -108,6 +113,7 @@ export default function FilingPage() {
           { metric: 'Total Debt', values: ['250', '230', '200', '180'] },
           { metric: 'Cash & Equivalents', values: ['50', '80', '100', '140'] },
         ]);
+        setIsSampleLoaded(true);
       }, 50);
       return () => clearTimeout(timer);
     }
@@ -172,6 +178,7 @@ export default function FilingPage() {
 
   function handleClear() {
     clearedRef.current = true;
+    setCleared(true);
     setClearVersion(v => v + 1);
     clear();
     setSheetRows([]);
@@ -267,6 +274,9 @@ export default function FilingPage() {
       />
 
       <DataQualityBar source={dataInfo.companyName || undefined} />
+      <div className="flex items-center gap-2 mb-2 mt-1">
+        <DataSourceBadge variant={isSampleLoaded ? 'sample' : dataInfo.dataSource === 'manual' ? 'manual' : dataInfo.dataSource && dataInfo.dataSource !== 'none' ? 'imported' : 'none'} />
+      </div>
 
       {/* ── Spreadsheet Input (periods entered directly in headers) ── */}
       <SectionTitle>Enter financial data</SectionTitle>
@@ -274,7 +284,7 @@ export default function FilingPage() {
         <div className="card-body p-2">
           <SpreadsheetInput
             initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : ['Period 1', 'Period 2']}
-            initialData={clearedRef.current ? [] : (sheetRows.length > 0 ? sheetRows : [
+            initialData={cleared ? [] : (sheetRows.length > 0 ? sheetRows : [
               { metric: 'Revenue', values: ['1000', '1150', '1240', '1380'] },
               { metric: 'Gross Profit', values: ['400', '470', '500', '550'] },
               { metric: 'EBITDA', values: ['220', '250', '270', '300'] },
@@ -323,7 +333,7 @@ export default function FilingPage() {
           {keyMetrics.length > 0 && (
             <div className="metric-grid mb-4">
               {keyMetrics.map((d, i) => {
-                const change = fmtChangeTrend(d.pct);
+                const changeTxt = fmtChangeTrend(d.pct);
                 const cls = d.dir === 'up' ? 'good' : d.dir === 'down' ? 'warn' : '';
                 return (
                   <div key={i} className={`metric-cell ${cls}`}>
@@ -331,8 +341,8 @@ export default function FilingPage() {
                     <div className="metric-value">
                       {d.b !== null ? (d.isPct ? d.b + '%' : fmtINR(d.b)) : '—'}
                     </div>
-                    <div className={`stat-context ${change.dir === 'up' ? 'trend-up-context' : change.dir === 'down' ? 'trend-down-context' : ''}`}>
-                      {change.text}
+                    <div className={`stat-context ${changeTxt.dir === 'up' ? 'trend-up-context' : changeTxt.dir === 'down' ? 'trend-down-context' : ''}`}>
+                      {changeTxt.text}
                     </div>
                   </div>
                 );
@@ -345,7 +355,6 @@ export default function FilingPage() {
             <div className="flex flex-col gap-2 mb-4">
               <span className="section-title">Key changes</span>
               {topChanges.map((d, i) => {
-                const change = fmtChangeTrend(d.pct);
                 const isPositive = d.dir === 'up'
                   ? !/debt|debt.*equity|pledge|liab/i.test(d.label)
                   : /debt|debt.*equity|pledge/i.test(d.label);
@@ -439,7 +448,7 @@ export default function FilingPage() {
 
           <CalcTimestamp />
           <div className="flex gap-2 flex-wrap mt-2">
-            <TrustBadge label="Filing Comparison" variant="source" />
+            <TrustBadge label={`Values from: ${isSampleLoaded ? 'Sample data' : dataInfo.companyName || 'User entry'}`} variant="source" />
             <TrustBadge label="₹ Indian Market" />
           </div>
           <NextLinks links={[

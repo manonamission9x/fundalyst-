@@ -2,15 +2,13 @@
 
 import { useCallback, useState, useRef } from 'react';
 import { fmtNum } from '@/lib/calculations';
-import { useAnalysisStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
-import { PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer, EmptyState, DataQualityBar, CalcTimestamp, TrustBadge } from '@/components/ui';
+import { PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer, EmptyState, DataQualityBar, CalcTimestamp, TrustBadge, DataSourceBadge } from '@/components/ui';
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import dynamic from 'next/dynamic';
-import { useGlobalImportFill, extractTrendsCSV, getDataSourceLabel } from '@/lib/importer/import-hooks';
-import { useActiveDataset, extractTrendData } from '@/store/financial-model-selectors';
+import { extractTrendData } from '@/store/financial-model-selectors';
 import { useModelData } from '@/store/use-model-data';
 import type { TrendRow } from '@/types/financial';
 import { usePageTitle } from '@/lib/use-page-title';
@@ -23,12 +21,11 @@ const TrendsChart = dynamic(() => import('@/components/tools/trends/TrendsChart'
 export default function TrendsPage() {
   const showToast = useToast();
   usePageTitle('Trend Charts');
-  const { filingData } = useAnalysisStore();
-  const { dataSource, companyName } = useGlobalImportFill((vals) => {}, extractTrendsCSV);
   const modelData = useModelData((ds) => extractTrendData(ds));
 
   const [clearVersion, setClearVersion] = useState(0);
   const clearedRef = useRef(false);
+  const [cleared, setCleared] = useState(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
   const [sheetPeriods, setSheetPeriods] = useState<string[]>([]);
   const [trendRows, setTrendRows] = useState<TrendRow[]>([]);
@@ -89,6 +86,7 @@ export default function TrendsPage() {
 
   function handleClear() {
     clearedRef.current = true;
+    setCleared(true);
     setClearVersion(v => v + 1);
     setSheetRows([]); setSheetPeriods([]); setTrendRows([]); setShowResults(false);
   }
@@ -101,6 +99,9 @@ export default function TrendsPage() {
         answer="What this helps you answer: Which metrics are improving? Which are declining?"
       />
       <DataQualityBar source={modelData.companyName || undefined} />
+      <div className="flex items-center gap-2 mb-2 mt-1">
+        <DataSourceBadge variant={modelData.companyName ? 'imported' : 'none'} />
+      </div>
       <UploadBar onUpload={handleCsvFile} hint="CSV: Metric, Period1, Period2, Period3, ..." />
 
       <Card label="Data">
@@ -108,10 +109,10 @@ export default function TrendsPage() {
           <ToolSpreadsheet
             tool="trends"
             multiColumn
-            initialPeriods={sheetPeriods.length >= 3 ? sheetPeriods : (clearedRef.current ? ['', '', ''] : ['FY22', 'FY23', 'FY24', 'FY25', 'FY26'])}
+            initialPeriods={sheetPeriods.length >= 3 ? sheetPeriods : (cleared ? ['', '', ''] : ['FY22', 'FY23', 'FY24', 'FY25', 'FY26'])}
             resetKey={clearVersion}
             initialData={
-              clearedRef.current ? [] : (sheetRows.length > 0
+              cleared ? [] : (sheetRows.length > 0
                 ? sheetRows
                 : [
                     { metric: 'Revenue', values: ['1000', '1150', '1240', '1380', '1530'] },
@@ -162,7 +163,7 @@ export default function TrendsPage() {
 
           <NextLinks links={[{ label: 'Growth rates', href: '/research/growth' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
           <CalcTimestamp />
-          <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label="Trend Analysis" variant="source" /><TrustBadge label="₹ Indian Market" /></div>
+          <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label={`Values from: ${modelData.companyName || 'Sample data'}`} variant="source" /><TrustBadge label="₹ Indian Market" /></div>
           <Disclaimer />
         </div>
       )}
