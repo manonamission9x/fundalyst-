@@ -89,7 +89,8 @@ function rowsToRatioData(rows: SpreadsheetRow[]): RatioInputs {
   const map: Record<string, number | null> = {};
   for (const row of rows) {
     const val = row.values[0]?.trim();
-    map[row.metric] = val ? Number(val) || 0 : null;
+    const parsed = val ? Number(val.replace(/,/g, '')) : null;
+    map[row.metric] = parsed !== null && Number.isFinite(parsed) ? parsed : null;
   }
   return {
     revenue: map['Revenue'] ?? null,
@@ -138,7 +139,14 @@ export default function RatiosPage() {
 
   function analyze() {
     const data = rowsToRatioData(sheetRows);
-    setRes(computeRatios(data));
+    const next = computeRatios(data);
+    if (next.length === 0) {
+      setRes(null);
+      setShowResults(false);
+      showToast('Add enough data to calculate at least one ratio.');
+      return;
+    }
+    setRes(next);
     setShowResults(true);
     showToast('Ratios calculated');
   }

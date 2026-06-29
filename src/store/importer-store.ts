@@ -75,9 +75,11 @@ export const useImporterStore = create<ImporterState>()(
         const review = get().review;
         if (!review) return null;
         const dataset = applyMappingOverrides(review, review.mappings);
+        const fallbackCompanyName = review.fileName === 'sample-financial-data.csv' ? 'Sample Company' : undefined;
         // Ensure dataset has ID and push to global store
         const fullDataset: FundalystDataset = {
           ...dataset,
+          companyName: dataset.companyName || fallbackCompanyName,
           id: dataset.id || generateDatasetId(),
           createdAt: dataset.createdAt || new Date().toISOString(),
         };

@@ -45,24 +45,36 @@ const EMPTY_DCF_ROWS: SpreadsheetRow[] = [
 const METRIC_TO_FIELD: Record<string, keyof import('@/types/financial').DCFInputs> = {
   'Free Cash Flow': 'fcf',
   'Growth Rate (%)': 'growth',
+  'Growth Rate': 'growth',
   'Projection Years': 'years',
   'WACC (%)': 'discount',
+  WACC: 'discount',
   'Terminal Growth (%)': 'terminal',
+  'Terminal Growth': 'terminal',
   'Net Debt': 'netDebt',
   'Shares Outstanding': 'shares',
-  'Current Price (₹)': 'price',
+  'Current Price (?)': 'price',
+  'Current Price': 'price',
 };
+
+function normalizeMetricLabel(label: string): string {
+  return label
+    .replace(/\s+/g, ' ')
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .trim();
+}
 
 function rowsToDCFInputs(rows: SpreadsheetRow[]): Record<string, number | ''> {
   const result: Record<string, number | ''> = {};
   for (const row of rows) {
-    const field = METRIC_TO_FIELD[row.metric.split(' (')[0]] || row.metric.toLowerCase().replace(/[^a-z]/g, '');
+    const normalized = normalizeMetricLabel(row.metric);
+    const field = METRIC_TO_FIELD[row.metric] || METRIC_TO_FIELD[normalized] || normalized.toLowerCase().replace(/[^a-z]/g, '');
     const val = row.values[0]?.trim() || '';
-    result[field] = val === '' ? '' : parseFloat(val) || 0;
+    const parsed = val === '' ? '' : Number(val.replace(/,/g, ''));
+    result[field] = parsed === '' ? '' : Number.isFinite(parsed) ? parsed : '';
   }
   return result;
 }
-
 export default function DCFPage() {
   const showToast = useToast();
   usePageTitle('DCF Valuation');
@@ -157,34 +169,47 @@ export default function DCFPage() {
     setErrors(errorMap);
 
     if (validationErrors.length > 0) {
-      if (validationErrors[0].field === 'terminal') {
-        showToast(validationErrors[0].message);
-      }
+      setShow(false);
+      setSummary(null);
+      setSens([]);
+      showToast(validationErrors[0].message);
       return;
     }
 
+    const fcfN = Number(fcf);
+    const growthN = Number(growth);
+    const yearsN = Number(years);
+    const discountN = Number(discount);
+    const terminalN = Number(terminal);
+    const netDebtN = netDebt === '' || netDebt === undefined ? 0 : Number(netDebt);
+    const sharesN = Number(shares);
+    const priceN = Number(price);
+
     const r = computeDCF(
-      Number(fcf), Number(growth), Number(years),
-      Number(discount), Number(terminal), Number(netDebt),
-      Number(shares), Number(price),
+      fcfN, growthN, yearsN,
+      discountN, terminalN, netDebtN,
+      sharesN, priceN,
     );
 
     if (r === null) {
-      showToast('Terminal growth too close to WACC — Gordon Growth model requires a meaningful spread');
+      setShow(false);
+      setSummary(null);
+      setSens([]);
+      showToast('Terminal growth too close to WACC - Gordon Growth model requires a meaningful spread');
       return;
     }
 
     // Generate sensitivity ranges around user's inputs
-    const g = Number(growth);
-    const d = Number(discount);
-    const t = Number(terminal);
+    const g = growthN;
+    const d = discountN;
+    const t = terminalN;
     const sensGrowRates = [Math.max(1, g - 3), Math.max(1, g - 1.5), g, g + 1.5, g + 3].filter(r => r < d - 0.5);
     const sensDiscRates = [Math.max(1, d - 4), Math.max(1, d - 2), d, d + 2, d + 4].filter(r => r <= 30);
     const sensResult = computeDCFSensitivity(
-      Number(fcf), Number(growth), Number(years),
+      fcfN, growthN, yearsN,
       sensGrowRates.length >= 3 ? sensGrowRates : [t - 1, t, t + 1],
       sensDiscRates.length >= 3 ? sensDiscRates : [d - 2, d, d + 2],
-      Number(netDebt), Number(shares), Number(price),
+      netDebtN, sharesN, priceN,
     );
 
     setShow(true);
@@ -204,8 +229,8 @@ export default function DCFPage() {
   }, [setShow, setSummary, setSens]);
 
   const priceVal = useMemo(() => {
-    const pRow = sheetRows.find((r) => r.metric === 'Current Price (₹)');
-    return pRow ? Number(pRow.values[0]) || 0 : 0;
+    const mapped = rowsToDCFInputs(sheetRows);
+    return Number(mapped.price) || 0;
   }, [sheetRows]);
 
   return (

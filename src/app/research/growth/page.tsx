@@ -44,8 +44,9 @@ export default function YoyPage() {
 
   // parseWithText: plain function (not useCallback) so it can be used before the effect
   function parseWithText(text: string) {
-    const lines = text.split('\n').filter(Boolean);
-    setRows(lines.map((l) => {
+    const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+    const dataLines = lines[0] && /^metric\s*,/i.test(lines[0]) ? lines.slice(1) : lines;
+    setRows(dataLines.map((l) => {
       const cols = l.split(',').map((s) => s.trim());
       const vals = cols.slice(1).map(Number);
       const growth = vals.map((v, i) => i > 0 && vals[i - 1] ? ((v - vals[i - 1]) / Math.abs(vals[i - 1])) * 100 : null);

@@ -29,7 +29,8 @@ function rowsToWCInputs(rows: SpreadsheetRow[]) {
   const result: Record<string, number | null> = {};
   for (const row of rows) {
     const val = row.values[0]?.trim();
-    result[row.metric] = val ? Number(val) || 0 : null;
+    const parsed = val ? Number(val.replace(/,/g, '')) : null;
+    result[row.metric] = parsed !== null && Number.isFinite(parsed) ? parsed : null;
   }
   return {
     revenue: result['Revenue (annual)'],
@@ -77,6 +78,12 @@ export default function WCPage() {
 
   function analyze() {
     const inputs = rowsToWCInputs(sheetRows);
+    if (inputs.revenue === null && inputs.cogs === null) {
+      setRes(null);
+      setShowResults(false);
+      showToast('Add revenue or COGS plus working-capital values before analyzing.');
+      return;
+    }
     setRes(computeWC(inputs.revenue, inputs.cogs, inputs.receivables, inputs.inventory, inputs.payables, inputs.cash));
     setShowResults(true);
     showToast('Analysis complete');

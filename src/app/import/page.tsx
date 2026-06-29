@@ -113,10 +113,9 @@ Interest Expense, 45, 52, 60`;
   }, [startImport]);
 
   const handleConfirm = useCallback(() => {
+    saveMappingTemplate();
     const dataset = confirmImport();
-    if (dataset) {
-      saveMappingTemplate();
-    }
+    void dataset;
   }, [confirmImport, saveMappingTemplate]);
 
   // Show the last confirmed dataset if no active review
@@ -326,7 +325,8 @@ function ImportReview({
   const mappedCount = review.mappings.filter((m) => m.canonicalMetric !== 'unknown' && !m.ignored).length;
   const ignoredCount = review.mappings.filter((m) => m.ignored).length;
   const unknownCount = review.mappings.filter((m) => m.canonicalMetric === 'unknown' && !m.ignored).length;
-  const pctMapped = factsCount > 0 ? Math.round((mappedCount / factsCount) * 100) : 0;
+  const mappingRowsCount = review.mappings.length;
+  const pctMapped = mappingRowsCount > 0 ? Math.round((mappedCount / mappingRowsCount) * 100) : 0;
 
   return (
     <div style={{ marginTop: '1.5rem' }}>
@@ -372,7 +372,7 @@ function ImportReview({
           )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             <DetectItem label="File" value={review.fileName} />
-            <DetectItem label="Company" value={review.metadata.company || 'Not detected'} />
+            <DetectItem label="Company" value={review.metadata.company || (review.fileName === 'sample-financial-data.csv' ? 'Sample Company' : 'Not detected')} />
             <DetectItem label="Currency" value={review.metadata.currency} />
             <DetectItem label="Unit" value={review.metadata.unit} />
             <DetectItem label="Periods" value={review.metadata.periodLabels.join(', ') || 'None detected'} />

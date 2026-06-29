@@ -86,12 +86,15 @@ export default function SpreadsheetInput({
 
   const cellRefs = useRef<Map<string, HTMLElement>>(new Map());
 
-  const notifyChange = useCallback(
-    (newRows: SpreadsheetRow[], newPeriods: string[]) => {
-      onDataChange?.(newRows, newPeriods);
-    },
-    [onDataChange],
-  );
+  const onDataChangeRef = useRef(onDataChange);
+
+  useEffect(() => {
+    onDataChangeRef.current = onDataChange;
+  }, [onDataChange]);
+
+  const notifyChange = useCallback((newRows: SpreadsheetRow[], newPeriods: string[]) => {
+    onDataChangeRef.current?.(newRows, newPeriods);
+  }, []);
 
   const filteredMetrics = useMemo(() => {
     if (!suggestionFilter) return METRIC_LABELS.slice(0, 15);
