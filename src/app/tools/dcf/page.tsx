@@ -26,6 +26,7 @@ import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import dynamic from 'next/dynamic';
 import { useModelData } from '@/store/use-model-data';
 import { usePageTitle } from '@/lib/use-page-title';
+import { useEnterpriseStore } from '@/store/enterprise-store';
 
 const DCFChart = dynamic(() => import('@/components/tools/dcf/DCFChart'), {
   ssr: false,
@@ -77,6 +78,7 @@ function rowsToDCFInputs(rows: SpreadsheetRow[]): Record<string, number | ''> {
 }
 export default function DCFPage() {
   const showToast = useToast();
+  const addAuditEvent = useEnterpriseStore((s) => s.addAuditEvent);
   usePageTitle('DCF Valuation');
   const { show, summary, sens, setShow, setSummary, setSens } = useDCFStore();
   const [clearVersion, setClearVersion] = useState(0);
@@ -215,6 +217,13 @@ export default function DCFPage() {
     setShow(true);
     setSummary(r);
     setSens(sensResult);
+    addAuditEvent({
+      category: 'calculation',
+      severity: 'info',
+      action: 'DCF valuation calculated',
+      target: modelData.companyName || 'Manual DCF',
+      details: `Intrinsic value/share ${Math.round(r.iv * 100) / 100}`,
+    });
     showToast('Valuation calculated');
   }
 

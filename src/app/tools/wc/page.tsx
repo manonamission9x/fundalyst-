@@ -24,6 +24,7 @@ import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import { extractWCFromModel } from '@/store/financial-model-selectors';
 import { useModelData } from '@/store/use-model-data';
+import { useEnterpriseStore } from '@/store/enterprise-store';
 
 function rowsToWCInputs(rows: SpreadsheetRow[]) {
   const result: Record<string, number | null> = {};
@@ -45,6 +46,7 @@ function rowsToWCInputs(rows: SpreadsheetRow[]) {
 export default function WCPage() {
   usePageTitle('Cash Efficiency');
   const showToast = useToast();
+  const addAuditEvent = useEnterpriseStore((s) => s.addAuditEvent);
   const { res, setRes, clear: clearStore } = useWCStore();
   const [clearVersion, setClearVersion] = useState(0);
   const clearedRef = useRef(false);
@@ -86,6 +88,12 @@ export default function WCPage() {
     }
     setRes(computeWC(inputs.revenue, inputs.cogs, inputs.receivables, inputs.inventory, inputs.payables, inputs.cash));
     setShowResults(true);
+    addAuditEvent({
+      category: 'calculation',
+      severity: 'info',
+      action: 'Cash efficiency analyzed',
+      target: modelData.companyName || 'Manual working capital',
+    });
     showToast('Analysis complete');
   }
 

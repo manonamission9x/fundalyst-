@@ -27,6 +27,7 @@ import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import { useModelData } from '@/store/use-model-data';
 import type { RatioInputs, RatioResult } from '@/types/financial';
+import { useEnterpriseStore } from '@/store/enterprise-store';
 
 const unlockedFormulas: Record<string, string> = {
   'Net Profit Margin': 'Net Profit ÷ Revenue',
@@ -106,6 +107,7 @@ function rowsToRatioData(rows: SpreadsheetRow[]): RatioInputs {
 export default function RatiosPage() {
   usePageTitle('Financial Ratios');
   const showToast = useToast();
+  const addAuditEvent = useEnterpriseStore((s) => s.addAuditEvent);
   const { res, setRes, clear: clearStore } = useRatiosStore();
   const [clearVersion, setClearVersion] = useState(0);
   const clearedRef = useRef(false);
@@ -148,6 +150,13 @@ export default function RatiosPage() {
     }
     setRes(next);
     setShowResults(true);
+    addAuditEvent({
+      category: 'calculation',
+      severity: 'info',
+      action: 'Ratios calculated',
+      target: modelData.companyName || 'Manual ratios',
+      details: `${next.length} ratio(s)`,
+    });
     showToast('Ratios calculated');
   }
 

@@ -4,6 +4,7 @@ import type { FundalystDataset, ToolReadiness, ValidationCheck } from '@/lib/imp
 import { TOOL_METRICS } from '@/lib/importer/types';
 import { runValidationChecks } from '@/lib/importer/tool-validation';
 import { usePipelineStore } from './pipeline-store';
+import { useEnterpriseStore } from './enterprise-store';
 
 interface GlobalDataState {
   /** All imported datasets (multi-file support) */
@@ -54,6 +55,13 @@ export const useGlobalDataStore = create<GlobalDataState>()(
           datasets: updated,
           activeDatasetId: dataset.id,
         });
+        useEnterpriseStore.getState().addAuditEvent({
+          category: 'data',
+          severity: dataset.missingFields?.length ? 'warning' : 'info',
+          action: 'Dataset added',
+          target: dataset.companyName || dataset.sourceType || dataset.id,
+          details: `${dataset.facts.length} fact(s), ${dataset.periods.length} period(s)`,
+        });
         // Notify all tools that the canonical model has been updated
         setTimeout(() => usePipelineStore.getState().notifyModelUpdated(), 0);
       },
@@ -67,6 +75,12 @@ export const useGlobalDataStore = create<GlobalDataState>()(
             ? (remaining.length > 0 ? remaining[remaining.length - 1].id : null)
             : activeId,
         });
+        useEnterpriseStore.getState().addAuditEvent({
+          category: 'data',
+          severity: 'warning',
+          action: 'Dataset removed',
+          target: id,
+        });
       },
 
       setActiveDataset: (id: string | null) => {
@@ -75,6 +89,12 @@ export const useGlobalDataStore = create<GlobalDataState>()(
 
       clearAllData: () => {
         set({ datasets: [], activeDatasetId: null });
+        useEnterpriseStore.getState().addAuditEvent({
+          category: 'data',
+          severity: 'critical',
+          action: 'All financial data cleared',
+          target: 'Workspace',
+        });
       },
 
       getActiveDataset: () => {

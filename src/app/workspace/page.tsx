@@ -1,12 +1,20 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { useImporterStore } from '@/store/importer-store';
 import { SectionTitle, Disclaimer, Card, TrustBadge } from '@/components/ui';
 import type { FundalystDataset, CanonicalFact } from '@/lib/importer/types';
+import { useEnterpriseStore, type EnterpriseRole, type ProjectStatus } from '@/store/enterprise-store';
+import {
+  collectFundalystLocalState,
+  decryptWorkspaceBackup,
+  downloadTextFile,
+  encryptWorkspaceBackup,
+  restoreFundalystLocalState,
+} from '@/lib/enterprise-backup';
 
 // ── Workspace step definitions ──
 const steps = [
@@ -24,6 +32,12 @@ const steps = [
     icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12V5l3 2 3-5 3 7 2-3" /><circle cx="13" cy="3" r="1" fill="currentColor" stroke="none" /></svg> },
   { id: 'thesis', label: 'Thesis',
     icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v10M10 2v10M2 4h10M2 10h10" /><path d="M7 2v10" /><path d="M2 7h10" /></svg> },
+  { id: 'governance', label: 'Governance',
+    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M7 1l5 2v4c0 3-2 5-5 6-3-1-5-3-5-6V3l5-2z" /><path d="M5 7l1.5 1.5L10 5" /></svg> },
+  { id: 'audit', label: 'Audit',
+    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2h8v10H3z" /><path d="M5 5h4M5 7h4M5 9h2" /></svg> },
+  { id: 'integrations', label: 'Integrations',
+    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4H3a3 3 0 000 6h2M9 4h2a3 3 0 010 6H9M5 7h4" /></svg> },
 ] as const;
 
 type StepId = (typeof steps)[number]['id'];
@@ -50,16 +64,33 @@ export default function WorkspacePage() {
   usePageTitle('Workspace');
   const [activeStep, setActiveStep] = useState<StepId>('overview');
   const datasets = useGlobalDataStore((s) => s.datasets);
+  const activeDatasetId = useGlobalDataStore((s) => s.activeDatasetId);
   const lastDataset = useImporterStore((s) => s.lastDataset);
-  const companyName = lastDataset?.companyName || datasets[0]?.companyName || 'No company selected';
+  const projects = useEnterpriseStore((s) => s.projects);
+  const activeProjectId = useEnterpriseStore((s) => s.activeProjectId);
+  const updateProject = useEnterpriseStore((s) => s.updateProject);
+  const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
+  const companyName = lastDataset?.companyName || datasets[0]?.companyName || activeProject?.companyName || 'No company selected';
   const hasData = datasets.length > 0 || lastDataset !== null;
   const totalFacts = datasets.reduce((sum, d) => sum + d.facts.length, 0);
+
+  useEffect(() => {
+    if (activeProject && hasData && (activeProject.companyName === 'No company selected' || activeProject.activeDatasetId !== activeDatasetId)) {
+      updateProject(activeProject.id, {
+        companyName,
+        activeDatasetId,
+      });
+    }
+  }, [activeDatasetId, activeProject, companyName, hasData, updateProject]);
 
   // Track completed steps based on actual state
   const completedSteps: Set<StepId> = new Set();
   if (hasData) completedSteps.add('import');
   if (hasData) completedSteps.add('data');
   if (totalFacts > 0) completedSteps.add('filing');
+  completedSteps.add('governance');
+  completedSteps.add('audit');
+  completedSteps.add('integrations');
 
   return (
     <div className="workspace">
@@ -129,6 +160,9 @@ export default function WorkspacePage() {
           {activeStep === 'dcf' && <DCFPanel />}
           {activeStep === 'ratios' && <RatiosPanel />}
           {activeStep === 'thesis' && <ThesisPanel />}
+          {activeStep === 'governance' && <GovernancePanel />}
+          {activeStep === 'audit' && <AuditPanel datasets={datasets} totalFacts={totalFacts} />}
+          {activeStep === 'integrations' && <IntegrationsPanel />}
         </main>
       </div>
     </div>
@@ -222,6 +256,8 @@ function OverviewPanel({
           )}
         </div>
 
+        <EnterpriseCommandCenter datasets={datasets} totalFacts={totalFacts} companyName={companyName} />
+
         {/* Workflow steps */}
         <div className="workflow-steps">
           {stepItems.map((s, i) => (
@@ -307,10 +343,10 @@ function OverviewPanel({
           <div className="workspace-card-header">Enterprise</div>
           <div className="p-4 text-xs text-tertiary leading-normal">
             <p className="p-0" style={{ margin: 0 }}>
-              <strong>Current:</strong> Fundalyst is a client-only research tool. All data is stored in browser localStorage — unencrypted, per-browser, and cleared on cache wipe.
+              <strong>Current:</strong> Fundalyst now includes local projects, role simulation, audit events, version snapshots, and encrypted workspace export. Data still lives in this browser unless exported.
             </p>
             <p className="p-0 mt-2" style={{ margin: 0 }}>
-              <strong>Enterprise deployment would require:</strong> authentication, encrypted persisted storage, audit logs, admin retention controls, and team workspaces.
+              <strong>Enterprise deployment would require:</strong> backend authentication, server-enforced permissions, encrypted cloud persistence, organization tenancy, and retained audit storage.
             </p>
             <p className="p-0 mt-2" style={{ margin: 0 }}>
               Contact us for enterprise deployment options.
@@ -321,6 +357,147 @@ function OverviewPanel({
         <div className="flex gap-2 flex-wrap mt-2">
           <TrustBadge label="Fundalyst Research" variant="source" />
           {hasData && <TrustBadge label="Data Loaded" variant="good" />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EnterpriseCommandCenter({
+  datasets,
+  totalFacts,
+  companyName,
+}: {
+  datasets: FundalystDataset[];
+  totalFacts: number;
+  companyName: string;
+}) {
+  const projects = useEnterpriseStore((s) => s.projects);
+  const activeProjectId = useEnterpriseStore((s) => s.activeProjectId);
+  const createProject = useEnterpriseStore((s) => s.createProject);
+  const setActiveProject = useEnterpriseStore((s) => s.setActiveProject);
+  const updateProject = useEnterpriseStore((s) => s.updateProject);
+  const createVersion = useEnterpriseStore((s) => s.createVersion);
+  const addAuditEvent = useEnterpriseStore((s) => s.addAuditEvent);
+  const versions = useEnterpriseStore((s) => s.versions);
+  const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
+  const [projectName, setProjectName] = useState(activeProject?.name || '');
+  const [passphrase, setPassphrase] = useState('');
+  const [backupMsg, setBackupMsg] = useState<string | null>(null);
+  const encryptedImportRef = useRef<HTMLInputElement>(null);
+
+  function handleCreateProject() {
+    const id = createProject(projectName || `${companyName} Research`, companyName);
+    setActiveProject(id);
+    setProjectName('');
+  }
+
+  function handleSnapshot() {
+    createVersion({
+      label: `${companyName} snapshot`,
+      summary: `${datasets.length} data source(s), ${totalFacts} fact(s)`,
+      datasetCount: datasets.length,
+      factCount: totalFacts,
+      payload: collectFundalystLocalState(),
+    });
+  }
+
+  async function handleEncryptedExport() {
+    try {
+      const encrypted = await encryptWorkspaceBackup(collectFundalystLocalState(), passphrase);
+      downloadTextFile(`fundalyst-encrypted-${new Date().toISOString().slice(0, 10)}.json`, encrypted);
+      setBackupMsg('Encrypted workspace exported.');
+      addAuditEvent({
+        category: 'export',
+        severity: 'info',
+        action: 'Encrypted workspace exported',
+        target: activeProject?.name || 'Workspace',
+      });
+    } catch (err) {
+      setBackupMsg(err instanceof Error ? err.message : 'Could not export encrypted workspace.');
+    }
+  }
+
+  function handleEncryptedImportClick() {
+    encryptedImportRef.current?.click();
+  }
+
+  function handleEncryptedImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const decrypted = await decryptWorkspaceBackup(String(evt.target?.result || ''), passphrase);
+        restoreFundalystLocalState(decrypted);
+        addAuditEvent({
+          category: 'security',
+          severity: 'warning',
+          action: 'Encrypted workspace restored',
+          target: file.name,
+        });
+        setBackupMsg('Encrypted workspace restored. Reloading page...');
+        setTimeout(() => window.location.reload(), 800);
+      } catch (err) {
+        setBackupMsg(err instanceof Error ? err.message : 'Could not restore encrypted workspace.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  return (
+    <div className="workspace-card">
+      <div className="workspace-card-header">Enterprise Command Center</div>
+      <div className="p-4 flex flex-col gap-4">
+        <div className="grid grid-cols-4 gap-4">
+          <div>
+            <div className="ws-metric-label">Active Project</div>
+            <div className="ws-metric-value text-xs">{activeProject?.name || 'None'}</div>
+          </div>
+          <div>
+            <div className="ws-metric-label">Status</div>
+            <select
+              className="num-input"
+              value={activeProject?.status || 'Active'}
+              onChange={(e) => activeProject && updateProject(activeProject.id, { status: e.target.value as ProjectStatus })}
+              aria-label="Project status"
+            >
+              {(['Active', 'Review', 'Approved', 'Archived'] as ProjectStatus[]).map((s) => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <div className="ws-metric-label">Snapshots</div>
+            <div className="ws-metric-value">{versions.length}</div>
+          </div>
+          <div>
+            <div className="ws-metric-label">Security</div>
+            <div className="ws-metric-value text-xs">Local + encrypted export</div>
+          </div>
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
+          <select className="num-input" style={{ maxWidth: 260 }} value={activeProjectId} onChange={(e) => setActiveProject(e.target.value)} aria-label="Active project">
+            {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          <input className="num-input" style={{ maxWidth: 260 }} value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="New project name" aria-label="New project name" />
+          <button type="button" className="btn-ghost btn-sm" onClick={handleCreateProject}>Create project</button>
+          <button type="button" className="btn-primary btn-sm" onClick={handleSnapshot}>Create snapshot</button>
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
+          <input className="num-input" type="password" style={{ maxWidth: 260 }} value={passphrase} onChange={(e) => setPassphrase(e.target.value)} placeholder="Backup passphrase" aria-label="Backup passphrase" />
+          <button type="button" className="btn-ghost btn-sm" onClick={handleEncryptedExport}>Encrypted export</button>
+          <button type="button" className="btn-ghost btn-sm" onClick={handleEncryptedImportClick}>Restore encrypted</button>
+          <input ref={encryptedImportRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleEncryptedImport} />
+          {backupMsg && <span className="text-xs text-primary font-mono">{backupMsg}</span>}
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
+          <TrustBadge label="Local roles" variant="source" />
+          <TrustBadge label="Audit log active" variant="good" />
+          <TrustBadge label="Version snapshots" variant="good" />
+          <TrustBadge label="Backend-ready integrations" variant="source" />
         </div>
       </div>
     </div>
@@ -523,10 +700,185 @@ function RatiosPanel() {
   );
 }
 
+function GovernancePanel() {
+  const projects = useEnterpriseStore((s) => s.projects);
+  const activeProjectId = useEnterpriseStore((s) => s.activeProjectId);
+  const members = useEnterpriseStore((s) => s.members);
+  const updateProject = useEnterpriseStore((s) => s.updateProject);
+  const updateMemberRole = useEnterpriseStore((s) => s.updateMemberRole);
+  const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
+
+  return (
+    <div>
+      <SectionTitle>Governance</SectionTitle>
+      <div className="flex flex-col gap-4 mt-4">
+        <div className="workspace-card">
+          <div className="workspace-card-header">Project Controls</div>
+          <div className="p-4 grid grid-cols-3 gap-4">
+            <div>
+              <div className="ws-metric-label">Approval Gate</div>
+              <label className="flex items-center gap-2 text-sm text-tertiary mt-2">
+                <input type="checkbox" checked={activeProject?.approvalRequired ?? true} onChange={(e) => activeProject && updateProject(activeProject.id, { approvalRequired: e.target.checked })} />
+                Require review before final thesis
+              </label>
+            </div>
+            <div>
+              <div className="ws-metric-label">Retention Policy</div>
+              <input className="num-input" value={activeProject?.retentionPolicy || ''} onChange={(e) => activeProject && updateProject(activeProject.id, { retentionPolicy: e.target.value })} aria-label="Retention policy" />
+            </div>
+            <div>
+              <div className="ws-metric-label">Project Status</div>
+              <select className="num-input" value={activeProject?.status || 'Active'} onChange={(e) => activeProject && updateProject(activeProject.id, { status: e.target.value as ProjectStatus })}>
+                {(['Active', 'Review', 'Approved', 'Archived'] as ProjectStatus[]).map((s) => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="workspace-card">
+          <div className="workspace-card-header">Role Simulation</div>
+          <div className="p-4">
+            <table className="diff-table">
+              <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Role</th></tr></thead>
+              <tbody>
+                {members.map((m) => (
+                  <tr key={m.id}>
+                    <td>{m.name}</td>
+                    <td>{m.email}</td>
+                    <td>{m.status}</td>
+                    <td>
+                      <select className="num-input" value={m.role} onChange={(e) => updateMemberRole(m.id, e.target.value as EnterpriseRole)}>
+                        {(['Owner', 'Admin', 'Analyst', 'Reviewer', 'Viewer'] as EnterpriseRole[]).map((role) => <option key={role}>{role}</option>)}
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="workspace-card">
+          <div className="workspace-card-header">Backend Boundary</div>
+          <div className="p-4 text-xs text-tertiary leading-normal">
+            These controls are enforced as local product state today. Production enforcement still requires server-side auth, permission checks, encrypted storage, audit retention, and organization tenancy.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuditPanel({ datasets, totalFacts }: { datasets: FundalystDataset[]; totalFacts: number }) {
+  const auditEvents = useEnterpriseStore((s) => s.auditEvents);
+  const versions = useEnterpriseStore((s) => s.versions);
+  const clearAuditEvents = useEnterpriseStore((s) => s.clearAuditEvents);
+  const createVersion = useEnterpriseStore((s) => s.createVersion);
+
+  function handleSnapshot() {
+    createVersion({
+      label: `Audit snapshot ${new Date().toLocaleDateString('en-IN')}`,
+      summary: `${datasets.length} data source(s), ${totalFacts} fact(s), ${auditEvents.length} audit event(s)`,
+      datasetCount: datasets.length,
+      factCount: totalFacts,
+      payload: collectFundalystLocalState(),
+    });
+  }
+
+  return (
+    <div>
+      <SectionTitle>Audit Trail</SectionTitle>
+      <div className="flex flex-col gap-4 mt-4">
+        <div className="workspace-card">
+          <div className="workspace-card-header">Version History</div>
+          <div className="p-4 flex flex-col gap-3">
+            <div className="flex gap-2 flex-wrap">
+              <button type="button" className="btn-primary btn-sm" onClick={handleSnapshot}>Create audit snapshot</button>
+              <button type="button" className="btn-ghost btn-sm" onClick={clearAuditEvents}>Clear local audit log</button>
+            </div>
+            {versions.length === 0 ? (
+              <div className="text-xs text-muted">No snapshots yet.</div>
+            ) : (
+              <table className="diff-table">
+                <thead><tr><th>Version</th><th>Created</th><th>Data</th><th>Summary</th></tr></thead>
+                <tbody>
+                  {versions.slice(0, 8).map((v) => (
+                    <tr key={v.id}>
+                      <td>{v.label}</td>
+                      <td>{new Date(v.createdAt).toLocaleString('en-IN')}</td>
+                      <td>{v.datasetCount} source(s), {v.factCount} fact(s)</td>
+                      <td>{v.summary}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        <div className="workspace-card">
+          <div className="workspace-card-header">Recent Events</div>
+          <div className="p-4">
+            <table className="diff-table">
+              <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Severity</th></tr></thead>
+              <tbody>
+                {auditEvents.slice(0, 20).map((event) => (
+                  <tr key={event.id}>
+                    <td>{new Date(event.timestamp).toLocaleString('en-IN')}</td>
+                    <td>{event.actor}</td>
+                    <td>{event.action}</td>
+                    <td>{event.target}</td>
+                    <td>{event.severity}</td>
+                  </tr>
+                ))}
+                {auditEvents.length === 0 && <tr><td colSpan={5}>No local audit events recorded.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IntegrationsPanel() {
+  const integrations = useEnterpriseStore((s) => s.integrations);
+  return (
+    <div>
+      <SectionTitle>Integrations</SectionTitle>
+      <div className="flex flex-col gap-4 mt-4">
+        <div className="workspace-card">
+          <div className="workspace-card-header">Backend-Ready Connectors</div>
+          <div className="p-4 grid grid-cols-2 gap-3">
+            {integrations.map((integration) => (
+              <div key={integration.id} className="workspace-quick-link">
+                <div className="flex items-center justify-between">
+                  <span>{integration.label}</span>
+                  <span className="text-2xs text-muted">{integration.status.replace(/_/g, ' ')}</span>
+                </div>
+                <div className="text-xs text-muted font-mono mt-1">{integration.description}</div>
+                {integration.requiresBackend && <div className="text-2xs text-tertiary mt-2">Requires backend API, credential vault, and scheduled jobs.</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="workspace-card">
+          <div className="workspace-card-header">Implementation Contract</div>
+          <div className="p-4 text-xs text-tertiary leading-normal">
+            The UI now models connector status, identity readiness, audit export, and data-ingestion surfaces. A backend can replace the local store with organization-scoped APIs without changing the analyst workflow.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Thesis Panel ──
 function ThesisPanel() {
   const [notes, setNotes] = useState('');
   const [verdict, setVerdict] = useState<'positive' | 'negative' | 'neutral' | ''>('');
+  const addAuditEvent = useEnterpriseStore((s) => s.addAuditEvent);
   const saved = typeof window !== 'undefined' ? localStorage.getItem('fundalyst-thesis') : null;
   const [savedStatus, setSavedStatus] = useState<string | null>(() => {
     if (saved) {
@@ -540,6 +892,13 @@ function ThesisPanel() {
 
   function handleSave() {
     localStorage.setItem('fundalyst-thesis', JSON.stringify({ notes, verdict, updatedAt: new Date().toISOString() }));
+    addAuditEvent({
+      category: 'governance',
+      severity: verdict === 'negative' ? 'warning' : 'info',
+      action: 'Investment thesis saved',
+      target: verdict || 'No verdict',
+      details: `${notes.length} character(s)`,
+    });
     setSavedStatus('Saved at ' + new Date().toLocaleTimeString());
   }
 
