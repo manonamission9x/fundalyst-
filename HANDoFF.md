@@ -1,96 +1,301 @@
-# FUNDALYST — PRODUCTION HANDOFF
+# Fundalyst Handoff
 
-**Last updated:** June 30, 2026
-**Framework:** Next.js 16 + TypeScript + Zustand + Recharts + Vitest + Playwright
-**Fonts:** Inter (UI) · IBM Plex Mono (data)
-**Build:** `npm run build` → zero errors, 14 static routes
-**Tests:** 58 Vitest + 17 Playwright
-**Lint:** `npm run lint` → 0 errors, 6 pre-existing warnings
-**Location:** `C:\Users\kingo\Desktop\fundalyst-next`
-**GitHub:** `github.com/manonamission9x/fundalyst-`
-**Deploy:** GitHub → Vercel (auto-deploys on push)
+Last updated: 2026-06-30
 
----
+Repo: `C:\Users\kingo\Desktop\fundalyst-next`
+GitHub: `https://github.com/manonamission9x/fundalyst-`
+Current branch: `main`
+Latest relevant commits:
+- `1840ddc` - Add backendless enterprise workspace foundation
+- `ff1f382` - Fix product audit reliability issues
 
-## PRODUCT
+## Product State
 
-Client-side financial analysis for Indian retail and value investors. No accounts, no server uploads, no data collection.
+Fundalyst is a client-side financial analysis app for imported/manual company financials. It has no backend yet.
 
-**Routes:** `/`, `/import`, `/workspace`, `/research/filing`, `/research/trends`, `/research/growth`, `/tools/dcf`, `/tools/wc`, `/tools/ratios`, `/tools/peer`, `/about`
+The product is now a credible local analyst tool, not a true enterprise platform. Be honest about this in future work:
+- Real today: local import, analysis tools, Workspace, local projects, local role simulation, local audit events, local snapshots, encrypted local export/import.
+- Not real yet: cloud auth, multi-user collaboration, server-enforced permissions, organization tenancy, retained audit logs, data-provider APIs, scheduled filing ingestion, credential vault, cloud sync.
 
-**Nav:** 4 grouped sections — Research, Valuation, Data, Tools (src/components/layout/Nav.tsx)
+## Stack
 
----
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Zustand with localStorage persistence
+- Recharts
+- Vitest
+- Playwright
+- Styling: global CSS in `src/app/globals.css`
 
-## ARCHITECTURE
+Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 
+## Routes
+
+- `/`
+- `/import`
+- `/workspace`
+- `/research/filing`
+- `/research/trends`
+- `/research/growth`
+- `/tools/dcf`
+- `/tools/wc`
+- `/tools/ratios`
+- `/tools/peer`
+- `/about`
+
+## Important Files
+
+- `src/app/workspace/page.tsx`
+  Workspace command center, local projects, governance, audit, integrations, thesis, encrypted backup UI.
+
+- `src/store/enterprise-store.ts`
+  Backendless enterprise state: projects, members/roles, audit events, versions, integration readiness.
+
+- `src/lib/enterprise-backup.ts`
+  Browser Web Crypto encrypted workspace backup/restore.
+
+- `src/store/global-data-store.ts`
+  Canonical imported dataset store. Import/add/remove/clear actions write audit events.
+
+- `src/store/importer-store.ts`
+  Import review and confirmation. Sample import now becomes `Sample Company`.
+
+- `src/components/input/SpreadsheetInput.tsx`
+  Shared spreadsheet grid. Its `onDataChange` callback is stabilized with a ref to prevent render loops.
+
+- `src/components/input/ToolSpreadsheet.tsx`
+  Tool-specific spreadsheet defaults.
+
+- `src/lib/calculations.ts`
+  Pure financial calculation engine.
+
+- `src/store/financial-model-selectors.ts`
+  Converts canonical datasets into per-tool inputs.
+
+- `src/app/tools/dcf/page.tsx`
+  DCF input mapping, validation, calculation, audit event.
+
+- `src/app/tools/ratios/page.tsx`
+  Ratio calculation, empty-result guard, audit event.
+
+- `src/app/tools/wc/page.tsx`
+  Cash efficiency calculation, empty-result guard, audit event.
+
+- `src/app/research/growth/page.tsx`
+  Growth Rates. Previously crashed from update depth; now stable.
+
+## Current Data Model
+
+Primary flow:
+
+```text
+CSV/XLSX/PDF/OCR/manual input
+  -> import parser / spreadsheet
+  -> FundalystDataset
+  -> global-data-store
+  -> financial-model-selectors
+  -> tools and Workspace
 ```
-Input → Import Pipeline (CSV/XLSX/PDF/OCR/Paste)
-  ↓
-FundalystDataset (global-data-store, Zustand + persist)
-  ↓
-Financial Model Selectors → per-tool views (Filing, DCF, Ratios, WC, Trends, Peer)
+
+Enterprise-local flow:
+
+```text
+Project / role / audit / snapshot actions
+  -> enterprise-store
+  -> localStorage key: fundalyst-enterprise
 ```
 
-All tools read from the canonical model via `financial-model-selectors.ts`. Per-tool stores hold only user assumptions (growth rate, WACC, etc.).
+Relevant localStorage keys:
+- `fundalyst-global-data`
+- `fundalyst-importer`
+- `fundalyst-enterprise`
+- `fundalyst-filing`
+- `fundalyst-wc`
+- `fundalyst-ratios`
+- `fundalyst-peer`
+- `fundalyst-trends`
+- `fundalyst-yoy`
+- `fundalyst-thesis`
 
-**localStorage keys:** `fundalyst-filing`, `fundalyst-wc`, `fundalyst-ratios`, `fundalyst-peer`, `fundalyst-trends`, `fundalyst-yoy`, `fundalyst-importer`, `fundalyst-global-data`, `fundalyst_tab`, `fundalyst_last_tab`, `fundalyst-errors`, `fundalyst-thesis`
+## Recently Fixed
 
----
+Critical/high-priority audit fixes:
+- Growth Rates no longer crashes.
+- DCF no longer renders `NaN` from sample/default data.
+- DCF invalid inputs clear stale results.
+- Desktop horizontal overflow fixed.
+- Import mapping percentage now reflects mapping rows, not raw facts.
+- Sample import now shows `Sample Company`.
+- Ratios no longer shows a successful empty result.
+- Cash Efficiency no longer shows a successful empty analysis from blank core inputs.
 
-## KEY COMPONENTS
+Backendless roadmap foundation:
+- Workspace has Enterprise Command Center.
+- Local projects and active project switching.
+- Local role simulation.
+- Governance controls: status, approval gate, retention policy.
+- Local audit log.
+- Version snapshots.
+- Encrypted workspace export/import.
+- Backend-ready integrations panel.
+- Audit events wired for dataset add/remove/clear, DCF, ratios, cash efficiency, thesis save, snapshots, role changes, encrypted backup actions.
 
-| Component | Path | Purpose |
-|---|---|---|
-| `SpreadsheetInput` | `components/input/SpreadsheetInput.tsx` | Keyboard-first financial data grid (Tab/Enter/arrows, paste, undo/redo) |
-| `ToolSpreadsheet` | `components/input/ToolSpreadsheet.tsx` | Single/multi-column wrapper for tool pages |
-| `Nav` | `components/layout/Nav.tsx` | 4-section grouped nav with SVG icons |
-| `ProvenancePopover` | `components/ui/index.tsx` | Click-to-inspect source info per metric |
-| `DataSourceBadge` | `components/ui/index.tsx` | Sample/imported/manual badges |
-| `DCFChart` | `components/tools/dcf/DCFChart.tsx` | DCF waterfall chart |
-| `TrendsChart` | `components/tools/trends/TrendsChart.tsx` | Multi-period Recharts line chart |
-| `PdfViewer` | `components/import/PdfViewer.tsx` | PDF.js canvas renderer |
-| Financial Model Selectors | `store/financial-model-selectors.ts` | Read-only access layer: `getMetricValue`, `findMetricFlexibly`, `datasetToSpreadsheetRows`, extract functions |
+## Verification Status
 
----
-
-## DATA FLOW
-
-**Import:** Upload (CSV/XLSX/PDF/Screenshot) → `detect.ts → parser.ts → normalizer.ts → metric-aliases.ts` → `FundalystDataset` → all tools pre-fill automatically.
-
-**Manual entry:** SpreadsheetInput → `writeSpreadsheetToModel()` → global-data-store.
-
-**Provenance:** Every `CanonicalFact` carries `sourceType`, `labelOriginal`, `value`, `rawValue`, `periodLabel`, `confidence`, `sourceRow`, `sourceColumn`, `userOverridden`. Surfaced via `ProvenancePopover` and `DataSourceBadge` on every tool page.
-
----
-
-## CRITICAL PITFALLS
-
-1. **DCF growth must be < WACC** — defaults 8% < 10%. Validation catches terminal == WACC before computeDCF runs.
-2. **DCF store has no persist** — Ephemeral per session. Don't add persist without partialize filtering.
-3. **Nav logo uses `#4F6EF7`** — If accent color changes, update both Nav.tsx and layout.tsx.
-4. **Spreadsheet cell refs** — contentEditable cells use `window.getSelection()` for cursor position (not DOM `selectionStart`).
-5. **getPeriods preserves insertion order** — Periods appear in insertion order, not sorted.
-6. **downloadCSV quotes cells** — Values with commas/quotes/newlines are wrapped correctly. Do not revert to `.join(',')`.
-7. **No IME/composition handling** — CJK IME may flicker suggestions in SpreadsheetInput.
-8. **No inputMode on mobile** — contentEditable value cells lack numeric keyboard hint.
-
----
-
-## TESTS
+Last verified after `1840ddc`:
 
 ```bash
-npm test               # 58 Vitest unit tests (calculations + edge cases)
-npm run test:e2e       # 17 Playwright tests (routes, a11y, core interactions)
-npm run lint           # 0 errors, 6 warnings (2 `<img>` in dynamic uploads, 4 deliberate exhaust-deps)
-npm run build          # 14 static routes, zero errors
+npm.cmd test          # 58 passed
+npm.cmd run lint      # 0 errors, 6 existing warnings
+npm.cmd run build     # passed
+npm.cmd run test:e2e  # 17 passed
 ```
 
----
+The 6 lint warnings are pre-existing:
+- 2 `next/no-img-element`
+- 4 React hook exhaustive-deps warnings
 
-## DEPLOYMENT
+Do not call the app "lint clean" unless those warnings are removed.
+
+## Known Limitations
+
+Be direct about these. Do not paper over them in future implementation notes.
+
+1. No backend.
+   Enterprise controls are local product state only.
+
+2. No real authentication.
+   Roles are simulated. They do not secure data.
+
+3. No true multi-user collaboration.
+   There is no shared workspace, comments, assignments, or server sync.
+
+4. No retained audit log.
+   Audit events live in localStorage and can be cleared.
+
+5. No external data providers.
+   Integrations panel is backend-ready UI, not connected APIs.
+
+6. No credential vault.
+   Do not add provider API keys to the frontend.
+
+7. No cloud encryption.
+   Encrypted backup is local file export/import only.
+
+8. Some text encoding/mojibake exists in older files.
+   Avoid broad encoding rewrites unless deliberately cleaning the app.
+
+9. Financial analytics are still shallow for institutional use.
+   DCF, ratios, peer comparison, filing comparison, trends, growth, and cash efficiency are useful, but not yet comparable to Bloomberg/FactSet/CapIQ/institutional Excel workflows.
+
+## Next Priorities
+
+### P0: Backend Foundation
+
+Build real backend primitives before claiming enterprise readiness:
+- Auth with organization tenancy.
+- User/team model.
+- Server-enforced RBAC.
+- Project/company/workspace persistence.
+- Server audit log with immutable retention.
+- Encrypted database storage.
+- File/document storage.
+- API route or service layer that can replace local Zustand persistence.
+
+Acceptance criteria:
+- A user can sign in.
+- A workspace belongs to an organization.
+- Roles are enforced server-side.
+- Audit events cannot be edited from the client.
+- Imported datasets survive browser/cache clearing.
+
+### P1: Source-Linked Analysis
+
+Every output should be traceable to source facts.
+
+Implement:
+- Formula/source drawer for DCF, ratios, WC, filing, growth.
+- Metric-level provenance in result tables.
+- "Used in this calculation" source list.
+- Snapshot comparison between versions.
+
+Acceptance criteria:
+- A reviewer can inspect any number and see formula, source metric, source period, source file/import, timestamp, and confidence.
+
+### P1: Institutional Analytics Upgrade
+
+Add professional-grade analysis:
+- EV/EBITDA, EV/Sales, P/E, P/B, ROIC, ROCE, FCF yield.
+- Scenario manager for DCF.
+- Sensitivity exports.
+- Peer multiples table.
+- Assumption versioning.
+- Investment memo export.
+
+Acceptance criteria:
+- A user can produce a basic investment committee memo from one imported company and one saved DCF scenario.
+
+### P2: Data Integrations
+
+Do not fake integrations in the frontend.
+
+Implement only after backend exists:
+- Filing ingestion jobs.
+- Market data provider abstraction.
+- Credential vault.
+- Provider health/status.
+- Refresh history and failures in audit log.
+
+Acceptance criteria:
+- A configured provider can ingest a company filing or quote data through backend services, not hardcoded frontend calls.
+
+### P2: Collaboration
+
+Implement:
+- Comments.
+- Review assignments.
+- Approval workflow.
+- Workspace activity feed.
+- Shared thesis/memo.
+
+Acceptance criteria:
+- Analyst submits a thesis for review; reviewer approves/rejects; both actions are retained in server audit log.
+
+## Engineering Rules For Future Agents
+
+- Do not add fake enterprise claims without backend enforcement.
+- Do not store provider credentials in frontend code or localStorage.
+- Do not remove local privacy messaging unless backend sync is actually added.
+- Prefer extending `enterprise-store` only for local prototype behavior; move to backend APIs when backend exists.
+- Keep calculations pure in `src/lib/calculations.ts`.
+- Keep import parsing separate from UI.
+- Preserve Playwright route coverage.
+- If changing spreadsheet behavior, test Growth, Trends, Filing, DCF, Ratios, Peer, and WC.
+
+## Useful Commands
 
 ```bash
-git add -A && git commit -m "..."
-git push origin main   # Auto-deploys to Vercel (~20s)
+npm.cmd run dev
+npm.cmd test
+npm.cmd run lint
+npm.cmd run build
+npm.cmd run test:e2e
 ```
+
+If a dev server is stuck:
+
+```powershell
+Get-NetTCPConnection -LocalPort 3000,3001 -ErrorAction SilentlyContinue
+Get-Process -Name node -ErrorAction SilentlyContinue
+```
+
+## Deployment
+
+```bash
+git add -A
+git commit -m "..."
+git push origin main
+```
+
+Vercel auto-deploys from GitHub.
