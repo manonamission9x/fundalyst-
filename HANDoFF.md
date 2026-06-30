@@ -1,15 +1,17 @@
 # Fundalyst Handoff
 
-Last updated: 2026-06-30 (post scanned-PDF OCR verification)
+Last updated: 2026-07-01 (post filing page shake fix)
 
 Repo: `C:\Users\kingo\Desktop\fundalyst-next`  
 GitHub: `https://github.com/manonamission9x/fundalyst-`  
 Branch: `main`  
-Latest code commit: `afcde26` — Homepage redesign: product-first institutional landing.
+Latest code commit: `47d80ef` — Fix filing page shaking: remove duplicate pre-fill effect.
 
 ## Git Log (Recent)
 
 ```text
+47d80ef  Fix filing page shaking: remove duplicate pre-fill effect
+b84a9b3  Fix filing page shaking: force scrollbar to prevent layout shift
 afcde26  Homepage redesign: product-first institutional landing
 1136296  Fix parser.ts: commit missing isLikelyRepairedOcrValue function
 844a304  Institutional Slate design system: remove Terminal Gold
@@ -18,10 +20,8 @@ a177ec7  Theme toggle: binary dark/light (remove auto mode)
 257f911  Replace all icons with Phosphor, remove lucide-react
 84c9c8c  Nav polish pass: consistent borders, better contrast, tighter sizing
 5f1755d  Fix: setSheetPeriods uses local periods const, not modelData.data
-653b9e2  Fix moon centering: symmetric crescent at (6.5,6.5)
 21ef828  Nav redesign: premium UX for the control center
 ed17b70  Audit-driven security + governance hardening (P1-P5)
-a60d377  Collapse desktop nav into dropdown sections
 ```
 
 ## Current Product State
@@ -117,6 +117,14 @@ The homepage was rewritten from a feature-grid app screen into a conversion-focu
 - All copy is short, specific, and avoids buzzwords. Design uses existing institutional slate tokens — no new colors or radii.
 - Commit: `afcde26`.
 
+### Filing Page Shake Fix
+
+The filing comparison page was shaking violently on navigation. Two causes:
+
+- **Duplicate pre-fill effect removed.** The page had two mechanisms filling the spreadsheet on mount — `useGlobalImportFill` (via import-hooks) and a direct `useEffect`. Both used `setTimeout(0)`, creating a cascade of empty → fill A → fill B. Removed the redundant effect.
+- **Scrollbar-induced layout shift.** Added `overflow-y: scroll` on `<html>` to permanently reserve the scrollbar track, preventing width reflow when content loads.
+- Commits: `b84a9b3`, `47d80ef`.
+
 ### Scanned PDF Import / OCR
 
 - Scanned PDF import falls back to OCR when text extraction yields no usable financial facts or no usable table structure.
@@ -129,11 +137,11 @@ The homepage was rewritten from a feature-grid app screen into a conversion-focu
 
 ## Verification
 
-Last verified after homepage redesign:
+Last verified after filing page shake fix:
 
 ```bash
 npm.cmd test          # 58 passed
-npm.cmd run lint      # 0 errors, 4 warnings
+npm.cmd run lint      # 0 errors, 3 warnings
 npm.cmd run build     # passed
 ```
 
