@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useMemo, useState, useRef } from 'react';
 import { fmtNum } from '@/lib/calculations';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
@@ -30,6 +30,14 @@ export default function TrendsPage() {
   const [sheetPeriods, setSheetPeriods] = useState<string[]>([]);
   const [trendRows, setTrendRows] = useState<TrendRow[]>([]);
   const [showResults, setShowResults] = useState(false);
+
+  const defaultPeriods = useMemo(() => ['FY22', 'FY23', 'FY24', 'FY25', 'FY26'], []);
+  const clearedPeriods = useMemo(() => ['', '', ''], []);
+  const defaultRows = useMemo<SpreadsheetRow[]>(() => [
+    { metric: 'Revenue', values: ['1000', '1150', '1240', '1380', '1530'] },
+    { metric: 'Net Profit', values: ['160', '155', '142', '130', '119'] },
+    { metric: 'Total Assets', values: ['2000', '2200', '2450', '2700', '3000'] },
+  ], []);
 
   const handleSheetChange = useCallback((newRows: SpreadsheetRow[], periods: string[]) => {
     setSheetRows(newRows);
@@ -109,16 +117,12 @@ export default function TrendsPage() {
           <ToolSpreadsheet
             tool="trends"
             multiColumn
-            initialPeriods={sheetPeriods.length >= 3 ? sheetPeriods : (cleared ? ['', '', ''] : ['FY22', 'FY23', 'FY24', 'FY25', 'FY26'])}
+            initialPeriods={sheetPeriods.length >= 3 ? sheetPeriods : (cleared ? clearedPeriods : defaultPeriods)}
             resetKey={clearVersion}
             initialData={
               cleared ? [] : (sheetRows.length > 0
                 ? sheetRows
-                : [
-                    { metric: 'Revenue', values: ['1000', '1150', '1240', '1380', '1530'] },
-                    { metric: 'Net Profit', values: ['160', '155', '142', '130', '119'] },
-                    { metric: 'Total Assets', values: ['2000', '2200', '2450', '2700', '3000'] },
-                  ])
+                : defaultRows)
             }
             onDataChange={handleSheetChange}
             hint="First row = period labels. Each row below = one metric. Values update the chart instantly."

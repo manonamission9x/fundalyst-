@@ -50,7 +50,7 @@ const sections: NavSection[] = [
   {
     label: 'Data',
     items: [
-      { id: 'import', label: 'Import Financials', href: '/import', icon: <IconNavImport /> },
+      { id: 'import', label: 'Import', href: '/import', icon: <IconNavImport /> },
     ],
   },
   {

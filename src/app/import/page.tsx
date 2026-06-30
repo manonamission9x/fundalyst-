@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePageTitle } from '@/lib/use-page-title';
 import { PageHeader, Card, Disclaimer, DataQualityBar, TrustBadge, DataSourceBadge } from '@/components/ui';
@@ -17,6 +17,12 @@ const PdfViewer = dynamic(() => import('@/components/import/PdfViewer'), {
   loading: () => <div className="skeleton" style={{ width: '100%', height: 200, borderRadius: 'var(--radius-md)' }} />,
 });
 
+const MAX_IMPORT_FILE_BYTES = 20 * 1024 * 1024;
+
+function isImportFileTooLarge(file: File): boolean {
+  return file.size > MAX_IMPORT_FILE_BYTES;
+}
+
 export default function ImportPage() {
   usePageTitle('Import');
   const {
@@ -30,11 +36,26 @@ export default function ImportPage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [pdfValidation, setPdfValidation] = useState<PdfValidationResult | null>(null);
   const [pdfValidating, setPdfValidating] = useState(false);
+  const sourceImageUrl = useMemo(
+    () => (pastedFile ? URL.createObjectURL(pastedFile) : undefined),
+    [pastedFile],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (sourceImageUrl) URL.revokeObjectURL(sourceImageUrl);
+    };
+  }, [sourceImageUrl]);
 
   const handleFileUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      if (isImportFileTooLarge(file)) {
+        alert('File is too large. Please import a file under 20 MB.');
+        e.target.value = '';
+        return;
+      }
       setUploadedFile(file);
       setPdfValidation(null);
 
@@ -98,6 +119,10 @@ Interest Expense, 45, 52, 60`;
           e.preventDefault();
           const file = item.getAsFile();
           if (file) {
+            if (isImportFileTooLarge(file)) {
+              alert('Screenshot is too large. Please paste an image under 20 MB.');
+              return;
+            }
             const imageFile = new File([file], 'clipboard-screenshot.png', {
               type: file.type || 'image/png',
             });
@@ -296,7 +321,7 @@ Interest Expense, 45, 52, 60`;
           onUpdateMapping={updateMapping}
           onConfirm={handleConfirm}
           onCancel={cancelImport}
-          sourceImageUrl={pastedFile ? URL.createObjectURL(pastedFile) : undefined}
+          sourceImageUrl={sourceImageUrl}
           uploadedFile={uploadedFile}
         />
       )}

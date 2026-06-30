@@ -60,6 +60,21 @@ const quickLinks: QuickLink[] = [
   { id: 'growth', label: 'Growth Rates', href: '/research/growth', desc: 'CAGR & YoY growth' },
 ];
 
+const RESTORABLE_WORKSPACE_KEYS = new Set([
+  'fundalyst-global-data',
+  'fundalyst-importer',
+  'fundalyst-enterprise',
+  'fundalyst-filing',
+  'fundalyst-wc',
+  'fundalyst-ratios',
+  'fundalyst-peer',
+  'fundalyst-trends',
+  'fundalyst-yoy',
+  'fundalyst-thesis',
+]);
+
+const MAX_WORKSPACE_RESTORE_BYTES = 10 * 1024 * 1024;
+
 export default function WorkspacePage() {
   usePageTitle('Workspace');
   const [activeStep, setActiveStep] = useState<StepId>('overview');
@@ -209,12 +224,17 @@ function OverviewPanel({
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_WORKSPACE_RESTORE_BYTES) {
+      setImportMsg('Workspace file is too large. Please restore a file under 10 MB.');
+      e.target.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
         const imported = JSON.parse(evt.target?.result as string);
         for (const key of Object.keys(imported)) {
-          if (key.startsWith('fundalyst-') && key !== '_exportedAt' && key !== '_version') {
+          if (RESTORABLE_WORKSPACE_KEYS.has(key)) {
             localStorage.setItem(key, JSON.stringify(imported[key]));
           }
         }
@@ -425,6 +445,11 @@ function EnterpriseCommandCenter({
   function handleEncryptedImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_WORKSPACE_RESTORE_BYTES) {
+      setBackupMsg('Encrypted workspace file is too large. Please restore a file under 10 MB.');
+      e.target.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = async (evt) => {
       try {

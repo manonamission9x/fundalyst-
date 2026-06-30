@@ -1,6 +1,19 @@
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
+const RESTORABLE_KEYS = new Set([
+  'fundalyst-global-data',
+  'fundalyst-importer',
+  'fundalyst-enterprise',
+  'fundalyst-filing',
+  'fundalyst-wc',
+  'fundalyst-ratios',
+  'fundalyst-peer',
+  'fundalyst-trends',
+  'fundalyst-yoy',
+  'fundalyst-thesis',
+]);
+
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
@@ -92,7 +105,7 @@ export function restoreFundalystLocalState(backup: Record<string, unknown>): voi
   const data = backup.data;
   if (!data || typeof data !== 'object') throw new Error('Backup has no Fundalyst data');
   for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-    if (key.startsWith('fundalyst-')) {
+    if (RESTORABLE_KEYS.has(key)) {
       localStorage.setItem(key, JSON.stringify(value));
     }
   }
