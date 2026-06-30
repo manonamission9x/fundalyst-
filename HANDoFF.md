@@ -2,107 +2,113 @@
 
 Last updated: 2026-06-30 (night)
 
-Repo: `C:\Users\kingo\Desktop\fundalyst-next`
-GitHub: `https://github.com/manonamission9x/fundalyst-`
-Branch: `main`
-Latest: `6182760` — full DeepSeek fix-queue (theme/P0-P3, D1-D6) + C1 palette + C3/C4, all merged & verified (58 tests, build, 25 e2e green)
+Repo: `C:\Users\kingo\Desktop\fundalyst-next`  
+GitHub: `https://github.com/manonamission9x/fundalyst-`  
+Branch: `main`  
+Latest: `a60d377` - C2/C5 complete, all merged and verified.
 
-## Git log (recent)
-```
+## Git Log (Recent)
+
+```text
+a60d377  Collapse desktop nav into dropdown sections
+5fe100d  Remove auto injected demo data
+48c259b  chore: remove scratch handoff markdown files
+3978186  docs: Codex work order for C2 + C5 (dev + e2e loop)
+2d4583b  docs: update handoff to HEAD 6182760 + exact C2/C5 implementation specs
 6182760  Add GitHub details + git log to handoff
 e789b79  feat: multi-company peer compare (C3) + global memo export (C4)
 4069571  feat: command palette (Cmd-K), Terminal Gold + light mode, dead-code cleanup
-8892f27  D1-D6: Product tasks complete
-8a41dc6  Update HANDoFF.md with Terminal Gold theme info
-6c12d6c  P0-P3 fixes + Terminal Gold theme re-skin + light mode toggle
 ```
 
 ## Current Product State
 
-Client-side financial analysis app for imported/manual company financials. Credible local analyst tool, not an enterprise platform.
+Fundalyst is a client-side financial analysis app for imported/manual company financials. It is a credible local analyst tool, not an enterprise platform.
 
-**Real today:** Local import/review (CSV/XLSX/PDF/OCR/image/manual), import review with collapsed low-confidence-only mapping table, Filing comparison, Trends, Growth rates, DCF valuation (with provenance-labeled assumptions), Cash efficiency, Financial Ratios, Peer comparison (with institutional analytics), Workspace command center, source-linked calculation trace panels (all tools), investment memo export, provenance badges on every visible metric, EV/EBITDA/EV/Sales/P/E/P/B/FCF Yield/ROIC/ROCE calculation helpers.
+Real today: local import/review for CSV/XLSX/PDF/OCR/image/manual data, Filing comparison, Trends, Growth rates, DCF valuation with provenance-labeled assumptions, Cash efficiency, Financial Ratios, Peer comparison with institutional analytics, Workspace command center, source-linked calculation trace panels, investment memo export, provenance badges, and EV/EBITDA/EV/Sales/P/E/P/B/FCF Yield/ROIC/ROCE helpers.
 
-**Not real:** Cloud auth, organization tenancy, server RBAC, multi-user collaboration, retained audit logs, cloud/database persistence, data-provider APIs, credential vault, cloud sync.
+Not real: cloud auth, organization tenancy, server RBAC, multi-user collaboration, retained audit logs, cloud/database persistence, data-provider APIs, credential vault, or cloud sync.
 
 ## Stack
 
-Next.js 16 App Router — React 19 — TypeScript strict — Zustand (localStorage) — Recharts — Vitest — Playwright — Global CSS
+Next.js 16 App Router, React 19, TypeScript strict, Zustand localStorage, Recharts, Vitest, Playwright, global CSS.
 
-## Design System v3 — Terminal Gold
+Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 
-- **Dark default:** Deep charcoal (`#0E0E0F`) with gold accent (`#C8962E`)
-- **Light mode:** Warm off-white (`#FAF9F6`) with deeper gold (`#B07D1F`)
-- **Theme toggle:** Nav bar button cycles auto/light/dark (persisted to localStorage)
-- **Auto-detect:** Respects `prefers-color-scheme`; explicit toggle wins
-- **Caution (warning only):** `#C2703D` (distinct hue from gold accent)
-- **Full CSS token system:** elevation scale (`--shadow-sm/base/md/lg`), radius scale (`--radius-pill`), type scale (`--text-3xs` floor 11px), spacing grid (`--space-*`)
-- **Chart colors:** Derived from CSS tokens at runtime via `getChartColors()` etc.
-- **Accessibility:** `change-up/down/flat` include `::before` arrows for color-blind users
+## Design System v3 - Terminal Gold
+
+- Dark default: deep charcoal `#0E0E0F` with gold accent `#C8962E`.
+- Light mode: warm off-white `#FAF9F6` with deeper gold `#B07D1F`.
+- Theme toggle in nav cycles auto/light/dark and persists to `localStorage` key `fundalyst-theme`.
+- Auto mode respects `prefers-color-scheme`.
+- Chart colors derive from CSS tokens at runtime.
+- `change-up/down/flat` include arrows for color-blind users.
 
 ## Key Files
 
 | Path | Purpose |
 |------|---------|
-| `src/lib/calculations.ts` | Pure financial engine — DCF, WC, ratios, institutional analytics |
-| `src/lib/calculation-trace.ts` | Source-fact trace helpers + provenance helpers |
-| `src/lib/memo-export.ts` | Investment memo generation (markdown/HTML) |
-| `src/lib/chart-theme.ts` | Chart config — dynamic CSS token readers for Recharts |
-| `src/components/layout/Nav.tsx` | Nav bar with desktop tabs, mobile hamburger, theme toggle |
-| `src/components/shared/CalculationTrace.tsx` | Reusable "Show sources" panel |
+| `src/lib/calculations.ts` | Pure financial engine: DCF, WC, ratios, institutional analytics |
+| `src/lib/calculation-trace.ts` | Source-fact trace helpers and provenance helpers |
+| `src/lib/memo-export.ts` | Investment memo generation |
+| `src/lib/chart-theme.ts` | Dynamic CSS-token chart config for Recharts |
+| `src/components/layout/Nav.tsx` | Workspace hub nav, desktop section dropdowns, mobile hamburger, theme toggle |
+| `src/components/layout/CommandPalette.tsx` | Cmd-K route/action palette; do not touch `.cmdk-*` styles unless explicitly scoped |
+| `src/components/shared/CalculationTrace.tsx` | Reusable Show sources panel |
 | `src/components/shared/MissingMetricsNotice.tsx` | Missing-metric alert per tool |
-| `src/components/shared/ProvenanceBadge.tsx` | Provenance badge (theme-aware CSS vars) |
+| `src/components/shared/ProvenanceBadge.tsx` | Provenance badge |
 | `src/components/input/SpreadsheetInput.tsx` | Excel-like grid with ARIA roles, undo/redo, paste support |
-| `src/store/financial-model-selectors.ts` | Tool-specific data extractors |
+| `src/store/index.ts` | Tool-local persisted stores; demo defaults are now blank |
+| `src/store/financial-model-selectors.ts` | Tool-specific imported-data extractors |
+
+## Recently Completed
+
+### C2 - Explicit Sample Loading
+
+- Removed auto-injected demo data from store defaults and tool mount effects.
+- Fresh Filing, DCF, Trends, and Growth screens now start empty when no import exists.
+- Canonical imported-data prefill remains intact.
+- Filing, DCF, Trends, and Growth samples moved behind explicit `Load sample` buttons.
+- E2E specs now click `Load sample` where sample-driven assertions are intended.
+- Commit: `5fe100d`.
+
+### C5 - Nav IA
+
+- Desktop nav now makes Workspace the primary hub and collapses deep routes behind Research, Valuation, Data, and Tools dropdown triggers.
+- Mobile hamburger overlay remains grouped and includes Workspace.
+- Added Playwright coverage for desktop dropdown route reachability, Escape close behavior, and mobile hamburger availability.
+- Dev-server browser check passed: dropdowns open/close, DCF route reachable, nav height shift `0`, mobile menu opens/closes, Workspace visible.
+- Commit: `a60d377`.
 
 ## Verification
 
+Last verified after C5:
+
 ```bash
 npm.cmd test          # 58 passed
-npm.cmd run lint      # 0 errors, 9 warnings (all pre-existing)
-npm.cmd run build     # passed — 14 static routes
-npm.cmd run test:e2e  # 25 passed
+npm.cmd run lint      # 0 errors, 4 warnings
+npm.cmd run build     # passed
+npm.cmd run test:e2e  # 27 passed
 ```
+
+Known lint warnings:
+- 2 `next/no-img-element`
+- 2 React hook exhaustive-deps warnings
 
 ## Audit
 
-`xlsx` high-severity advisory (no fix). Mitigated with 15s timeout + `structuredClone()` sandboxing. See `docs/xlsx-risk-plan.md`.
-
-## Theme info
-
-- Toggle in nav bar (sun icon = light, moon icon = dark, sun+rays icon = auto)
-- `localStorage` key: `fundalyst-theme` (values: `light`, `dark`, or absent for auto)
-- No flash-of-wrong-theme: CSS `@media (prefers-color-scheme: light)` handles auto mode before JS hydrates
-
-## Pending — C2 & C5 (implement in the dev + e2e loop; both break current e2e)
-
-These need the app running + e2e updates; do NOT push blind to green main. Specs are exact (file/line refs verified against `6182760`).
-
-### C2 — Remove auto-injected demo data; explicit "Load sample" instead
-Goal: no fake company data auto-loads. Fresh users get the (already-polished, D5) empty states + an explicit per-tool "Load sample" button. Keep all canonical-model prefill (real imported data) untouched.
-- `src/store/index.ts` — blank initial sample defaults to match each store's own `clear()` state: Filing `labelA/labelB/periodA/periodB` → `''`; DCF `inputs` → all `''`; WC `inputs` → all `''`; Ratios `data` → all `null`; Peer `csv` → `''`; Trends `csv` → `''`; YoY `years/csv` → `''`. Do NOT bump `version` (preserve existing users' persisted data).
-- `src/app/research/filing/page.tsx` (~L114-130) — delete the "Priority 2: demo data" block (keep Priority 1 canonical prefill). Move the Q1-Q4 sample into a `loadSample()` fn behind a button; clean now-unused `isSampleLoaded`/refs.
-- `src/app/tools/dcf/page.tsx` (~L126-159) — delete the "Auto-demo on first visit" effect AND the auto-calculate-on-demo effect; move the 8-row sample into a `loadSample()` button.
-- `src/app/research/trends/page.tsx` (~L43-60) — `defaultPeriods`/`defaultRows` return empty (`['','','']` / `[]`) when no imported data; add a "Load sample" button injecting the FY22-26 demo.
-- `src/app/research/growth/page.tsx` (~L76) — same: neutralize the on-mount demo, add a button.
-- WC / Ratios / Peer — already clean (canonical prefill; peer already has an on-demand `loadSample()`); no change.
-- **e2e impact:** specs asserting demo values (filing Q1-Q4, DCF intrinsic value, trends series) will fail — update them to import a fixture OR click "Load sample" before asserting. Preserve route coverage.
-- Verify: `npm run build`, `npm test`, `npm run test:e2e` (update to green), dev pass (each tool: empty state + working "Load sample").
-
-### C5 — Nav IA: collapse 9 flat tabs; resolve Workspace redundancy
-- `src/components/layout/Nav.tsx` renders Research/Valuation/Data/Tools as flat tabs. Collapse desktop to ~4 section triggers that open a dropdown/popover of their tools (mobile overlay already groups — keep). Position Workspace as the primary hub/landing; tools remain deep-links from Workspace + command palette.
-- Risk: interaction-heavy (hover/click/keyboard focus-trap, mobile, active-state, no layout shift — F-17 already reserves the 2px). MUST be built with dev server open; tsc won't catch nav interaction bugs.
+`xlsx` has a high-severity advisory with no fix. Mitigations and plan live in `docs/xlsx-risk-plan.md`. Do not blindly run `npm audit fix --force`.
 
 ## Later Work
 
-1. **DCF scenario manager** — Bull/Base/Bear cases with assumption versioning and sensitivity export.
-2. **Backend API boundary scaffold** — Typed service interfaces to replace Zustand.
-3. **Real backend** — Auth, tenancy, RBAC, persistence, immutable audit, collaboration.
+1. DCF scenario manager: Bull/Base/Bear cases with assumption versioning and sensitivity export.
+2. Backend API boundary scaffold: typed service interfaces to replace Zustand later.
+3. Real backend: auth, tenancy, RBAC, persistence, immutable audit, collaboration.
 
 ## Rules
 
-- No fake enterprise/backend claims.
-- No provider credentials in frontend code or localStorage.
+- Do not add fake enterprise/backend claims.
+- Do not store provider credentials in frontend code or localStorage.
 - Keep calculations pure in `src/lib/calculations.ts`.
-- Preserve Playwright route coverage. If changing spreadsheet behavior, test all routes.
-- If changing backup/restore, test plain + encrypted export/import.
+- Preserve Playwright route coverage.
+- If changing spreadsheet behavior, test all routes.
+- If changing backup/restore, test plain and encrypted export/import.
