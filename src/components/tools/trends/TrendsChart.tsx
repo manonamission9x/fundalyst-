@@ -5,7 +5,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { TrendRow } from '@/types/financial';
-import { CHART_COLORS, SERIES_COLORS, chartGrid, axisTick, tooltipStyle, fmtINR } from '@/lib/chart-theme';
+import { getChartColors, getSeriesColors, getChartGrid, getAxisTick, getTooltipStyle, fmtINR } from '@/lib/chart-theme';
 
 interface TrendsChartProps {
   rows: TrendRow[];
@@ -13,6 +13,12 @@ interface TrendsChartProps {
 }
 
 export default function TrendsChart({ rows, headers }: TrendsChartProps) {
+  const COLORS = getChartColors();
+  const series = getSeriesColors();
+  const grid = getChartGrid();
+  const tick = getAxisTick();
+  const tooltip = getTooltipStyle();
+
   const labels = headers.slice(1);
 
   const data = labels.map((label, i) => {
@@ -24,12 +30,12 @@ export default function TrendsChart({ rows, headers }: TrendsChartProps) {
   });
 
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono, monospace' }}>
+    <div style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>
       <div
         style={{
           fontSize: 11,
           fontWeight: 600,
-          color: CHART_COLORS.text,
+          color: COLORS.text,
           letterSpacing: '0.02em',
           paddingBottom: 4,
         }}
@@ -41,15 +47,15 @@ export default function TrendsChart({ rows, headers }: TrendsChartProps) {
           data={data}
           margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
         >
-          <CartesianGrid {...chartGrid} vertical={false} />
+          <CartesianGrid {...grid} vertical={false} />
           <XAxis
             dataKey="name"
-            tick={axisTick}
-            axisLine={{ stroke: CHART_COLORS.grid, strokeOpacity: 0.3 }}
+            tick={tick}
+            axisLine={{ stroke: COLORS.grid, strokeOpacity: 0.3 }}
             tickLine={false}
           />
           <YAxis
-            tick={axisTick}
+            tick={tick}
             axisLine={false}
             tickLine={false}
             tickFormatter={(v: number) => fmtINR(v)}
@@ -58,21 +64,21 @@ export default function TrendsChart({ rows, headers }: TrendsChartProps) {
               value: '₹ Cr',
               position: 'insideTopLeft',
               offset: -10,
-              fill: CHART_COLORS.textMuted,
+              fill: COLORS.textMuted,
               fontSize: 9,
-              fontFamily: 'IBM Plex Mono, monospace',
+              fontFamily: 'var(--font-ibm-plex-mono)',
             }}
           />
           <Tooltip
-            contentStyle={tooltipStyle.contentStyle}
-            labelStyle={tooltipStyle.labelStyle}
-            itemStyle={tooltipStyle.itemStyle}
+            contentStyle={tooltip.contentStyle}
+            labelStyle={tooltip.labelStyle}
+            itemStyle={tooltip.itemStyle}
             formatter={(value: unknown, name: unknown) => [fmtINR(Number(value)), String(name)] as [string, string]}
             labelFormatter={(_label: unknown) => `Period: ${_label}` as string}
           />
 
           {rows.map((r, i) => {
-            const color = SERIES_COLORS[i % SERIES_COLORS.length];
+            const color = series[i % series.length];
             const isPrimary = i === 0;
             return (
               <Line

@@ -17,6 +17,60 @@ import {
   IconNavAbout,
 } from '@/components/ui';
 
+function ThemeToggle() {
+  const [theme, setTheme] = useState<'auto' | 'light' | 'dark'>('auto');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('fundalyst-theme');
+    if (saved === 'light' || saved === 'dark') {
+      setTheme(saved);
+      document.documentElement.setAttribute('data-theme', saved);
+    } else {
+      setTheme('auto');
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, []);
+
+  const toggle = useCallback(() => {
+    const next = theme === 'auto' ? 'light' : theme === 'light' ? 'dark' : 'auto';
+    setTheme(next);
+    if (next === 'auto') {
+      localStorage.removeItem('fundalyst-theme');
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      localStorage.setItem('fundalyst-theme', next);
+      document.documentElement.setAttribute('data-theme', next);
+    }
+  }, [theme]);
+
+  return (
+    <button
+      type="button"
+      className="nav-cta"
+      onClick={toggle}
+      title={theme === 'auto' ? 'Auto theme' : theme === 'light' ? 'Light theme' : 'Dark theme'}
+      aria-label={`Theme: ${theme}. Click to switch.`}
+      style={{ minWidth: 28, justifyContent: 'center', padding: '4px 7px' }}
+    >
+      {theme === 'auto' ? (
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="6" cy="6" r="2.5" />
+          <path d="M6 1v1M6 10v1M1 6h1M10 6h1M2.1 2.1l.7.7M9.2 9.2l.7.7M2.1 9.9l.7-.7M9.2 2.8l.7-.7" />
+        </svg>
+      ) : theme === 'light' ? (
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+          <circle cx="6" cy="6" r="3" />
+          <path d="M6 1v2M6 9v2M1 6h2M9 6h2M2.8 2.8l1.4 1.4M7.8 7.8l1.4 1.4M2.8 9.2l1.4-1.4M7.8 4.2l1.4-1.4" />
+        </svg>
+      ) : (
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+          <path d="M9.5 8.5A5 5 0 013.5 2.5 5 5 0 109.5 8.5z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 interface NavItem {
   id: string;
   label: string;
@@ -128,8 +182,8 @@ export default function Nav() {
       <div className="nav-inner">
         <Link href="/" className="nav-brand" aria-label="Fundalyst home">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-            <rect width="20" height="20" rx="3" fill="#4F6EF7" />
-            <path d="M5 14V6L10 10L15 6V14" stroke="rgba(13,13,15,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <rect width="20" height="20" rx="3" fill="#C8962E" />
+            <path d="M5 14V6L10 10L15 6V14" stroke="rgba(14,14,15,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <span>Fundalyst</span>
         </Link>
@@ -184,6 +238,7 @@ export default function Nav() {
             </svg>
             <span>Import financials</span>
           </Link>
+          <ThemeToggle />
           <button
             type="button"
             className="nav-mobile-toggle"
@@ -212,8 +267,8 @@ export default function Nav() {
         <div className="nav-mobile-header">
           <Link href="/" className="nav-mobile-brand" onClick={handleNavClick} aria-label="Fundalyst home">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <rect width="20" height="20" rx="3" fill="#4F6EF7" />
-              <path d="M5 14V6L10 10L15 6V14" stroke="rgba(13,13,15,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <rect width="20" height="20" rx="3" fill="#C8962E" />
+              <path d="M5 14V6L10 10L15 6V14" stroke="rgba(14,14,15,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Fundalyst
           </Link>

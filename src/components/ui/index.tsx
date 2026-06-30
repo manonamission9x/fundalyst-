@@ -371,7 +371,7 @@ export function Toolbar({ onClear, onAction, actionLabel, hint, isLoading }: Too
         >
           {isLoading ? (
             <>
-              <span className="spinner" style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', marginRight: 6, verticalAlign: 'middle', animation: 'spin 0.6s linear infinite' }} />
+              <span className="spinner" style={{ marginRight: 6 }} />
               {actionLabel}
             </>
           ) : (
@@ -496,7 +496,7 @@ export function ProvenancePopover({
             </div>
           )}
           {userOverridden && (
-            <div style={{ color: 'var(--amber)', marginTop: 2 }}>✦ User override</div>
+            <div style={{ color: 'var(--caution)', marginTop: 2 }}>✦ User override</div>
           )}
         </div>
       )}
@@ -520,21 +520,21 @@ export function DataSourceBadge({ variant }: DataSourceBadgeProps) {
     <span
       className={`data-source-badge ${c.cls}`}
       style={{
-        fontSize: 9, padding: '1px 7px', borderRadius: '10px',
+        fontSize: 9, padding: '1px 7px', borderRadius: 'var(--radius-pill)',
         fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap',
         display: 'inline-flex', alignItems: 'center', gap: 3,
         border: '1px solid var(--border)',
-        background: variant === 'sample' ? 'rgba(245,158,11,0.12)' :
-                    variant === 'imported' ? 'rgba(34,197,94,0.12)' :
+        background: variant === 'sample' ? 'var(--caution-subtle)' :
+                    variant === 'imported' ? 'var(--green-subtle)' :
                     'rgba(148,163,184,0.12)',
-        color: variant === 'sample' ? 'var(--amber)' :
-               variant === 'imported' ? 'var(--green)' :
-               'var(--text-muted)',
-      }}
-    >
-      <span style={{
+        color: variant === 'sample' ? 'var(--caution)' :
+           variant === 'imported' ? 'var(--green)' :
+           'var(--text-muted)',
+        }}
+        >
+        <span style={{
         width: 5, height: 5, borderRadius: '50%',
-        background: variant === 'sample' ? 'var(--amber)' :
+        background: variant === 'sample' ? 'var(--caution)' :
                     variant === 'imported' ? 'var(--green)' :
                     'var(--text-muted)',
         display: 'inline-block',

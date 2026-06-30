@@ -24,8 +24,8 @@ export default function MissingMetricsNotice({
       style={{
         padding: '12px 16px',
         borderRadius: 'var(--radius-md)',
-        background: 'var(--amber-subtle, #fff8e1)',
-        border: '1px solid var(--amber, #f59e0b)',
+        background: 'var(--caution-subtle)',
+        border: '1px solid var(--caution)',
         fontSize: 12,
         lineHeight: 1.6,
         marginBottom: 16,

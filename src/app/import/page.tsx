@@ -188,7 +188,7 @@ Price, 185, 210, 230`;
                   <span>PDF</span>
                   <span>·</span>
                   <span>Screenshot</span>
-                  <span style={{ color: 'var(--amber)', fontSize: 8 }}>NEW</span>
+                  <span style={{ color: 'var(--caution)', fontSize: 'var(--text-3xs)' }}>NEW</span>
                 </div>
                 <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', marginTop: 6 }}>
                   Or paste a screenshot from clipboard (Ctrl+V)
@@ -435,7 +435,7 @@ function ImportReview({
                 <span style={{ color: 'var(--green)' }}>
                   ● {review.rawFacts.filter(f => f.metric !== 'unknown' && f.confidence >= 0.7).length} high
                 </span>
-                <span style={{ color: 'var(--amber)' }}>
+                <span style={{ color: 'var(--caution)' }}>
                   ● {review.rawFacts.filter(f => f.metric !== 'unknown' && f.confidence >= 0.4 && f.confidence < 0.7).length} medium
                 </span>
                 <span style={{ color: 'var(--red)' }}>
@@ -450,7 +450,7 @@ function ImportReview({
           <div style={{ marginTop: 8, display: 'flex', gap: 16, fontSize: 11, fontFamily: 'var(--font-mono)' }}>
             <span style={{ color: 'var(--green)' }}>{factsCount} values found</span>
             <span style={{ color: 'var(--primary)' }}>{mappedCount} metrics mapped ({pctMapped}%)</span>
-            {unknownCount > 0 && <span style={{ color: 'var(--amber)' }}>{unknownCount} need review</span>}
+            {unknownCount > 0 && <span style={{ color: 'var(--caution)' }}>{unknownCount} need review</span>}
             {ignoredCount > 0 && <span style={{ color: 'var(--text-muted)' }}>{ignoredCount} skipped</span>}
           </div>
         </div>
@@ -461,7 +461,7 @@ function ImportReview({
         <Card label="Warnings" style={{ marginTop: 2 }}>
           <div className="card-body">
             {review.warnings.map((w, i) => (
-              <div key={i} style={{ fontSize: 11, color: 'var(--amber)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
+              <div key={i} style={{ fontSize: 11, color: 'var(--caution)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" style={{ marginRight: 4, verticalAlign: 'middle' }}><path d="M6 1L1 11h10L6 1z" /><path d="M6 5v2" /><circle cx="6" cy="9" r="0.5" fill="currentColor" stroke="none" /></svg>
                 {w}
               </div>
@@ -583,7 +583,7 @@ function ImportReview({
                   }
                 }
               }}
-              style={{ fontSize: 11, padding: '6px 12px', color: 'var(--amber)', border: '1px solid var(--amber)', borderRadius: 'var(--radius-sm)', background: 'transparent', cursor: 'pointer' }}
+              style={{ fontSize: 11, padding: '6px 12px', color: 'var(--caution)', border: '1px solid var(--caution)', borderRadius: 'var(--radius-sm)', background: 'transparent', cursor: 'pointer' }}
             >
               Accept high-confidence, skip low
             </button>
@@ -721,7 +721,7 @@ function ImportResult({
                 <span
                   key={field}
                   style={{
-                    fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--amber)',
+                    fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--caution)',
                     padding: '3px 8px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
                   }}
                 >
@@ -774,7 +774,7 @@ function ConfidenceBadge({ score }: { score: number }) {
   let color = 'var(--red)';
   let label = 'low';
   if (pct >= 80) { color = 'var(--green)'; label = 'high'; }
-  else if (pct >= 50) { color = 'var(--amber)'; label = 'medium'; }
+  else if (pct >= 50) { color = 'var(--caution)'; label = 'medium'; }
 
   return (
     <span

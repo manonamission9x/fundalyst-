@@ -4,11 +4,11 @@ import type { ProvenanceKind } from '@/types/financial';
 import { provenanceKindLabel } from '@/lib/calculation-trace';
 
 const BADGE_STYLES: Record<ProvenanceKind, { bg: string; color: string }> = {
-  imported: { bg: '#e8f5e9', color: '#2e7d32' },
-  manual: { bg: '#e3f2fd', color: '#1565c0' },
-  default: { bg: '#fff8e1', color: '#f57f17' },
-  inferred: { bg: '#f3e5f5', color: '#7b1fa2' },
-  unavailable: { bg: '#f5f5f5', color: '#9e9e9e' },
+  imported: { bg: 'var(--green-subtle)', color: 'var(--green)' },
+  manual: { bg: 'var(--primary-subtle)', color: 'var(--primary)' },
+  default: { bg: 'var(--caution-subtle)', color: 'var(--caution)' },
+  inferred: { bg: 'rgba(123, 126, 200, 0.08)', color: '#8B7EC8' },
+  unavailable: { bg: 'var(--bg-surface)', color: 'var(--text-muted)' },
 };
 
 export interface ProvenanceBadgeProps {
@@ -33,7 +33,7 @@ export default function ProvenanceBadge({
         alignItems: 'center',
         gap: 4,
         padding: '1px 7px',
-        borderRadius: 3,
+        borderRadius: 'var(--radius-sm)',
         fontSize: 10,
         fontFamily: 'var(--font-mono)',
         fontWeight: 500,

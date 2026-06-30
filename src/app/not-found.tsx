@@ -3,7 +3,7 @@ import Link from 'next/link';
 export default function NotFound() {
   return (
     <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-      <div style={{ fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+      <div className="text-mono" style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
         404
       </div>
       <h1 style={{ fontSize: 28, fontWeight: 600, color: 'var(--text)', margin: '0 0 8px' }}>

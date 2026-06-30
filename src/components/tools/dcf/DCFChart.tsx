@@ -5,7 +5,7 @@ import {
   ResponsiveContainer, ReferenceLine, Cell,
 } from 'recharts';
 import type { ProjectedYear } from '@/types/financial';
-import { CHART_COLORS, chartGrid, axisTick, tooltipStyle, fmtINR } from '@/lib/chart-theme';
+import { getChartColors, getChartGrid, getAxisTick, getTooltipStyle, fmtINR } from '@/lib/chart-theme';
 
 interface DCFChartProps {
   projected: ProjectedYear[];
@@ -15,6 +15,11 @@ interface DCFChartProps {
 }
 
 export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChartProps) {
+  const COLORS = getChartColors();
+  const grid = getChartGrid();
+  const tick = getAxisTick();
+  const tooltip = getTooltipStyle();
+
   const data = [
     ...projected.map((p) => ({
       name: 'Yr ' + p.year,
@@ -29,12 +34,12 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
   const yMax = Math.ceil(maxVal * 1.15 / 10000) * 10000;
 
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono, monospace' }}>
+    <div style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>
       <div
         style={{
           fontSize: 11,
           fontWeight: 600,
-          color: CHART_COLORS.text,
+          color: COLORS.text,
           letterSpacing: '0.02em',
           paddingBottom: 4,
         }}
@@ -47,15 +52,15 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
           barCategoryGap="28%"
           margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
         >
-          <CartesianGrid {...chartGrid} vertical={false} />
+          <CartesianGrid {...grid} vertical={false} />
           <XAxis
             dataKey="name"
-            tick={axisTick}
-            axisLine={{ stroke: CHART_COLORS.grid, strokeOpacity: 0.3 }}
+            tick={tick}
+            axisLine={{ stroke: COLORS.grid, strokeOpacity: 0.3 }}
             tickLine={false}
           />
           <YAxis
-            tick={axisTick}
+            tick={tick}
             axisLine={false}
             tickLine={false}
             domain={[0, yMax]}
@@ -65,30 +70,30 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
               value: '₹ Cr',
               position: 'insideTopLeft',
               offset: -10,
-              fill: CHART_COLORS.textMuted,
+              fill: COLORS.textMuted,
               fontSize: 9,
-              fontFamily: 'IBM Plex Mono, monospace',
+              fontFamily: 'var(--font-ibm-plex-mono)',
             }}
           />
 
           {currentPrice && (
             <ReferenceLine
               y={currentPrice}
-              stroke={CHART_COLORS.red}
+              stroke={COLORS.red}
               strokeDasharray="6 3"
               strokeWidth={1.5}
               label={{
                 value: 'Mkt: ' + fmtINR(currentPrice),
-                fill: CHART_COLORS.red,
+                fill: COLORS.red,
                 fontSize: 10,
-                fontFamily: 'IBM Plex Mono, monospace',
+                fontFamily: 'var(--font-ibm-plex-mono)',
                 position: 'insideTopRight',
               }}
             />
           )}
 
           <Tooltip
-            {...tooltipStyle}
+            {...tooltip}
             formatter={(value: unknown, name: unknown) => [
               fmtINR(Number(value)),
               name === 'fcf' ? 'Projected FCF' : 'PV of FCF',
@@ -106,7 +111,7 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
             {data.map((entry, index) => (
               <Cell
                 key={index}
-                fill={entry.isTerminal ? CHART_COLORS.amber : CHART_COLORS.primary}
+                fill={entry.isTerminal ? COLORS.amber : COLORS.primary}
                 fillOpacity={entry.isTerminal ? 0.65 : 0.85}
               />
             ))}
@@ -121,7 +126,7 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
             {data.map((entry, index) => (
               <Cell
                 key={index}
-                fill={entry.isTerminal ? CHART_COLORS.amberLight : CHART_COLORS.green}
+                fill={entry.isTerminal ? COLORS.amberLight : COLORS.green}
                 fillOpacity={entry.isTerminal ? 0.45 : 0.75}
               />
             ))}
