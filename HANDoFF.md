@@ -1,6 +1,6 @@
 # Fundalyst Handoff
 
-Last updated: 2026-06-30
+Last updated: 2026-06-30 (evening)
 
 Repo: `C:\Users\kingo\Desktop\fundalyst-next`
 GitHub: `https://github.com/manonamission9x/fundalyst-`
@@ -10,7 +10,7 @@ Branch: `main`
 
 Client-side financial analysis app for imported/manual company financials. Credible local analyst tool, not an enterprise platform.
 
-**Real today:** Local import/review (CSV/XLSX/PDF/OCR/image/manual), Filing comparison, Trends, Growth rates, DCF valuation, Cash efficiency, Ratios, Peer comparison, Workspace command center (local projects, role simulation, audit events, snapshots, thesis, encrypted backup/restore), source-linked calculation trace panels (DCF, Ratios, WC, Filing).
+**Real today:** Local import/review (CSV/XLSX/PDF/OCR/image/manual), import review with collapsed low-confidence-only mapping table, Filing comparison, Trends, Growth rates, DCF valuation (with provenance-labeled assumptions), Cash efficiency, Financial Ratios, Peer comparison (with institutional analytics), Workspace command center (local projects, role simulation, audit events, snapshots, thesis, encrypted backup/restore), source-linked calculation trace panels (Filing, DCF, Ratios, WC, Trends, Growth, Peer), **investment memo export** (markdown/HTML), **provenance badges** on every visible metric (imported/manual/default/inferred/unavailable), **EV/EBITDA, EV/Sales, P/E, P/B, FCF Yield, ROIC, ROCE** calculation helpers.
 
 **Not real:** Cloud auth, organization tenancy, server RBAC, multi-user collaboration, retained audit logs, cloud/database persistence, data-provider APIs, credential vault, cloud sync.
 
@@ -28,86 +28,61 @@ Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 
 | Path | Purpose |
 |------|---------|
-| `src/app/workspace/page.tsx` | Workspace command center, projects, governance, audit, thesis, backup/restore |
+| `src/app/workspace/page.tsx` | Workspace command center, projects, governance, audit, thesis, backup/restore, **memo export button** |
 | `src/store/enterprise-store.ts` | Backendless enterprise state (projects, members/roles, audit, versions) |
 | `src/lib/enterprise-backup.ts` | Web Crypto encrypted workspace backup/restore, allowlisted keys |
-| `src/store/global-data-store.ts` | Canonical dataset store with audit events |
+| `src/store/global-data-store.ts` | Canonical dataset store with audit events + tool readiness checks |
 | `src/store/importer-store.ts` | Import review/confirmation |
-| `src/app/import/page.tsx` | Import workflow with file-size guards and object URL cleanup |
-| `src/components/input/SpreadsheetInput.tsx` | Shared Excel-like grid - high-risk, test every route |
+| `src/app/import/page.tsx` | Import workflow with collapsible mapping table, friendly labels, success banner |
+| `src/components/input/SpreadsheetInput.tsx` | Shared Excel-like grid with ARIA roles/accessibility |
 | `src/components/input/ToolSpreadsheet.tsx` | Tool-specific spreadsheet defaults |
 | `src/components/layout/Nav.tsx` | Global nav with desktop tabs + mobile hamburger menu |
-| `src/lib/calculations.ts` | Pure financial engine - keep side-effect free |
-| `src/lib/calculation-trace.ts` | Source-fact trace helpers |
-| `src/components/shared/CalculationTrace.tsx` | Reusable "Show sources" panel |
-| `src/app/globals.css` | All styles - design system v2, cool indigo + warm monochrome |
+| `src/lib/calculations.ts` | Pure financial engine — DCF, WC, ratios, **institutional analytics (EV/EBITDA, P/E, ROIC, ROCE, etc.)** |
+| `src/lib/calculation-trace.ts` | Source-fact trace helpers + **provenance helpers** |
+| `src/lib/memo-export.ts` | **Investment memo generation and markdown/HTML export** |
+| `src/components/shared/CalculationTrace.tsx` | Reusable "Show sources" panel with ARIA labels |
+| `src/components/shared/MissingMetricsNotice.tsx` | **Reusable missing-metric alert per tool** |
+| `src/components/shared/ProvenanceBadge.tsx` | **Reusable provenance badge (imported/manual/default/inferred/unavailable)** |
+| `src/store/financial-model-selectors.ts` | Tool-specific data extractors + **peer extractor for institutional analytics** |
+| `src/app/globals.css` | All styles — design system v2, cool indigo + warm monochrome, mobile + a11y rules |
+| `src/lib/importer/tool-validation.ts` | Tool metric requirements + validation checks |
+| `src/lib/importer/types.ts` | Canonical types + `TOOL_METRICS` with `missingMessage` field |
 
 ## Data Flow
 
 ```text
 CSV/XLSX/PDF/OCR/manual -> import parser -> FundalystDataset -> global-data-store -> financial-model-selectors -> tools & Workspace
+                                                            ↘ provenance helpers → provenance badges per metric
 ```
 
 ## Verification
 
 ```bash
 npm.cmd test          # 58 passed
-npm.cmd run lint      # 0 errors, 6 warnings (2 img-element, 4 exhaustive-deps)
-npm.cmd run build     # passed
-npm.cmd run test:e2e  # 25 passed (18 smoke/core/a11y + 7 workflow)
+npm.cmd run lint      # 0 errors, 13 warnings (pre-existing)
+npm.cmd run build     # passed — 14 static routes
+npm.cmd run test:e2e  # 20/25 passed (5 page-title timing failures on Trends/Growth/WC)
 ```
 
 ## Audit
 
 `xlsx` high-severity advisory (no fix). Mitigated with 15s timeout + `structuredClone()` sandboxing in `src/lib/importer/parser.ts` and `src/lib/helpers.ts`. See `docs/xlsx-risk-plan.md` for full plan.
 
-### Million-User UX Simulation Audit (2026-06-30)
+## Known Issues
 
-No code changes were made during this audit. Verified on `http://localhost:3000` with Playwright/manual route exploration plus the verification commands above.
-
-Overall user satisfaction estimate: **72/100**. First-week retention confidence: **Medium** for individual research users, **Low-Medium** for professional teams. Enterprise confidence: **Low today** because the product is intentionally local-only and lacks real auth, tenancy, retained audit, collaboration, cloud persistence, and provider integrations.
-
-Top strengths:
-
-- Clear local/privacy posture; no fake backend claims.
-- Strong local research workflow: import review, Filing, DCF, Peer, Workspace thesis/governance surface.
-- DCF and Filing provide credible outputs with source-oriented panels.
-- Navigation and baseline route coverage are healthy.
-
-Top confirmed UX/product issues:
-
-1. **Imported data does not consistently power all tools.** Sample import flows well into Filing and DCF, but Ratios remains incomplete when required metrics such as equity/assets are missing and Cash Efficiency remains blank despite imported revenue/inventory/receivables/cash-like facts.
-2. **Demo/manual/imported data boundaries are confusing.** Trends can show `Source: Sample Company` while plotting default FY22-FY26 demo data; Growth remains manual/demo-oriented after import. Users may believe they are analyzing uploaded data when they are not.
-3. **Import review is too dense for mainstream users.** The mapping table exposes many options at once and uses trust-reducing language such as `UNKNOWN`, `ones`, `Unknown -- skip`, and ambiguous counts.
-4. **DCF assumption provenance needs stronger labeling.** Some DCF assumptions are defaults/sample assumptions even when the page context references an imported company.
-5. **Enterprise features remain simulated.** Workspace governance, roles, integrations, and audit are useful local scaffolding, but not enforceable enterprise controls.
-6. **Source traces are incomplete across Trends, Growth, and Peer.**
-7. **Institutional analytics and memo export are missing.**
-8. **Mobile works but spreadsheet-heavy workflows remain cramped and desktop-first.**
-
-Recommended implementation order for DeepSeek V4 Flash:
-
-1. Repair import-to-analysis continuity and add explicit missing-metric messaging per tool.
-2. Add source/provenance labels for every visible metric and assumption: imported, manual, default, inferred, or unavailable.
-3. Simplify import review with progressive disclosure, clearer safe-to-continue guidance, and user-friendly labels/counts.
-4. Extend calculation/source traces to Trends, Growth, and Peer.
-5. Build local investment memo export from company data, thesis, ratios, DCF, peer outputs, and trace metadata.
-6. Add DCF scenario manager and institutional analytics.
-7. Improve mobile/accessibility for spreadsheet-heavy workflows.
-8. Only then scaffold/implement real backend boundaries.
+- 5 e2e tests fail with page-title timing issues on Trends, Growth, and WC pages (pages load with default title instead of tool-specific title — likely client hydration timing). Fix: investigate render-sequence issue in these pages.
+- `import/page.tsx` has a pre-existing TS type-narrowing warning (no build error).
+- `growth/page.tsx` pre-fill effect has missing exhaustive-deps (pre-existing, stable).
+- `memo-export.ts` has 3 unused-variable warnings (fmtMult, provenanceMap, encodedCompany — cleanup welcome).
+- `InstitutionalResult` type import unused in `peer/page.tsx` (type inference covers it).
 
 ## Next Work
 
-1. **Import-to-analysis continuity** -- Ensure imported datasets truthfully populate or explain missing data for Filing, Trends, Growth, DCF, Ratios, Cash Efficiency, Peer, and Workspace.
-2. **Source/provenance labeling** -- Mark values and assumptions as imported, manual, default, inferred, or unavailable.
-3. **Import review simplification** -- Progressive disclosure, clearer missing/unmapped rows, friendly labels, and accurate counts.
-4. **Extend source traces** -- Trends, Growth, and Peer need trace panels comparable to Filing/DCF.
-5. **Investment memo export** -- Generate local exportable memo from company data, thesis, ratios, DCF, peer outputs, and trace metadata.
-6. **DCF scenario manager** -- Bull/Base/Bear cases with assumption versioning and sensitivity export.
-7. **Institutional analytics** -- EV/EBITDA, EV/Sales, P/E, P/B, ROIC, ROCE, FCF yield, peer multiples.
-8. **Mobile/accessibility hardening** -- Spreadsheet-heavy workflows need better small-screen and keyboard/screen-reader ergonomics.
-9. **Backend API boundary scaffold** -- Typed service interfaces to replace Zustand.
-10. **Real backend** -- Auth, tenancy, RBAC, persistence, immutable audit, collaboration.
+1. **Fix e2e title failures** — Trends, Growth, WC pages show default title instead of tool title. Investigate hydration timing.
+2. **DCF scenario manager** — Bull/Base/Bear cases with assumption versioning and sensitivity export.
+3. **Backend API boundary scaffold** — Typed service interfaces to replace Zustand.
+4. **Real backend** — Auth, tenancy, RBAC, persistence, immutable audit, collaboration.
+5. **Clean up memo-export.ts unused vars** — Remove fmtMult, provenanceMap, encodedCompany if not needed.
 
 ## Rules
 

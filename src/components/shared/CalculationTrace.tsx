@@ -26,6 +26,7 @@ export default function CalculationTracePanel({ traces }: { traces: CalculationT
         className="btn-ghost btn-sm calc-trace-toggle"
         onClick={() => setOpen((next) => !next)}
         aria-expanded={open}
+        aria-label={open ? 'Hide calculation sources' : 'Show calculation sources'}
       >
         {open ? 'Hide sources' : 'Show sources'}
       </button>
@@ -40,12 +41,12 @@ export default function CalculationTracePanel({ traces }: { traces: CalculationT
                 </div>
                 <div className="calc-trace-value">{trace.value}</div>
               </div>
-              <div className="calc-trace-source-list">
+              <div className="calc-trace-source-list" role="list">
                 {trace.sources.map((source, index) => (
-                  <div key={`${trace.label}-${source.label}-${index}`} className="calc-trace-source">
+                  <div key={`${trace.label}-${source.label}-${index}`} className="calc-trace-source" role="listitem">
                     <div className="calc-trace-source-main">
-                      <span className="calc-trace-source-label">{source.label}</span>
-                      <span className="calc-trace-source-value">{source.value}</span>
+                      <span className="calc-trace-source-label" aria-label={`Source: ${source.label}`}>{source.label}</span>
+                      <span className="calc-trace-source-value" aria-label={`Value: ${source.value}`}>{source.value}</span>
                       <span className={`confidence-badge ${source.confidence !== undefined && source.confidence >= 0.9 ? 'good' : source.confidence !== undefined && source.confidence < 0.7 ? 'warn' : ''}`}>
                         {formatConfidence(source.confidence)}
                       </span>

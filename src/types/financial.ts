@@ -89,6 +89,94 @@ export interface RatioResult {
   cls: 'good' | 'warn' | '';
 }
 
+// ── Provenance Types ──
+
+/** Describes where a value came from — used for every visible metric/assumption */
+export type ProvenanceKind = 'imported' | 'manual' | 'default' | 'inferred' | 'unavailable';
+
+export interface ProvenanceSource {
+  kind: ProvenanceKind;
+  label: string;
+  value: string | number | null;
+  period?: string;
+  sourceLabel?: string;       // e.g. "FY24 Annual Report (PDF)"
+  confidence?: number;
+  overridden?: boolean;
+  capturedAt?: string;
+}
+
+// ── Institutional Analytics Types ──
+
+export interface InstitutionalInputs {
+  enterpriseValue: number | null;
+  ebitda: number | null;
+  ebit: number | null;
+  revenue: number | null;
+  netProfit: number | null;
+  totalEquity: number | null;
+  totalDebt: number | null;
+  cash: number | null;
+  freeCashFlow: number | null;
+  totalAssets: number | null;
+  taxRate: number | null;        // % (e.g. 25 for 25%)
+  investedCapital: number | null;
+  sharesOutstanding: number | null;
+  price: number | null;
+}
+
+export interface InstitutionalMetric {
+  label: string;
+  value: number | null;
+  formatted: string;
+  description: string;
+  cls: 'good' | 'warn' | '';
+}
+
+export interface InstitutionalResult {
+  valuation: InstitutionalMetric[];   // EV/EBITDA, EV/Sales, P/E, P/B, FCF Yield
+  profitability: InstitutionalMetric[]; // ROIC, ROCE
+  metadata: {
+    enterpriseValue: number | null;
+    evFormatted: string;
+    computedAt: string;
+  };
+}
+
+// ── Memo Export Types ──
+
+export type MemoProvenanceKind = 'imported' | 'manual' | 'assumed' | 'computed';
+
+export interface MemoProvenance {
+  kind: MemoProvenanceKind;
+  label: string;
+  value: string | number;
+}
+
+export interface MemoSection {
+  title: string;
+  subsections: {
+    heading: string;
+    body: string;
+    provenance?: MemoProvenance[];
+  }[];
+}
+
+export interface MemoExport {
+  id: string;
+  title: string;
+  companyName: string;
+  generatedAt: string;
+  analyst: string;
+  projectName: string;
+  sections: MemoSection[];
+  metadata: {
+    datasetId: string | null;
+    datasetPeriods: string[];
+    factCount: number;
+    versionId?: string;
+  };
+}
+
 /** A peer comparison row */
 export interface PeerRow {
   name: string;

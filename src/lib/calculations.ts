@@ -15,6 +15,9 @@ import type {
   LineItem,
   DiffResult,
   RiskFlag,
+  InstitutionalInputs,
+  InstitutionalResult,
+  InstitutionalMetric,
 } from '@/types/financial';
 
 // ── Validation Helpers ─────────────────────────────────────────────────────
@@ -325,6 +328,178 @@ export function computeRatios(values: RatioInputs): RatioResult[] {
   }
 
   return results;
+}
+
+// ── Institutional Analytics ──────────────────────────────────────────────────
+
+/**
+ * Compute institutional-grade valuation & profitability metrics.
+ *
+ * Methodology:
+ *   Enterprise Value (EV) = Market Cap + Total Debt - Cash
+ *     (If not directly provided, computed from price × shares + debt - cash)
+ *   EV/EBITDA     — lower is cheaper; <10 = good, >20 = warn
+ *   EV/Sales      — <2 = good, >5 = warn
+ *   P/E           — <15 = good, >30 = warn
+ *   P/B           — <3 = good, >5 = warn
+ *   FCF Yield     — FCF / EV; >5% = good, <2% = warn
+ *   ROIC          — NOPAT / Invested Capital, NOPAT = EBIT × (1 - taxRate/100)
+ *   ROCE          — EBIT / (Total Assets - Current Liabilities) or EBIT / Invested Capital
+ */
+
+function isPositive(n: number | null): n is number {
+  return n !== null && n > 0;
+}
+
+function fmtEV(n: number | null): string {
+  if (n === null) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1e7) return (abs / 1e7).toFixed(1) + ' Cr';
+  if (abs >= 1e5) return (abs / 1e5).toFixed(1) + ' L';
+  return abs.toLocaleString('en-IN');
+}
+
+export function computeInstitutionalAnalytics(inputs: InstitutionalInputs): InstitutionalResult {
+  const now = new Date().toISOString();
+
+  // Compute Enterprise Value if not directly provided
+  let ev: number | null = inputs.enterpriseValue;
+  if (ev === null && isPositive(inputs.sharesOutstanding) && isPositive(inputs.price)) {
+    ev = inputs.sharesOutstanding * inputs.price + (inputs.totalDebt || 0) - (inputs.cash || 0);
+  }
+  const evFormatted = fmtEV(ev);
+
+  // ── Valuation Multiples ──
+  const valuation: InstitutionalMetric[] = [];
+
+  // EV/EBITDA
+  if (ev !== null && isPositive(inputs.ebitda)) {
+    const ratio = ev / inputs.ebitda;
+    valuation.push({
+      label: 'EV/EBITDA',
+      value: ratio,
+      formatted: ratio.toFixed(2) + 'x',
+      description: 'Enterprise Value to EBITDA. Lower is cheaper.',
+      cls: ratio < 10 ? 'good' : ratio > 20 ? 'warn' : '',
+    });
+  }
+
+  // EV/Sales
+  if (ev !== null && isPositive(inputs.revenue)) {
+    const ratio = ev / inputs.revenue;
+    valuation.push({
+      label: 'EV/Sales',
+      value: ratio,
+      formatted: ratio.toFixed(2) + 'x',
+      description: 'Enterprise Value to Revenue. Lower is cheaper.',
+      cls: ratio < 2 ? 'good' : ratio > 5 ? 'warn' : '',
+    });
+  }
+
+  // P/E
+  if (isPositive(inputs.netProfit) && isPositive(inputs.sharesOutstanding) && isPositive(inputs.price)) {
+    const eps = inputs.netProfit / inputs.sharesOutstanding;
+    const pe = inputs.price / eps;
+    valuation.push({
+      label: 'P/E',
+      value: pe,
+      formatted: pe.toFixed(2) + 'x',
+      description: 'Price to Earnings. Lower is cheaper.',
+      cls: pe < 15 ? 'good' : pe > 30 ? 'warn' : '',
+    });
+  }
+
+  // P/B
+  if (isPositive(inputs.totalEquity) && isPositive(inputs.sharesOutstanding) && isPositive(inputs.price)) {
+    const bvps = inputs.totalEquity / inputs.sharesOutstanding;
+    const pb = inputs.price / bvps;
+    valuation.push({
+      label: 'P/B',
+      value: pb,
+      formatted: pb.toFixed(2) + 'x',
+      description: 'Price to Book Value. Lower is cheaper.',
+      cls: pb < 3 ? 'good' : pb > 5 ? 'warn' : '',
+    });
+  }
+
+  // FCF Yield
+  if (ev !== null && isPositive(inputs.freeCashFlow) && ev > 0) {
+    const yieldPct = (inputs.freeCashFlow / ev) * 100;
+    valuation.push({
+      label: 'FCF Yield',
+      value: yieldPct,
+      formatted: yieldPct.toFixed(2) + '%',
+      description: 'Free Cash Flow divided by Enterprise Value. Higher is better.',
+      cls: yieldPct >= 5 ? 'good' : yieldPct < 2 ? 'warn' : '',
+    });
+  }
+
+  // ── Profitability Metrics ──
+  const profitability: InstitutionalMetric[] = [];
+
+  // ROIC = NOPAT / Invested Capital
+  // NOPAT = EBIT × (1 - taxRate)
+  const taxRate = inputs.taxRate !== null ? inputs.taxRate / 100 : 0.25;
+  const nopat = isPositive(inputs.ebit) ? inputs.ebit * (1 - taxRate) : null;
+
+  if (nopat !== null && isPositive(inputs.investedCapital)) {
+    const roic = (nopat / inputs.investedCapital) * 100;
+    profitability.push({
+      label: 'ROIC',
+      value: roic,
+      formatted: roic.toFixed(2) + '%',
+      description: 'Return on Invested Capital. NOPAT / Invested Capital. Higher is better.',
+      cls: roic >= 15 ? 'good' : roic < 8 ? 'warn' : '',
+    });
+  } else if (nopat !== null && isPositive(inputs.totalAssets) && isPositive(inputs.totalDebt)) {
+    // Approximate invested capital as Total Assets - Cash - Current Liabilities
+    const approxIC = inputs.totalAssets - (inputs.cash || 0);
+    if (approxIC > 0) {
+      const roic = (nopat / approxIC) * 100;
+      profitability.push({
+        label: 'ROIC',
+        value: roic,
+        formatted: roic.toFixed(2) + '%',
+        description: 'Return on Invested Capital (approximate). Higher is better.',
+        cls: roic >= 15 ? 'good' : roic < 8 ? 'warn' : '',
+      });
+    }
+  }
+
+  // ROCE = EBIT / Capital Employed
+  if (isPositive(inputs.ebit) && isPositive(inputs.investedCapital)) {
+    const roce = (inputs.ebit / inputs.investedCapital) * 100;
+    profitability.push({
+      label: 'ROCE',
+      value: roce,
+      formatted: roce.toFixed(2) + '%',
+      description: 'Return on Capital Employed. EBIT / Capital Employed. Higher is better.',
+      cls: roce >= 20 ? 'good' : roce < 10 ? 'warn' : '',
+    });
+  } else if (isPositive(inputs.ebit) && isPositive(inputs.totalAssets)) {
+    // Capital employed ≈ Total Assets - Current Liabilities (approximate)
+    const capEmp = inputs.totalAssets - (inputs.cash || 0);
+    if (capEmp > 0) {
+      const roce = (inputs.ebit / capEmp) * 100;
+      profitability.push({
+        label: 'ROCE',
+        value: roce,
+        formatted: roce.toFixed(2) + '%',
+        description: 'Return on Capital Employed (approximate). Higher is better.',
+        cls: roce >= 20 ? 'good' : roce < 10 ? 'warn' : '',
+      });
+    }
+  }
+
+  return {
+    valuation,
+    profitability,
+    metadata: {
+      enterpriseValue: ev,
+      evFormatted,
+      computedAt: now,
+    },
+  };
 }
 
 // ── Formatting ──

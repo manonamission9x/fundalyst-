@@ -8,10 +8,15 @@ import { PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer, EmptyState
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import dynamic from 'next/dynamic';
-import { extractTrendData } from '@/store/financial-model-selectors';
+import { extractTrendData, useActiveDataset } from '@/store/financial-model-selectors';
 import { useModelData } from '@/store/use-model-data';
+import { useGlobalDataStore } from '@/store/global-data-store';
 import type { TrendRow } from '@/types/financial';
 import { usePageTitle } from '@/lib/use-page-title';
+import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
+import CalculationTracePanel from '@/components/shared/CalculationTrace';
+import { findRow, type CalculationTrace } from '@/lib/calculation-trace';
+import MissingMetricsNotice from '@/components/shared/MissingMetricsNotice';
 
 const TrendsChart = dynamic(() => import('@/components/tools/trends/TrendsChart'), {
   ssr: false,
@@ -22,6 +27,8 @@ export default function TrendsPage() {
   const showToast = useToast();
   usePageTitle('Trend Charts');
   const modelData = useModelData((ds) => extractTrendData(ds));
+  const activeDataset = useActiveDataset();
+  const toolReadiness = useGlobalDataStore((s) => s.getToolReadiness('trends'));
 
   const [clearVersion, setClearVersion] = useState(0);
   const clearedRef = useRef(false);
@@ -31,13 +38,53 @@ export default function TrendsPage() {
   const [trendRows, setTrendRows] = useState<TrendRow[]>([]);
   const [showResults, setShowResults] = useState(false);
 
-  const defaultPeriods = useMemo(() => ['FY22', 'FY23', 'FY24', 'FY25', 'FY26'], []);
+  // Period labels: use imported periods when available, otherwise demo defaults
+  const defaultPeriods = useMemo(() => {
+    if (activeDataset && modelData.data && modelData.data.periods.length >= 3) {
+      return modelData.data.periods;
+    }
+    return ['FY22', 'FY23', 'FY24', 'FY25', 'FY26'];
+  }, [activeDataset, modelData.data]);
   const clearedPeriods = useMemo(() => ['', '', ''], []);
-  const defaultRows = useMemo<SpreadsheetRow[]>(() => [
-    { metric: 'Revenue', values: ['1000', '1150', '1240', '1380', '1530'] },
-    { metric: 'Net Profit', values: ['160', '155', '142', '130', '119'] },
-    { metric: 'Total Assets', values: ['2000', '2200', '2450', '2700', '3000'] },
-  ], []);
+
+  // Spreadsheet rows: use imported metrics when available, otherwise demo data
+  const defaultRows = useMemo<SpreadsheetRow[]>(() => {
+    if (activeDataset && modelData.data && modelData.data.periods.length > 0 && Object.keys(modelData.data.metrics).length > 0) {
+      return Object.entries(modelData.data.metrics).map(([metric, vals]) => ({
+        metric,
+        values: vals.map((v) => (v !== null ? String(v) : '')),
+      }));
+    }
+    return [
+      { metric: 'Revenue', values: ['1000', '1150', '1240', '1380', '1530'] },
+      { metric: 'Net Profit', values: ['160', '155', '142', '130', '119'] },
+      { metric: 'Total Assets', values: ['2000', '2200', '2450', '2700', '3000'] },
+    ];
+  }, [activeDataset, modelData.data]);
+
+  // Build trace items for the CalculationTracePanel
+  const traceItems = useMemo<CalculationTrace[]>(() => {
+    if (!showResults || trendRows.length === 0) return [];
+    return trendRows.map((row) => {
+      const sheetRow = findRow(sheetRows, [row.label]);
+      return {
+        label: row.label,
+        value: row.vals.map((v) => (isNaN(v) ? '—' : fmtNum(v))).join(', '),
+        formula: 'Direct values plotted across periods',
+        sources: sheetPeriods.map((period, idx) => ({
+          label: period,
+          value: isNaN(row.vals[idx]) ? '—' : String(row.vals[idx]),
+          source: activeDataset
+            ? `${activeDataset.companyName || 'Imported dataset'} (trends)`
+            : 'Manual input',
+          period,
+          originalLabel: row.label,
+          confidence: activeDataset ? 0.95 : undefined,
+          capturedAt: activeDataset?.createdAt,
+        })),
+      };
+    });
+  }, [showResults, trendRows, sheetRows, sheetPeriods, activeDataset]);
 
   const handleSheetChange = useCallback((newRows: SpreadsheetRow[], periods: string[]) => {
     setSheetRows(newRows);
@@ -106,10 +153,21 @@ export default function TrendsPage() {
         subtitle="Track revenue, profit, costs, debt, and other metrics across periods."
         answer="What this helps you answer: Which metrics are improving? Which are declining?"
       />
-      <DataQualityBar source={modelData.companyName || undefined} />
+      <DataQualityBar source={activeDataset?.companyName || undefined} />
       <div className="flex items-center gap-2 mb-2 mt-1">
         <DataSourceBadge variant={modelData.companyName ? 'imported' : 'none'} />
+        {activeDataset && modelData.data && modelData.data.periods.length > 0 && (
+          <ProvenanceBadge kind="imported" label="Imported data" />
+        )}
+        {(!activeDataset || !modelData.data || modelData.data.periods.length === 0) && (
+          <ProvenanceBadge kind="default" label="Demo data" />
+        )}
       </div>
+      <MissingMetricsNotice
+        toolName={toolReadiness.toolName}
+        missingMetrics={toolReadiness.missingMetrics}
+        presentMetrics={toolReadiness.presentMetrics}
+      />
       <UploadBar onUpload={handleCsvFile} hint="CSV: Metric, Period1, Period2, Period3, ..." />
 
       <Card label="Data">
@@ -139,6 +197,8 @@ export default function TrendsPage() {
             </div>
           </Card>
 
+          {showResults && <CalculationTracePanel traces={traceItems} />}
+
           <Card label="Data table" className="mt-4">
             <table className="diff-table">
               <thead>
@@ -167,7 +227,7 @@ export default function TrendsPage() {
 
           <NextLinks links={[{ label: 'Growth rates', href: '/research/growth' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
           <CalcTimestamp />
-          <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label={`Values from: ${modelData.companyName || 'Sample data'}`} variant="source" /><TrustBadge label="₹ Indian Market" /></div>
+          <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label={`Values from: ${activeDataset?.companyName || 'Sample data'}`} variant="source" /><TrustBadge label="₹ Indian Market" /></div>
           <Disclaimer />
         </div>
       )}

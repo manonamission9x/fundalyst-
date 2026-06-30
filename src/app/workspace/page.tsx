@@ -15,6 +15,9 @@ import {
   encryptWorkspaceBackup,
   restoreFundalystLocalState,
 } from '@/lib/enterprise-backup';
+import { generateMemo, downloadMemoMarkdown } from '@/lib/memo-export';
+import { useActiveDataset } from '@/store/financial-model-selectors';
+import { useDCFStore, useRatiosStore } from '@/store';
 
 // ── Workspace step definitions ──
 const steps = [
@@ -80,6 +83,7 @@ export default function WorkspacePage() {
   const [activeStep, setActiveStep] = useState<StepId>('overview');
   const datasets = useGlobalDataStore((s) => s.datasets);
   const activeDatasetId = useGlobalDataStore((s) => s.activeDatasetId);
+  const activeDataset = useActiveDataset();
   const lastDataset = useImporterStore((s) => s.lastDataset);
   const projects = useEnterpriseStore((s) => s.projects);
   const activeProjectId = useEnterpriseStore((s) => s.activeProjectId);
@@ -184,6 +188,7 @@ export default function WorkspacePage() {
               datasets={datasets}
               totalFacts={totalFacts}
               quickLinks={quickLinks}
+              activeDataset={activeDataset}
             />
           )}
           {activeStep === 'import' && <ImportPanel />}
@@ -202,11 +207,11 @@ export default function WorkspacePage() {
 }
 
 // ── Overview Panel ──
-function OverviewPanel({
-  hasData, companyName, datasets, totalFacts, quickLinks,
+export function OverviewPanel({
+  hasData, companyName, datasets, totalFacts, quickLinks, activeDataset,
 }: {
   hasData: boolean; companyName: string; datasets: FundalystDataset[]; totalFacts: number;
-  quickLinks: QuickLink[];
+  quickLinks: QuickLink[]; activeDataset: FundalystDataset | null;
 }) {
   const stepItems = [
     { num: '01', label: 'Import', desc: 'Upload CSV, Excel, or PDF with financial statements.', action: '/import', cta: 'Import data' },
@@ -263,6 +268,32 @@ function OverviewPanel({
     };
     reader.readAsText(file);
     e.target.value = '';
+  }
+
+  function handleExportMemo() {
+    const dataset = activeDataset;
+    const dcfState = useDCFStore.getState();
+    const ratiosState = useRatiosStore.getState();
+
+    // Read thesis from localStorage
+    let thesis: string | undefined;
+    try {
+      const saved = localStorage.getItem('fundalyst-thesis');
+      if (saved) {
+        const data = JSON.parse(saved);
+        thesis = data.notes || undefined;
+      }
+    } catch {}
+
+    const memo = generateMemo({
+      companyName,
+      dataset,
+      thesis,
+      ratios: ratiosState.res ?? undefined,
+      dcfResult: dcfState.summary,
+    });
+
+    downloadMemoMarkdown(memo);
   }
 
   return (
@@ -338,6 +369,22 @@ function OverviewPanel({
                 </Link>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Export Investment Memo */}
+        <div className="workspace-card">
+          <div className="workspace-card-header">Investment Memo</div>
+          <div className="p-4">
+            <div className="text-xs text-tertiary mb-3">
+              Generate a structured investment memo with company overview, thesis, DCF valuation, financial ratios, and data provenance — all exported as a Markdown file.
+            </div>
+            <button type="button" className="btn-primary btn-sm" onClick={handleExportMemo}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2v6M4 6l2 2 2-2" /><path d="M2 9v1h8V9" />
+              </svg>
+              Export Investment Memo
+            </button>
           </div>
         </div>
 

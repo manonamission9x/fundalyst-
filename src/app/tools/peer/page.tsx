@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useState, useRef } from 'react';
-import { fmtNum } from '@/lib/calculations';
+import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
+import { fmtNum, computeInstitutionalAnalytics } from '@/lib/calculations';
 import { usePeerStore } from '@/store';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useToast } from '@/components/shared/ToastProvider';
@@ -23,9 +23,22 @@ import {
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import { useGlobalDataStore } from '@/store/global-data-store';
-import type { PeerRow } from '@/types/financial';
+import type { PeerRow, InstitutionalInputs, InstitutionalResult } from '@/types/financial';
+import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
+import CalculationTracePanel from '@/components/shared/CalculationTrace';
+import MissingMetricsNotice from '@/components/shared/MissingMetricsNotice';
+import { useModelData } from '@/store/use-model-data';
+import { useActiveDataset } from '@/store/financial-model-selectors';
+import { extractPeersFromModel } from '@/store/financial-model-selectors';
+import { makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
 
 const LABELS = ['Revenue', 'Profit', 'Assets', 'Debt'];
+const LABEL_METRIC_KEYS: Record<string, string[]> = {
+  Revenue: ['revenue'],
+  Profit: ['netProfit'],
+  Assets: ['totalAssets'],
+  Debt: ['totalDebt'],
+};
 
 const LOWER_IS_BETTER = [false, false, false, true]; // Revenue, Profit, Assets, Debt
 
@@ -69,6 +82,9 @@ export default function PeerPage() {
   const showToast = useToast();
   const { clear: clearStore } = usePeerStore();
   const dsCount = useGlobalDataStore((s) => s.datasets.length);
+  const activeDataset = useActiveDataset();
+
+  const modelData = useModelData((ds) => extractPeersFromModel(ds));
 
   const [clearVersion, setClearVersion] = useState(0);
   const clearedRef = useRef(false);
@@ -78,6 +94,68 @@ export default function PeerPage() {
   const [peerResults, setPeerResults] = useState<PeerRow[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [isSampleLoaded, setIsSampleLoaded] = useState(false);
+  const prefilledRef = useRef(false);
+
+  // Pre-fill from imported dataset
+  useEffect(() => {
+    if (clearedRef.current) return;
+    if (prefilledRef.current) return;
+    if (!modelData.data || sheetRows.length > 0) return;
+    const { companyName, revenue, netProfit, totalAssets, totalDebt } = modelData.data;
+    if (revenue !== null && netProfit !== null && totalAssets !== null && totalDebt !== null) {
+      const timer = setTimeout(() => {
+        const companies = [companyName];
+        setSheetPeriods(companies);
+        setSheetRows(LABELS.map((label, li) => {
+          const vals: Record<number, number | null> = {
+            0: revenue,
+            1: netProfit,
+            2: totalAssets,
+            3: totalDebt,
+          };
+          return { metric: label, values: [vals[li] !== null ? String(vals[li]) : ''] };
+        }));
+        // Auto-run comparison
+        const parsed: PeerRow[] = [{
+          name: companyName,
+          vals: [revenue ?? NaN, netProfit ?? NaN, totalAssets ?? NaN, totalDebt ?? NaN],
+        }];
+        setPeerResults(parsed);
+        setShowResults(false); // needs at least 2 companies
+        prefilledRef.current = true;
+        showToast(`Pre-filled from imported data: ${companyName}`);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [modelData.data, sheetRows.length]);
+
+  // Compute institutional analytics when active dataset has enough data
+  const institutionalAnalyticsResult = useMemo(() => {
+    if (!activeDataset || activeDataset.facts.length === 0) return null;
+    const { revenue, netProfit, totalAssets, totalDebt, price, sharesOutstanding } =
+      extractPeersFromModel(activeDataset);
+    if (revenue !== null && netProfit !== null && totalAssets !== null &&
+        totalDebt !== null && price !== null && sharesOutstanding !== null) {
+      const inputs: InstitutionalInputs = {
+        enterpriseValue: null,
+        ebitda: null,
+        ebit: null,
+        revenue,
+        netProfit,
+        totalEquity: null,
+        totalDebt,
+        cash: null,
+        freeCashFlow: null,
+        totalAssets,
+        taxRate: null,
+        investedCapital: null,
+        sharesOutstanding,
+        price,
+      };
+      return computeInstitutionalAnalytics(inputs);
+    }
+    return null;
+  }, [activeDataset]);
 
   async function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -138,7 +216,53 @@ Infosys, 156000, 28700, 172000, 24000`;
     showToast('Loaded 4 sample companies');
   }
 
-  function handleClear() { clearedRef.current = true; setCleared(true); setClearVersion(v => v + 1); clearStore(); setSheetRows([]); setSheetPeriods([]); setPeerResults([]); setShowResults(false); setIsSampleLoaded(false); }
+  function handleClear() { clearedRef.current = true; setCleared(true); setClearVersion(v => v + 1); clearStore(); setSheetRows([]); setSheetPeriods([]); setPeerResults([]); setShowResults(false); setIsSampleLoaded(false); prefilledRef.current = false; }
+
+  // ── Data source label ──
+  const dataSourceLabel = isSampleLoaded
+    ? 'Sample data'
+    : (activeDataset && activeDataset.facts.length > 0)
+      ? `Imported data: ${activeDataset.companyName || 'Company'}`
+      : 'User entry';
+
+  // ── Provenance kind ──
+  const provenanceKind = isSampleLoaded ? 'default' as const
+    : (activeDataset && activeDataset.facts.length > 0) ? 'imported' as const
+    : 'manual' as const;
+
+  // ── Missing metrics ──
+  const requiredPeerMetrics = ['revenue', 'netProfit', 'totalAssets', 'totalDebt'];
+  const presentPeerMetrics = activeDataset
+    ? requiredPeerMetrics.filter((m) =>
+        activeDataset.facts.some((f) => f.metric === m || f.canonicalMetric === m))
+    : [];
+  const missingPeerMetrics = requiredPeerMetrics.filter((m) => !presentPeerMetrics.includes(m));
+
+  // ── Build trace items ──
+  const traceItems: CalculationTrace[] = showResults && peerResults.length > 0
+    ? LABELS.map((label, li) => {
+        const metricKeys = LABEL_METRIC_KEYS[label] || [label.toLowerCase()];
+        const sources = peerResults.map((r, ri) => {
+          const cellValue = isNaN(r.vals[li]) ? '—' : String(r.vals[li]);
+          const row = sheetRows.find((sr) => sr.metric === label);
+          const singleRow = row ? { metric: label, values: [row.values[ri] || ''] } : undefined;
+          const traceSource = makeTraceSource(
+            r.name,
+            activeDataset,
+            metricKeys,
+            singleRow,
+            cellValue,
+          );
+          return traceSource;
+        });
+        return {
+          label,
+          value: '',
+          formula: 'Per-company values',
+          sources,
+        };
+      })
+    : [];
 
   // ── Insight helpers ──
   const bestRevenue = findBestRow(peerResults, 0, true);
@@ -164,7 +288,17 @@ Infosys, 156000, 28700, 172000, 24000`;
       <DataQualityBar source={dsCount > 0 ? `${dsCount} dataset(s) loaded` : undefined} metrics={dsCount} />
       <div className="flex items-center gap-2 mb-2 mt-1">
         <DataSourceBadge variant={isSampleLoaded ? 'sample' : dsCount > 0 ? 'imported' : 'none'} />
+        <ProvenanceBadge kind={provenanceKind} showLabel />
       </div>
+
+      {/* Missing metrics notice */}
+      {activeDataset && missingPeerMetrics.length > 0 && (
+        <MissingMetricsNotice
+          toolName="peer"
+          missingMetrics={missingPeerMetrics}
+          presentMetrics={presentPeerMetrics}
+        />
+      )}
 
       <UploadBar onUpload={handleCsvFile} hint="Company, Revenue, Profit, Assets, Debt" />
 
@@ -252,6 +386,48 @@ Infosys, 156000, 28700, 172000, 24000`;
             </div>
           </Card>
 
+          {/* Institutional Metrics Card */}
+          {institutionalAnalyticsResult && (institutionalAnalyticsResult.valuation.length > 0 || institutionalAnalyticsResult.profitability.length > 0) && (
+            <Card label="Institutional Metrics" className="mt-4">
+              <div className="card-body">
+                <div className="flex items-center gap-2 mb-3">
+                  <ProvenanceBadge kind="imported" label="From imported dataset" />
+                  <span className="text-xs text-muted">
+                    Computed from primary company data
+                  </span>
+                </div>
+                {institutionalAnalyticsResult.valuation.length > 0 && (
+                  <div className="mb-3">
+                    <h4 className="text-sm font-semibold mb-2">Valuation Multiples</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {institutionalAnalyticsResult.valuation.map((m) => (
+                        <div key={m.label} className={`metric-chip ${m.cls}`}>
+                          <span className="metric-chip-label">{m.label}</span>
+                          <span className="metric-chip-value">{m.formatted}</span>
+                          <span className="metric-chip-desc text-xs text-muted">{m.description}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {institutionalAnalyticsResult.profitability.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2">Profitability Metrics</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {institutionalAnalyticsResult.profitability.map((m) => (
+                        <div key={m.label} className={`metric-chip ${m.cls}`}>
+                          <span className="metric-chip-label">{m.label}</span>
+                          <span className="metric-chip-value">{m.formatted}</span>
+                          <span className="metric-chip-desc text-xs text-muted">{m.description}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+
           <div className="flex flex-col gap-3 mt-4">
             {bestRevenue && <InsightCard type="positive" title="Highest Revenue" text={`${bestRevenue.name} leads with ${fmtNum(bestRevenue.vals[0])} in revenue.`} />}
             {bestProfit && <InsightCard type="positive" title="Highest Profit" text={`${bestProfit.name} leads with ${fmtNum(bestProfit.vals[1])} in profit.`} />}
@@ -262,7 +438,12 @@ Infosys, 156000, 28700, 172000, 24000`;
           <div className="mt-4">
             <NextLinks links={[{ label: 'Cash efficiency', href: '/tools/wc' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
             <CalcTimestamp />
-            <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label={`Values from: ${isSampleLoaded ? 'Sample data' : dsCount > 0 ? 'Imported data' : 'User entry'}`} variant="source" /><TrustBadge label="₹ Indian Market" /></div>
+            <CalculationTracePanel traces={traceItems} />
+            <div className="flex gap-2 flex-wrap mt-2">
+              <TrustBadge label={`Values from: ${dataSourceLabel}`} variant="source" />
+              <ProvenanceBadge kind={provenanceKind} />
+              <TrustBadge label="₹ Indian Market" />
+            </div>
             <Disclaimer />
           </div>
         </>

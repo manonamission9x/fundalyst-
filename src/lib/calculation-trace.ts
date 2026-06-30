@@ -1,5 +1,6 @@
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import type { CanonicalFact, FundalystDataset } from '@/lib/importer/types';
+import type { ProvenanceSource, ProvenanceKind } from '@/types/financial';
 
 export interface CalculationSource {
   label: string;
@@ -105,4 +106,76 @@ export function makeTraceSource(
     capturedAt: dataset?.createdAt,
     overridden: Boolean(fact),
   };
+}
+
+// ── Provenance Helpers ──
+
+/**
+ * Map a canonical fact to a ProvenanceSource for provenance labeling.
+ */
+export function factToProvenance(fact: CanonicalFact | null, dataset?: FundalystDataset | null): ProvenanceSource {
+  if (!fact) {
+    return { kind: 'unavailable', label: '', value: null };
+  }
+
+  let kind: ProvenanceKind;
+  if (fact.userOverridden) {
+    kind = 'manual';
+  } else if (fact.sourceType === 'manual' || fact.sourceType === 'sample') {
+    kind = 'manual';
+  } else {
+    kind = 'imported';
+  }
+
+  return {
+    kind,
+    label: fact.labelOriginal || fact.metric,
+    value: fact.value,
+    period: fact.periodLabel,
+    sourceLabel: dataset ? `${dataset.companyName || 'Unknown'} (${fact.sourceType})` : undefined,
+    confidence: fact.confidence,
+    overridden: fact.userOverridden,
+    capturedAt: dataset?.createdAt,
+  };
+}
+
+/**
+ * Create a provenance label for a manually-entered or defaulted value.
+ */
+export function makeProvenance(
+  kind: ProvenanceKind,
+  label: string,
+  value: string | number | null,
+  options?: {
+    period?: string;
+    sourceLabel?: string;
+    confidence?: number;
+    overridden?: boolean;
+    capturedAt?: string;
+  },
+): ProvenanceSource {
+  return {
+    kind,
+    label,
+    value,
+    period: options?.period,
+    sourceLabel: options?.sourceLabel,
+    confidence: options?.confidence,
+    overridden: options?.overridden,
+    capturedAt: options?.capturedAt,
+  };
+}
+
+/**
+ * Return a human-readable label for a provenance kind.
+ */
+export function provenanceKindLabel(kind: ProvenanceKind): string {
+  const labels: Record<ProvenanceKind, string> = {
+    imported: 'Imported from filing/document',
+    manual: 'Manually entered',
+    default: 'Default/assumed value',
+    inferred: 'Inferred from other values',
+    unavailable: 'Not available',
+  };
+  return labels[kind] || kind;
 }

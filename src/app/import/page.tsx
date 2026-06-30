@@ -103,7 +103,13 @@ Cash & Equivalents, 200, 180, 150
 Inventory, 600, 700, 800
 Receivables, 900, 1050, 1200
 Depreciation, 80, 85, 90
-Interest Expense, 45, 52, 60`;
+Interest Expense, 45, 52, 60
+Equity, 1500, 1700, 1900
+Free Cash Flow, 95, 82, 74
+EBIT, 195, 188, 176
+Cost of Goods Sold, 620, 710, 810
+Shares Outstanding, 120, 120, 120
+Price, 185, 210, 230`;
     const blob = new Blob([sampleCSV], { type: 'text/csv' });
     const file = new File([blob], 'sample-financial-data.csv', { type: 'text/csv' });
     setUploadedFile(file);
@@ -352,6 +358,11 @@ function ImportReview({
   const unknownCount = review.mappings.filter((m) => m.canonicalMetric === 'unknown' && !m.ignored).length;
   const mappingRowsCount = review.mappings.length;
   const pctMapped = mappingRowsCount > 0 ? Math.round((mappedCount / mappingRowsCount) * 100) : 0;
+  const [showAllMappings, setShowAllMappings] = useState(false);
+  const lowConfMappings = review.mappings.filter(
+    (m) => m.canonicalMetric === 'unknown' || m.confidence < 0.8 || m.ignored
+  );
+  const visibleMappings = showAllMappings ? review.mappings : lowConfMappings;
 
   return (
     <div style={{ marginTop: '1.5rem' }}>
@@ -398,9 +409,9 @@ function ImportReview({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             <DetectItem label="File" value={review.fileName} />
             <DetectItem label="Company" value={review.metadata.company || (review.fileName === 'sample-financial-data.csv' ? 'Sample Company' : 'Not detected')} />
-            <DetectItem label="Currency" value={review.metadata.currency} />
-            <DetectItem label="Unit" value={review.metadata.unit} />
-            <DetectItem label="Periods" value={review.metadata.periodLabels.join(', ') || 'None detected'} />
+            <DetectItem label="Currency" value={review.metadata.currency === 'UNKNOWN' ? 'Not specified' : review.metadata.currency} />
+            <DetectItem label="Unit" value={review.metadata.unit === 'ones' ? 'Units not specified' : review.metadata.unit} />
+            <DetectItem label="Periods" value={review.metadata.periodLabels.map(l => l === 'UNKNOWN' ? 'Not detected' : l).join(', ') || 'None detected'} />
             <DetectItem label="Statement" value={review.metadata.statementTypes.join(', ')} />
           </div>
           <DataQualityBar
@@ -460,7 +471,23 @@ function ImportReview({
       )}
 
       {/* Mapping Table */}
-      <Card label={`Metric mappings (${review.mappings.length} rows)`} style={{ marginTop: 2 }}>
+      <Card label={`Metric mappings (${mappedCount} mapped, ${unknownCount} need review)`} style={{ marginTop: 2 }}>
+        <div style={{ padding: '6px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, fontFamily: 'var(--font-mono)', borderBottom: '1px solid var(--border)' }}>
+          <span style={{ color: 'var(--text-muted)' }}>
+            {mappedCount - ignoredCount} metrics mapped successfully, {unknownCount} need review
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowAllMappings(!showAllMappings)}
+            style={{
+              fontSize: 10, background: 'transparent', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)', padding: '2px 10px', cursor: 'pointer',
+              color: 'var(--primary)',
+            }}
+          >
+            {showAllMappings ? 'Show only review needed' : `Show all (${review.mappings.length} rows)`}
+          </button>
+        </div>
         <div style={{ overflowX: 'auto' }}>
           <table className="diff-table">
             <thead>
@@ -472,7 +499,7 @@ function ImportReview({
               </tr>
             </thead>
             <tbody>
-              {review.mappings.map((m, i) => (
+              {visibleMappings.map((m, i) => (
                 <tr key={i}>
                   <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     <span style={m.ignored ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>
@@ -509,7 +536,7 @@ function ImportReview({
                             {canonicalDisplayName(opt)}
                           </option>
                         ))}
-                        <option value="unknown">Unknown — skip</option>
+                        <option value="unknown">Skip this metric</option>
                       </select>
                     )}
                   </td>
@@ -618,17 +645,45 @@ function ImportResult({
             <TrustBadge label="Import" variant="source" />
             <TrustBadge label="Data Ready for Analysis" variant="good" />
           </div>
-          {/* Global data status */}
-          <div className="import-success-banner">
-            <span className="import-success-banner-title">
-              ✓ Import complete
-            </span>
-            <span className="import-success-banner-text">
-              {dataset.facts.length} metrics across {periods.length} periods
-            </span>
-            <span className="import-success-banner-text">
-              Available in all analysis tools
-            </span>
+          {/* Global data status — success banner */}
+          <div style={{
+            marginTop: 16,
+            background: 'linear-gradient(135deg, #065f46, #047857)',
+            borderRadius: 'var(--radius-md)',
+            padding: '20px 24px',
+            textAlign: 'center',
+            boxShadow: '0 4px 14px rgba(5, 150, 105, 0.3)',
+          }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 6 }}>
+              ✓ Ready for analysis
+            </div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 14 }}>
+              {dataset.facts.length} values imported — available in all tools
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link
+                href="/research/filing"
+                style={{
+                  display: 'inline-block', fontSize: 12, fontWeight: 600,
+                  color: '#065f46', background: '#fff',
+                  padding: '8px 20px', borderRadius: 'var(--radius-sm)',
+                  textDecoration: 'none',
+                }}
+              >
+                Start analysis →
+              </Link>
+              <Link
+                href="/tools/dcf"
+                style={{
+                  display: 'inline-block', fontSize: 12, fontWeight: 600,
+                  color: '#fff', background: 'rgba(255,255,255,0.15)',
+                  padding: '8px 20px', borderRadius: 'var(--radius-sm)',
+                  textDecoration: 'none', border: '1px solid rgba(255,255,255,0.3)',
+                }}
+              >
+                DCF valuation
+              </Link>
+            </div>
           </div>
         </div>
       </Card>

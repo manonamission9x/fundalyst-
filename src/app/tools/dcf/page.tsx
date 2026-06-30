@@ -24,6 +24,7 @@ import {
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import CalculationTracePanel from '@/components/shared/CalculationTrace';
+import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
 import dynamic from 'next/dynamic';
 import { useModelData } from '@/store/use-model-data';
 import { usePageTitle } from '@/lib/use-page-title';
@@ -247,6 +248,21 @@ export default function DCFPage() {
     return Number(mapped.price) || 0;
   }, [sheetRows]);
 
+  // Determine provenance for each DCF assumption
+  const metricProvenance = useMemo(() => {
+    const { fcf, shares, netDebt, price } = modelData.data ?? {};
+    return {
+      freeCashFlow: fcf != null ? 'imported' as const : 'manual' as const,
+      sharesOutstanding: shares != null ? 'imported' as const : 'manual' as const,
+      netDebt: netDebt != null ? 'imported' as const : 'manual' as const,
+      currentPrice: price != null ? 'imported' as const : 'manual' as const,
+      growthRate: 'default' as const,
+      wacc: 'default' as const,
+      terminalGrowth: 'default' as const,
+      projectionYears: 'default' as const,
+    };
+  }, [modelData.data]);
+
   return (
     <div>
       <PageHeader
@@ -284,6 +300,18 @@ export default function DCFPage() {
             onDataChange={(rows) => setSheetRows(rows)}
             hint="Type or paste values. Tab to navigate between rows."
           />
+          {/* Provenance indicators for each assumption */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-2xs text-muted">
+            <span className="mr-1 font-medium" style={{ fontSize: 10 }}>Source:</span>
+            <ProvenanceBadge kind={metricProvenance.freeCashFlow} label="Free Cash Flow" />
+            <ProvenanceBadge kind={metricProvenance.sharesOutstanding} label="Shares" />
+            <ProvenanceBadge kind={metricProvenance.netDebt} label="Net Debt" />
+            <ProvenanceBadge kind={metricProvenance.currentPrice} label="Price" />
+            <ProvenanceBadge kind={metricProvenance.growthRate} label="Growth Rate" />
+            <ProvenanceBadge kind={metricProvenance.wacc} label="WACC" />
+            <ProvenanceBadge kind={metricProvenance.terminalGrowth} label="Terminal Growth" />
+            <ProvenanceBadge kind={metricProvenance.projectionYears} label="Projection Years" />
+          </div>
         </div>
         {Object.keys(errors).length > 0 && (
           <div className="card-body py-2">

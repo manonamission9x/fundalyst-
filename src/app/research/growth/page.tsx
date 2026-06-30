@@ -23,6 +23,12 @@ import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import { useGlobalImportFill, extractYoYInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
 import { useModelData } from '@/store/use-model-data';
 import { extractTrendData } from '@/store/financial-model-selectors';
+import { useActiveDataset } from '@/store/financial-model-selectors';
+import { useGlobalDataStore } from '@/store/global-data-store';
+import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
+import CalculationTracePanel from '@/components/shared/CalculationTrace';
+import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
+import MissingMetricsNotice from '@/components/shared/MissingMetricsNotice';
 
 import { usePageTitle } from '@/lib/use-page-title';
 
@@ -41,6 +47,7 @@ export default function YoyPage() {
   );
 
   const modelData = useModelData((ds) => extractTrendData(ds));
+  const activeDataset = useActiveDataset();
 
   // parseWithText: plain function (not useCallback) so it can be used before the effect
   function parseWithText(text: string) {
@@ -60,6 +67,7 @@ export default function YoyPage() {
     if (clearedRef.current) return;
     if (prefilledRef.current) return;
     if (!modelData.data || !modelData.isLoaded) return;
+    if (dataInfo.dataSource === 'none' || dataInfo.dataSource === undefined) return;
     const td = modelData.data;
     if (!td || !td.periods || td.periods.length < 2) return;
     const periods = td.periods;
@@ -76,7 +84,7 @@ export default function YoyPage() {
     }, 0);
     prefilledRef.current = true;
     return () => clearTimeout(timer);
-  }, [modelData.data, modelData.isLoaded]);
+  }, [modelData.data, modelData.isLoaded, dataInfo.dataSource]);
 
   const handleDataChange = (newRows: SpreadsheetRow[], newPeriods: string[]) => {
     setSheetRows(newRows);
@@ -142,6 +150,42 @@ export default function YoyPage() {
       }).filter((m) => m.avg < 0).sort((a, b) => a.avg - b.avg)[0]
     : null;
 
+  const toolReadiness = useGlobalDataStore((s) => s.getToolReadiness('growth'));
+  const provenanceKind = dataInfo.dataSource === 'sample' ? 'manual' as const
+    : dataInfo.dataSource === 'manual' ? 'manual' as const
+    : dataInfo.dataSource && dataInfo.dataSource !== 'none' ? 'imported' as const
+    : 'unavailable' as const;
+
+  const traceItems: CalculationTrace[] = rows.length > 0
+    ? rows.map((r) => {
+        const sheetRow = findRow(sheetRows, [r.label]);
+        const metricKeys = [r.label.toLowerCase().replace(/\s+/g, '')];
+        return {
+          label: r.label,
+          value: r.growth.slice(1).map((g) => g !== null ? (g > 0 ? '+' : '') + g.toFixed(1) + '%' : '—').join(', '),
+          formula: 'Year-over-year growth: (Vᵢ₊₁ − Vᵢ) ÷ |Vᵢ| × 100',
+          sources: yearList.slice(0, -1).map((yr, idx) => {
+            const nextYr = yearList[idx + 1];
+            const curVal = r.vals[idx] ?? null;
+            const nextVal = r.vals[idx + 1] ?? null;
+            const source = makeTraceSource(
+              `${yr}→${nextYr}`,
+              activeDataset,
+              metricKeys,
+              sheetRow,
+              curVal !== null ? String(curVal) : null,
+            );
+            return {
+              ...source,
+              value: curVal !== null ? String(curVal) : 'not provided',
+              rawValue: nextVal !== null ? String(nextVal) : undefined,
+              period: `${yr} / ${nextYr}`,
+            };
+          }),
+        };
+      })
+    : [];
+
   return (
     <div>
       <PageHeader
@@ -153,7 +197,13 @@ export default function YoyPage() {
       <DataQualityBar source={getDataSourceLabel(dataInfo.dataSource, dataInfo.companyName)} />
       <div className="flex items-center gap-2 mb-2 mt-1">
         <DataSourceBadge variant={dataInfo.dataSource === 'sample' ? 'sample' : dataInfo.dataSource === 'manual' ? 'manual' : dataInfo.dataSource && dataInfo.dataSource !== 'none' ? 'imported' : 'none'} />
+        <ProvenanceBadge kind={provenanceKind} showLabel />
       </div>
+      <MissingMetricsNotice
+        toolName={toolReadiness.toolName}
+        missingMetrics={toolReadiness.missingMetrics}
+        presentMetrics={toolReadiness.presentMetrics}
+      />
       <UploadBar onUpload={handleCsvFile} hint="CSV: Metric, Year1, Year2, Year3, ..." />
 
       <Card label="Data">
@@ -202,6 +252,8 @@ export default function YoyPage() {
             {fastestGrowing && fastestGrowing.avg > -Infinity && <InsightCard type="positive" title="Fastest growing metric" text={`${fastestGrowing.label} averaged ${fastestGrowing.avg.toFixed(1)}% growth.`} />}
             {declining && <InsightCard type="risk" title="Declining metric" text={`${declining.label} averaged ${declining.avg.toFixed(1)}% — worth investigating.`} />}
           </div>
+
+          <CalculationTracePanel traces={traceItems} />
 
           <div className="mt-4">
             <NextLinks links={[{ label: 'Trend charts', href: '/research/trends' }, { label: 'Review filings', href: '/research/filing' }]} />

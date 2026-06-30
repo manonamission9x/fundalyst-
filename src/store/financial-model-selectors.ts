@@ -205,6 +205,29 @@ export function extractWCFromModel(dataset: FundalystDataset): Record<string, nu
   };
 }
 
+/** Extract Peer data: primary company values from the canonical model */
+export function extractPeersFromModel(dataset: FundalystDataset): {
+  companyName: string;
+  revenue: number | null;
+  netProfit: number | null;
+  totalAssets: number | null;
+  totalDebt: number | null;
+  price: number | null;
+  sharesOutstanding: number | null;
+} {
+  const latest = getLatestPeriod(dataset);
+  const p = latest ?? undefined;
+  return {
+    companyName: dataset.companyName || 'Company',
+    revenue: findMetricFlexibly(dataset, 'revenue', p)?.value ?? null,
+    netProfit: findMetricFlexibly(dataset, 'netProfit', p)?.value ?? null,
+    totalAssets: findMetricFlexibly(dataset, 'totalAssets', p)?.value ?? null,
+    totalDebt: findMetricFlexibly(dataset, 'totalDebt', p)?.value ?? null,
+    price: findMetricFlexibly(dataset, 'price', p)?.value ?? null,
+    sharesOutstanding: findMetricFlexibly(dataset, 'sharesOutstanding', p)?.value ?? null,
+  };
+}
+
 /** Extract Trend data: metric values across all periods */
 export function extractTrendData(dataset: FundalystDataset): {
   periods: string[];

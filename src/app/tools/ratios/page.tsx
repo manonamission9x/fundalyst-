@@ -31,6 +31,7 @@ import { useEnterpriseStore } from '@/store/enterprise-store';
 import CalculationTracePanel from '@/components/shared/CalculationTrace';
 import { useActiveDataset } from '@/store/financial-model-selectors';
 import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
+import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
 
 const unlockedFormulas: Record<string, string> = {
   'Net Profit Margin': 'Net Profit ÷ Revenue',
@@ -241,7 +242,13 @@ export default function RatiosPage() {
       <DataQualityBar source={modelData.companyName || undefined} />
       <div className="flex items-center gap-2 mb-2 mt-1">
         <DataSourceBadge variant={modelData.companyName ? 'imported' : 'none'} />
+        <ProvenanceBadge kind={modelData.companyName ? 'imported' : 'unavailable'} />
       </div>
+      {modelData.companyName && (
+        <p className="text-2xs text-muted mb-3">
+          ✓ Ratios sourced from imported dataset ({modelData.companyName}). Clear the form to enter values manually.
+        </p>
+      )}
 
       <Card label="Required (6 fields)">
         <div className="card-body">

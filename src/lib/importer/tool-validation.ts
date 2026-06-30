@@ -2,34 +2,41 @@ import type { FundalystDataset, CanonicalFact, ValidationCheck } from './types';
 import { canonicalDisplayName } from './metric-aliases';
 
 /** Required metrics for each tool and what to suggest if missing */
-export const TOOL_REQUIREMENTS: Record<string, { required: string[]; label: string }> = {
+export const TOOL_REQUIREMENTS: Record<string, { required: string[]; label: string; missingMessage: string }> = {
   filing: {
-    required: ['revenue', 'netProfit', 'totalDebt'],
+    required: [],
     label: 'Filing comparison',
+    missingMessage: 'Filing Comparison works with any financial data.',
   },
   trends: {
     required: [],
     label: 'Trend charts',
+    missingMessage: 'Trend Charts work with any financial data.',
   },
   growth: {
     required: [],
     label: 'Growth rates',
+    missingMessage: 'Growth Rates work with any financial data.',
   },
   wc: {
     required: ['revenue', 'receivables', 'inventory', 'payables'],
     label: 'Working capital',
+    missingMessage: 'Cash Efficiency requires',
   },
   ratios: {
-    required: ['currentAssets', 'currentLiabilities', 'totalDebt', 'equity', 'netProfit', 'totalAssets', 'interestExpense', 'ebit', 'revenue'],
+    required: ['revenue', 'netProfit', 'totalAssets', 'equity', 'totalDebt'],
     label: 'Financial ratios',
+    missingMessage: 'Financial Ratios requires',
   },
   dcf: {
     required: ['freeCashFlow', 'sharesOutstanding'],
     label: 'DCF valuation',
+    missingMessage: 'DCF Valuation requires',
   },
   peer: {
     required: [],
     label: 'Peer comparison',
+    missingMessage: 'Peer Comparison works with any data.',
   },
 };
 
@@ -79,7 +86,7 @@ export function validateToolDataset(
   }
 
   const missingNames = missingCritical.map(canonicalDisplayName).join(', ');
-  const message = `This file is missing ${missingNames}, so ${reqs.label} may be incomplete. Add these manually or upload a more complete financial statement.`;
+  const message = `${reqs.missingMessage}: ${missingNames}. Please import these metrics to enable full ${reqs.label} functionality.`;
 
   return {
     canRun: missingCritical.length < reqs.required.length / 2,

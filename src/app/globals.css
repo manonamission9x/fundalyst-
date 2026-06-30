@@ -127,7 +127,7 @@ body::before {
 .nav-right { margin-left: auto; display: flex; align-items: center; gap: var(--space-3); }
 .nav-badge { font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--green); display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border: 1px solid rgba(61,160,109,0.12); border-radius: var(--radius-sm); white-space: nowrap; min-height: unset; }
 .nav-badge-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
-.nav-clear { font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px 7px; cursor: pointer; transition: color var(--transition), border-color var(--transition); min-height: unset; }
+.nav-clear { font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px 7px; cursor: pointer; transition: color var(--transition), border-color var(--transition); min-height: unset; display: inline-flex; align-items: center; justify-content: center; }
 .nav-clear:hover { color: var(--red); border-color: var(--red); }
 
 /* ── Mobile hamburger toggle ── */
@@ -1196,7 +1196,7 @@ details[open] .details-summary::before {
   .page-hero-answer { font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 
   /* ── Cards ── */
-  .card-body { padding: var(--space-3) var(--space-4); }
+  .card-body { padding: var(--space-2) var(--space-3); }
   .card-header { padding: var(--space-1) var(--space-2); }
   .card-actions { padding: var(--space-1) var(--space-2); flex-wrap: wrap; gap: var(--space-1); }
   .card-label { font-size: 8px; }
@@ -1221,12 +1221,16 @@ details[open] .details-summary::before {
   .diff-table { font-size: 9px; }
   .diff-table th, .diff-table td { padding: 3px 4px; }
   .diff-table th { font-size: 7px; }
+  .diff-table tr td:first-child { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .table-scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .card:has(.diff-table), .card:has(.sens-table) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .sens-table { font-size: 9px; }
   .sens-table th, .sens-table td { padding: 3px 4px; font-size: 9px; }
   .sens-table td:first-child { font-size: 8px; }
 
   /* ── Charts ── */
   .chart-wrap { padding: var(--space-1); overflow-x: auto; }
+  .chart-wrap > * { max-width: 100%; }
 
   /* ── Grids ── */
   .field-grid { grid-template-columns: 1fr; gap: var(--space-1); }
@@ -1358,7 +1362,9 @@ details[open] .details-summary::before {
 @media (pointer: coarse) {
   .nav-tab, .nav-cta, button, .btn, .home-card, .upload-label, .import-dropzone,
   .workspace-step, .workspace-cta, .workspace-quick-link, .empty-state-action,
-  .nav-clear, .spreadsheet-add-btn, .spreadsheet-remove-btn, .details-summary { min-height: 44px; min-width: 44px; }
+  .nav-clear, .spreadsheet-add-btn, .spreadsheet-remove-btn, .details-summary,
+  .nav-mobile-item, .nav-mobile-clear, .nav-mobile-toggle,
+  .spreadsheet-context-item, .metric-browser-item { min-height: 44px; min-width: 44px; }
   .nav-tab { padding: 10px 12px; }
   .num-input, .period-label-input, .spreadsheet-header-input, .spreadsheet-cell { min-height: 44px; font-size: 16px; }
 }

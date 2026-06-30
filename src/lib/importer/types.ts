@@ -153,40 +153,47 @@ export interface ValidationCheck {
 }
 
 /** Tool metric requirements */
-export const TOOL_METRICS: Record<string, { required: string[]; optional: string[]; name: string }> = {
+export const TOOL_METRICS: Record<string, { required: string[]; optional: string[]; name: string; missingMessage: string }> = {
   filing: {
     name: 'Filing Comparison',
     required: [],
     optional: [],
+    missingMessage: 'Filing Comparison works with any financial data — no specific metrics required.',
   },
   trends: {
     name: 'Trend Charts',
     required: [],
     optional: [],
+    missingMessage: 'Trend Charts work with any financial data — no specific metrics required.',
   },
   dcf: {
     name: 'DCF Valuation',
     required: ['freeCashFlow', 'sharesOutstanding'],
-    optional: ['operatingCashFlow', 'capex', 'totalDebt', 'cash', 'price'],
+    optional: ['operatingCashFlow', 'capex', 'totalDebt', 'cash', 'price', 'revenue', 'netProfit', 'ebit'],
+    missingMessage: 'DCF Valuation requires Free Cash Flow and Shares Outstanding. Providing Operating Cash Flow, Capex, Total Debt, Cash, Price, Revenue, Net Profit, and EBIT improves accuracy.',
   },
   wc: {
     name: 'Cash Efficiency',
     required: ['revenue', 'receivables', 'inventory', 'payables'],
     optional: ['cogs', 'cash'],
+    missingMessage: 'Cash Efficiency requires Revenue, Receivables, Inventory, and Payables. COGS and Cash are optional.',
   },
   ratios: {
     name: 'Financial Ratios',
-    required: ['revenue', 'currentAssets', 'currentLiabilities', 'totalDebt', 'totalAssets', 'equity'],
-    optional: ['cogs', 'netProfit', 'inventory', 'interestExpense', 'ebit'],
+    required: ['revenue', 'netProfit', 'totalAssets', 'equity', 'totalDebt'],
+    optional: ['cogs', 'currentAssets', 'currentLiabilities', 'inventory', 'interestExpense', 'ebit'],
+    missingMessage: 'Financial Ratios requires Revenue, Net Profit, Total Assets, Equity, and Total Debt. COGS, Current Assets, Current Liabilities, Inventory, Interest Expense, and EBIT provide additional ratios.',
   },
   peer: {
     name: 'Peer Comparison',
     required: [],
     optional: ['revenue', 'netProfit', 'totalAssets', 'totalDebt'],
+    missingMessage: 'Peer Comparison works with any data, but Revenue, Net Profit, Total Assets, and Total Debt enable richer comparisons.',
   },
   growth: {
     name: 'Growth Rates',
     required: [],
     optional: [],
+    missingMessage: 'Growth Rates work with any financial data — no specific metrics required.',
   },
 };

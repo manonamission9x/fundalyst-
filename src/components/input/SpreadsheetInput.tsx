@@ -751,15 +751,16 @@ export default function SpreadsheetInput({
 
   return (
     <div className={`spreadsheet-wrap${className ? ' ' + className : ''}`}>
-      <table className="spreadsheet-grid">
+      <table className="spreadsheet-grid" role="grid" aria-label="Financial data spreadsheet">
         <thead>
-          <tr>
-            <th className={`spreadsheet-corner${activeCol >= 0 ? ' col-active' : ''}`}>
+          <tr role="row">
+            <th role="columnheader" className={`spreadsheet-corner${activeCol >= 0 ? ' col-active' : ''}`}>
               <span className="spreadsheet-corner-label">Line Item</span>
             </th>
             {periods.map((p, ci) => (
               <th
                 key={ci}
+                role="columnheader"
                 className={`spreadsheet-header${activeCol === ci + 1 ? ' col-active' : ''}`}
               >
                 <input
@@ -786,7 +787,7 @@ export default function SpreadsheetInput({
                 </button>
               </th>
             ))}
-            <th className="spreadsheet-add-col">
+            <th className="spreadsheet-add-col" role="columnheader">
               <button
                 type="button"
                 className="spreadsheet-add-btn"
@@ -801,14 +802,15 @@ export default function SpreadsheetInput({
         </thead>
         <tbody>
           {rows.map((row, ri) => (
-            <tr key={ri} className={`${ri === activeRow ? 'spreadsheet-row-active' : ''}${isInSelection(ri, -1) ? ' row-selected' : ''}`}>
+            <tr key={ri} role="row" className={`${ri === activeRow ? 'spreadsheet-row-active' : ''}${isInSelection(ri, -1) ? ' row-selected' : ''}`}>
               {/* Metric name cell */}
-              <td className={`spreadsheet-metric-cell${activeRow === ri ? ' row-active' : ''}`}>
+              <td role="rowheader" className={`spreadsheet-metric-cell${activeRow === ri ? ' row-active' : ''}`}>
                 <div className="spreadsheet-metric-wrap">
                   <span
                     className={cellClass(ri, METRIC_COL, row.metric)}
                     contentEditable
                     suppressContentEditableWarning
+                    tabIndex={0}
                     ref={(el) => { if (el) cellRefs.current.set(`${ri}-${METRIC_COL}`, el); }}
                     onInput={(e) => handleMetricInput((e.target as HTMLElement).textContent ?? '')}
                     onKeyDown={(e) => handleKeyDown(e, ri, METRIC_COL)}
@@ -843,11 +845,12 @@ export default function SpreadsheetInput({
                 const colIdx = ci + 1;
                 const val = row.values[ci] ?? '';
                 return (
-                  <td key={ci} className={`spreadsheet-value-cell${activeRow === ri && activeCol === colIdx ? ' cell-active-td' : ''}`}>
+                  <td key={ci} role="gridcell" className={`spreadsheet-value-cell${activeRow === ri && activeCol === colIdx ? ' cell-active-td' : ''}`}>
                     <span
                       className={cellClass(ri, colIdx, val)}
                       contentEditable
                       suppressContentEditableWarning
+                      tabIndex={0}
                       ref={(el) => { if (el) cellRefs.current.set(`${ri}-${colIdx}`, el); }}
                       onKeyDown={(e) => handleKeyDown(e, ri, colIdx)}
                       onInput={(e) => {
@@ -873,7 +876,7 @@ export default function SpreadsheetInput({
                 );
               })}
               {/* Row actions */}
-              <td className="spreadsheet-row-actions">
+              <td role="gridcell" className="spreadsheet-row-actions">
                 <button
                   type="button"
                   className="spreadsheet-remove-btn"
