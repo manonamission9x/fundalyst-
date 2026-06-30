@@ -1,16 +1,23 @@
 # Fundalyst Handoff
 
-Last updated: 2026-06-30 (late night)
+Last updated: 2026-06-30 (post scanned-PDF OCR verification)
 
 Repo: `C:\Users\kingo\Desktop\fundalyst-next`  
 GitHub: `https://github.com/manonamission9x/fundalyst-`  
 Branch: `main`  
-Latest code commit: `5f1755d` - ingestion/source-switching hardening verified and pushed.  
-This handoff update documents that state and the top-right theme-toggle note.
+Latest code commit: `1136296` - scanned PDF import warning/repair helper is on `origin/main`.  
+This handoff update documents the current pushed state, design-system changes, and scanned-PDF OCR behavior.
 
 ## Git Log (Recent)
 
 ```text
+1136296  Fix parser.ts: commit missing isLikelyRepairedOcrValue function
+844a304  Institutional Slate design system: remove Terminal Gold
+a177ec7  Theme toggle: binary dark/light (remove auto mode)
+1a7c1f5  Fix page shake + switch to system fonts (zero FOUT)
+257f911  Replace all icons with Phosphor, remove lucide-react
+84c9c8c  Nav polish pass: consistent borders, better contrast, tighter sizing
+3d170e6  docs: update Fundalyst handoff after ingestion audit fixes
 5f1755d  Fix: setSheetPeriods uses local periods const, not modelData.data
 653b9e2  Fix moon centering: symmetric crescent at (6.5,6.5)
 3a42f3f  Fix: centered moon icon, remove ⌘K from search bar
@@ -34,14 +41,15 @@ Next.js 16 App Router, React 19, TypeScript strict, Zustand localStorage, Rechar
 
 Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 
-## Design System v3 - Terminal Gold
+## Design System v4 - Institutional Slate
 
-- Dark default: deep charcoal `#0E0E0F` with gold accent `#C8962E`.
-- Light mode: warm off-white `#FAF9F6` with deeper gold `#B07D1F`.
-- Theme toggle in nav cycles auto/light/dark and persists to `localStorage` key `fundalyst-theme`.
-- Auto mode respects `prefers-color-scheme`.
+- Dark default is an institutional slate/neutral system, not the earlier Terminal Gold theme.
+- Light mode remains warm off-white.
+- Theme toggle is binary dark/light and persists to `localStorage` key `fundalyst-theme`.
+- Auto theme mode was removed.
 - Chart colors derive from CSS tokens at runtime.
 - `change-up/down/flat` include arrows for color-blind users.
+- Icons now use `@phosphor-icons/react`; `lucide-react` was removed.
 
 ## Key Files
 
@@ -51,7 +59,7 @@ Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 | `src/lib/calculation-trace.ts` | Source-fact trace helpers and provenance helpers |
 | `src/lib/memo-export.ts` | Investment memo generation |
 | `src/lib/chart-theme.ts` | Dynamic CSS-token chart config for Recharts |
-| `src/components/layout/Nav.tsx` | Workspace hub nav, desktop section dropdowns, mobile hamburger, theme toggle |
+| `src/components/layout/Nav.tsx` | Workspace hub nav, desktop section dropdowns, mobile hamburger, binary theme toggle |
 | `src/components/layout/CommandPalette.tsx` | Cmd-K route/action palette; do not touch `.cmdk-*` styles unless explicitly scoped |
 | `src/components/shared/CalculationTrace.tsx` | Reusable Show sources panel |
 | `src/components/shared/MissingMetricsNotice.tsx` | Missing-metric alert per tool |
@@ -61,6 +69,8 @@ Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 | `src/store/financial-model-selectors.ts` | Tool-specific imported-data extractors |
 | `src/store/importer-store.ts` | Import lifecycle; blocks no-data parses, clears stale tool state on confirm, marks sample vs uploaded source |
 | `src/lib/importer/parser.ts` | CSV/XLSX/PDF/OCR parse-to-review flow; preserves partial-parse warnings and source type |
+| `src/lib/importer/ocr.ts` | Browser OCR/PDF rendering path, OCR row splitting, compact scanned-table value repair |
+| `src/lib/importer/pdf-importer.ts` | PDF text extraction and scanned/tableless OCR fallback orchestration |
 
 ## Recently Completed
 
@@ -96,20 +106,33 @@ Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 ### Nav / Top-Right Theme Icon
 
 - The small crescent icon in the top-right nav is the theme toggle in dark mode.
-- It cycles `dark -> light -> auto` and persists to `localStorage` key `fundalyst-theme`.
+- It toggles `dark <-> light` and persists to `localStorage` key `fundalyst-theme`.
 - It has `title`/`aria-label`, but visually it can look like a stray icon when isolated. If future polish work touches nav affordances, either keep the icon with a clearer hover/active treatment or replace it with a more explicit theme control.
 - Relevant files: `src/components/layout/Nav.tsx` (`ThemeToggle`) and `src/app/globals.css` (`.nav-theme-toggle`).
 
+### Scanned PDF Import / OCR
+
+- Scanned PDF import falls back to OCR when text extraction yields no usable financial facts or no usable table structure.
+- OCR table parsing handles collapsed rows such as `Revenue from operations 566090 8457.33 ...` by splitting label/value cells and repairing compact numeric OCR tokens like `566090 -> 5660.90`.
+- Repaired compact OCR values are intentionally marked lower confidence via `isLikelyRepairedOcrValue`; review warnings explicitly tell users to verify them against the PDF.
+- Exact test file: `C:\Users\kingo\Downloads\Financial-Results.pdf`.
+- Real `/import` production-build test reached review in about 54 seconds with `404 values found`, `75 metrics mapped`, `20 need review`, scanned-PDF warning present, and repaired-OCR-values warning present.
+- Accuracy caveat: this is not fully verified line-item truth. Spot-checking the first page showed some values match after repair, but at least one revenue-period value was still wrong/missing due to OCR. Treat scanned-PDF imports as review-required, not trusted automation.
+- Next accuracy work should add row/column consistency checks against header counts, flag row-level value-count mismatches, and expose suspicious rows more prominently in the review table.
+
 ## Verification
 
-Last verified after ingestion/source-switching hardening:
+Last verified after scanned-PDF OCR hardening:
 
 ```bash
 npm.cmd test          # 58 passed
 npm.cmd run lint      # 0 errors, 3 warnings
 npm.cmd run build     # passed
-npm.cmd run test:e2e  # 33 passed
 ```
+
+Additional manual/browser verification:
+- Production server on a fresh port, `/import`, exact `Financial-Results.pdf`.
+- Result: review screen, 404 values, 75 mapped metrics, 20 requiring review, repaired-value warning present.
 
 Known lint warnings:
 - 2 `next/no-img-element`
