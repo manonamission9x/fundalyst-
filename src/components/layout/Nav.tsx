@@ -51,7 +51,6 @@ function ThemeToggle() {
       onClick={toggle}
       title={theme === 'auto' ? 'Auto theme' : theme === 'light' ? 'Light theme' : 'Dark theme'}
       aria-label={`Theme: ${theme}. Click to switch.`}
-      style={{ minWidth: 28, justifyContent: 'center', padding: '4px 7px' }}
     >
       {theme === 'auto' ? (
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
@@ -351,12 +350,13 @@ export default function Nav() {
             className="nav-cmdk-trigger"
             onClick={openCommandPalette}
             aria-label="Open command palette"
-            title="Command palette (Ctrl/Cmd+K)"
+            title="Open command palette"
           >
-            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="6.5" cy="6.5" r="4" /><path d="M13 13l-3-3" />
             </svg>
-            <span>⌘K</span>
+            <span>Search</span>
+            <kbd>⌘K</kbd>
           </button>
           {activeDataset && activeDataset.facts.length > 0 && (
             <span
@@ -364,32 +364,31 @@ export default function Nav() {
               title={`${activeDataset.companyName || 'Imported data'} — ${activeDataset.facts.length} facts, ${activeDataset.periods.length} periods`}
             >
               <span className="nav-badge-dot" />
-              {activeDataset.companyName || `${activeDataset.facts.length} metrics`}
+              <span>{activeDataset.companyName || `${activeDataset.facts.length} metrics`}</span>
             </span>
           )}
           {activeDataset && activeDataset.facts.length > 0 && (
             <button
               type="button"
-              className="nav-cta"
+              className="nav-icon-btn"
               onClick={() => {
                 const ds = useGlobalDataStore.getState().getActiveDataset();
                 if (!ds) return;
                 downloadMemoMarkdown(generateMemo({ companyName: ds.companyName || 'Company', dataset: ds }));
               }}
               aria-label="Export investment memo"
-              title="Export investment memo (Markdown)"
+              title="Export memo (Markdown)"
             >
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M7 2v8M4 7l3 3 3-3" /><path d="M2 11v1h10v-1" />
               </svg>
-              <span>Memo</span>
             </button>
           )}
-          <Link href="/import" className="nav-cta">
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <Link href="/import" className="nav-cta nav-cta-primary">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M7 2v7M4 6l3 3 3-3" /><path d="M2 11v1h10v-1" />
             </svg>
-            <span>Import financials</span>
+            <span>Import</span>
           </Link>
           <ThemeToggle />
           <button
