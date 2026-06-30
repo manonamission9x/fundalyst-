@@ -7,7 +7,7 @@ GitHub: `https://github.com/manonamission9x/fundalyst-`
 Branch: `main`
 
 Latest relevant commits:
-- `e7226fc` - Fix Workspace React update loop and persisted state recovery
+- `14acc5e` - Fix Workspace React update loop and persisted state recovery
 - `6e41857` - Harden local workflows and polish responsive UI
 - `04012a7` - Add source-linked calculation traces
 - `1840ddc` - Add backendless enterprise workspace foundation
