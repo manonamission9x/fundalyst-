@@ -296,7 +296,6 @@ function buildDCFSection(
 /** Build the Institutional Analytics section */
 function buildInstitutionalSection(
   institutional: InstitutionalResult | null,
-  provenanceMap?: Record<string, ProvenanceSource>,
 ): MemoSection | null {
   if (!institutional || (!institutional.valuation.length && !institutional.profitability.length)) return null;
 
@@ -467,7 +466,7 @@ export function generateMemo(inputs: {
   if (dcfSection) sections.push(dcfSection);
 
   // 5. Institutional Analytics
-  const instSection = buildInstitutionalSection(inputs.institutional ?? null, inputs.provenanceMap);
+  const instSection = buildInstitutionalSection(inputs.institutional ?? null);
   if (instSection) sections.push(instSection);
 
   // 6. Data Provenance

@@ -23,7 +23,7 @@ import {
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import { useGlobalDataStore } from '@/store/global-data-store';
-import type { PeerRow, InstitutionalInputs, InstitutionalResult } from '@/types/financial';
+import type { PeerRow, InstitutionalInputs } from '@/types/financial';
 import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
 import CalculationTracePanel from '@/components/shared/CalculationTrace';
 import MissingMetricsNotice from '@/components/shared/MissingMetricsNotice';

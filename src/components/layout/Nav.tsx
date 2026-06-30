@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useGlobalDataStore } from '@/store/global-data-store';
+import { openCommandPalette } from '@/components/layout/CommandPalette';
 import {
   IconNavImport,
   IconNavFiling,
@@ -24,12 +25,13 @@ function ThemeToggle() {
         document.documentElement.setAttribute('data-theme', saved);
         return saved;
       }
+      document.documentElement.setAttribute('data-theme', 'dark');
     }
-    return 'auto';
+    return 'dark';
   });
 
   const toggle = useCallback(() => {
-    const next = theme === 'auto' ? 'light' : theme === 'light' ? 'dark' : 'auto';
+    const next = theme === 'dark' ? 'light' : theme === 'light' ? 'auto' : 'dark';
     setTheme(next);
     if (next === 'auto') {
       localStorage.removeItem('fundalyst-theme');
@@ -43,7 +45,7 @@ function ThemeToggle() {
   return (
     <button
       type="button"
-      className="nav-cta"
+      className="nav-theme-toggle"
       onClick={toggle}
       title={theme === 'auto' ? 'Auto theme' : theme === 'light' ? 'Light theme' : 'Dark theme'}
       aria-label={`Theme: ${theme}. Click to switch.`}
@@ -205,6 +207,18 @@ export default function Nav() {
         </div>
 
         <div className="nav-right">
+          <button
+            type="button"
+            className="nav-cmdk-trigger"
+            onClick={openCommandPalette}
+            aria-label="Open command palette"
+            title="Command palette (Ctrl/Cmd+K)"
+          >
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="6.5" cy="6.5" r="4" /><path d="M13 13l-3-3" />
+            </svg>
+            <span>⌘K</span>
+          </button>
           {activeDataset && activeDataset.facts.length > 0 && (
             <span
               className="nav-badge"

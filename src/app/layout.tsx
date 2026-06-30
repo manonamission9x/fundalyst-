@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Inter, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/layout/Nav';
+import CommandPalette from '@/components/layout/CommandPalette';
 import ToastProvider from '@/components/shared/ToastProvider';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <ToastProvider>
           <Nav />
+          <CommandPalette />
           <ErrorBoundary>
             <main id="main-content" className="page" tabIndex={-1}>
               {children}

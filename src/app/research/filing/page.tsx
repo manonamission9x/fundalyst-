@@ -22,6 +22,15 @@ import { usePageTitle } from '@/lib/use-page-title';
 import CalculationTracePanel from '@/components/shared/CalculationTrace';
 import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
 
+const DEFAULT_FILING_ROWS: SpreadsheetRow[] = [
+  { metric: 'Revenue', values: ['1000', '1150', '1240', '1380'] },
+  { metric: 'Gross Profit', values: ['400', '470', '500', '550'] },
+  { metric: 'EBITDA', values: ['220', '250', '270', '300'] },
+  { metric: 'Net Profit', values: ['90', '105', '115', '130'] },
+  { metric: 'Total Debt', values: ['250', '230', '200', '180'] },
+  { metric: 'Cash & Equivalents', values: ['50', '80', '100', '140'] },
+];
+
 export default function FilingPage() {
   const showToast = useToast();
   usePageTitle('Filing Comparison');
@@ -267,6 +276,15 @@ export default function FilingPage() {
       .slice(0, 6) as typeof diffs;
   }, [diffs]);
 
+  const spreadsheetInitialPeriods = useMemo(
+    () => (sheetPeriods.length >= 2 ? sheetPeriods : ['Period 1', 'Period 2']),
+    [sheetPeriods],
+  );
+  const spreadsheetInitialData = useMemo(
+    () => (cleared ? [] : sheetRows.length > 0 ? sheetRows : DEFAULT_FILING_ROWS),
+    [cleared, sheetRows],
+  );
+
   return (
     <div>
       <PageHeader
@@ -285,15 +303,8 @@ export default function FilingPage() {
       <Card>
         <div className="card-body p-2">
           <SpreadsheetInput
-            initialPeriods={sheetPeriods.length >= 2 ? sheetPeriods : ['Period 1', 'Period 2']}
-            initialData={cleared ? [] : (sheetRows.length > 0 ? sheetRows : [
-              { metric: 'Revenue', values: ['1000', '1150', '1240', '1380'] },
-              { metric: 'Gross Profit', values: ['400', '470', '500', '550'] },
-              { metric: 'EBITDA', values: ['220', '250', '270', '300'] },
-              { metric: 'Net Profit', values: ['90', '105', '115', '130'] },
-              { metric: 'Total Debt', values: ['250', '230', '200', '180'] },
-              { metric: 'Cash & Equivalents', values: ['50', '80', '100', '140'] },
-            ])}
+            initialPeriods={spreadsheetInitialPeriods}
+            initialData={spreadsheetInitialData}
             resetKey={clearVersion}
             onDataChange={(rows, periods) => {
               setSheetRows(rows);

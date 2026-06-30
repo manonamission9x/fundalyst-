@@ -22,7 +22,7 @@ Verified in source. These exist and work; only *surface/refine* them, never re-i
 ## CLAUDE LANE — high-stakes (I build these)
 Architectural, touch shared state/routing, real regression risk. Done carefully, verified.
 
-- [ ] **C1 · Command palette (Cmd-K)** — *genuinely missing.* Additive global overlay: jump to any tool, saved company (switch `activeDatasetId`), or metric. Fuzzy search, full keyboard nav, routes via `next/navigation`. Lowest regression risk of the lane (purely additive). Gold-theme styled. → biggest "terminal feel" win.
+- [x] **C1 · Command palette (Cmd-K)** ✅ shipped — `components/layout/CommandPalette.tsx`, mounted in layout, ⌘K + nav trigger, tsc clean — *genuinely missing.* Additive global overlay: jump to any tool, saved company (switch `activeDatasetId`), or metric. Fuzzy search, full keyboard nav, routes via `next/navigation`. Lowest regression risk of the lane (purely additive). Gold-theme styled. → biggest "terminal feel" win.
 - [ ] **C2 · Remove demo-data injection + real empty states** — *highest-noise fix.* Strip hardcoded sample CSV/number defaults from every store in `store/index.ts` and the mount-injection logic in `research/filing/page.tsx`. Replace with genuine empty states + one explicit "Load sample company" action. Blast radius: all stores + tool pages → must verify each loads clean. Depends on nothing; unblocks the "users can't tell what's real" problem.
 - [ ] **C3 · Multi-company compare** — *genuinely missing.* Peer Comparison currently reads only pasted CSV (`tools/peer/page.tsx` ignores saved datasets). Let it pull saved companies from the canonical model and rank them on any ratio. Reuses existing selectors.
 - [ ] **C4 · Surface memo export + backup globally** — engine exists (`memo-export.ts`), buried in Workspace. Add a persistent "Export memo" affordance reachable from every tool (and the command palette). IA/wiring only — no new engine.
@@ -46,8 +46,9 @@ Architectural, touch shared state/routing, real regression risk. Done carefully,
 ## Status
 - [x] Data-layer audit (corrected the product plan against real code)
 - [ ] (1) DeepSeek lane — in progress
-- [ ] (2) Claude lane C1–C5 — holding for step 1
-- [ ] (3) DeepSeek second pass
+- [~] (2) Claude lane — C1 shipped. C2–C5 deprioritized per user (pivot to tech-debt + push).
+- [x] Tech-debt sweep — lint 0 errors, tsc clean, git index repaired, dead code removed
+- [ ] (3) Codex visual verify + push (see CODEX_VERIFY.md)
 - [ ] (4) Claude full framework audit
 
 I (Claude) own C1–C5 and keep this file updated as each lands. DeepSeek owns D0–D6.
