@@ -19,6 +19,8 @@ import { useGlobalImportFill, extractFilingInputs } from '@/lib/importer/import-
 import { useGlobalDataStore } from '@/store/global-data-store';
 
 import { usePageTitle } from '@/lib/use-page-title';
+import CalculationTracePanel from '@/components/shared/CalculationTrace';
+import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
 
 export default function FilingPage() {
   const showToast = useToast();
@@ -440,6 +442,20 @@ export default function FilingPage() {
           </details>
 
           {/* ── Actions ── */}
+          {diffs.length > 0 && (
+            <CalculationTracePanel traces={(() => {
+              const traceItems: CalculationTrace[] = keyMetrics.slice(0, 6).map((d) => ({
+                label: d.label,
+                value: `${d.b !== null ? (d.isPct ? d.b + '%' : fmtINR(d.b)) : '—'} (${d.dir === 'up' ? '↑' : d.dir === 'down' ? '↓' : '→'} ${d.pct !== null ? Math.abs(d.pct).toFixed(1) + '%' : '—'})`,
+                formula: d.isPct ? 'Percentage-point change' : 'Value change',
+                sources: [
+                  makeTraceSource(d.label, activeDataset, [d.label.toLowerCase().replace(/[^a-z]/g, '')], findRow(sheetRows, [d.label])),
+                ],
+              }));
+              return traceItems;
+            })()} />
+          )}
+
           <div className="flex items-center gap-3 mb-4">
             <button type="button" className="btn-primary btn-sm" onClick={handleExportCSV}>
               Download CSV

@@ -23,11 +23,11 @@ test('main content has skip link and main landmark', async ({ page }) => {
 
 test('buttons are focusable', async ({ page }) => {
   await page.goto('/');
-  // Get all buttons on the page
-  const buttons = page.locator('button');
+  // Get all buttons that are visible on screen
+  const buttons = page.locator('button:visible');
   const count = await buttons.count();
   expect(count).toBeGreaterThan(0);
-  // Check first button has a discernible role
+  // Check first visible button has a discernible role
   const firstButton = buttons.first();
   await expect(firstButton).toBeVisible();
 });

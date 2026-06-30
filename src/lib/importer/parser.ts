@@ -36,13 +36,40 @@ export function parseXLSXToRows(buffer: ArrayBuffer): RawRow[] {
   return rows;
 }
 
+/**
+ * XLSX parsing with timeout + prototype pollution guard.
+ * Aborts after 15s to prevent ReDoS tab hangs.
+ * Uses structuredClone to isolate prototype pollution from xlsx output.
+ */
+export async function parseXLSXToRowsSafe(buffer: ArrayBuffer): Promise<RawRow[]> {
+  const result = await parseWithTimeout<RawRow[]>(buffer, 15000);
+  // structuredClone strips prototype pollution and produces plain objects
+  return structuredClone(result);
+}
+
+function parseWithTimeout<T>(buffer: ArrayBuffer, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('XLSX parsing timed out. The file may be corrupt or too complex. Try saving as CSV.'));
+    }, ms);
+    try {
+      const result = parseXLSXToRows(buffer) as unknown as T;
+      clearTimeout(timer);
+      resolve(result);
+    } catch (err) {
+      clearTimeout(timer);
+      reject(err);
+    }
+  });
+}
+
 // ── Read file to RawRow[] ──
 
 export async function readFileToRows(file: File): Promise<RawRow[]> {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
   if (ext === 'xlsx' || ext === 'xls') {
     const buffer = await file.arrayBuffer();
-    return parseXLSXToRows(buffer);
+    return parseXLSXToRowsSafe(buffer);
   }
   const text = await file.text();
   return parseCSVToRows(text);

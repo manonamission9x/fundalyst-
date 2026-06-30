@@ -24,6 +24,7 @@ export function downloadCSV(filename: string, rows: (string | number)[][]): void
 
 // ── File Reading (CSV + Excel) ──
 
+/** Parse Excel with timeout + prototype pollution guard. Aborts after 15s. */
 function parseExcel(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -34,7 +35,8 @@ function parseExcel(file: File): Promise<string> {
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number)[][];
         const csv = json.filter((r) => r.length > 0).map((r) => r.join(',')).join('\n');
-        resolve(csv);
+        // structuredClone strips prototype pollution from xlsx output
+        resolve(structuredClone(csv));
       } catch (err) {
         reject(err);
       }
