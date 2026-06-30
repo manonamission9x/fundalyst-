@@ -68,6 +68,7 @@ export default function TrendsPage() {
     if (clearedRef.current) return;
     if (!activeDataset?.id || loadedDatasetIdRef.current === activeDataset.id) return;
     if (!modelData.data || modelData.data.periods.length === 0 || defaultRows.length === 0) return;
+    const periods = modelData.data.periods;
     const timer = setTimeout(() => {
       const nextRows: TrendRow[] = defaultRows.map((r) => ({
         label: r.metric,
@@ -77,7 +78,7 @@ export default function TrendsPage() {
         }),
       }));
       setClearVersion(v => (v ?? 0) + 1);
-      setSheetPeriods(modelData.data.periods);
+      setSheetPeriods(periods);
       setSheetRows(defaultRows);
       setTrendRows(nextRows);
       setShowResults(defaultRows.some((r) => r.values.some((v) => v.trim())));
