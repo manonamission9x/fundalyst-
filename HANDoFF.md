@@ -18,9 +18,16 @@ Client-side financial analysis app for imported/manual company financials. Credi
 
 Next.js 16 App Router — React 19 — TypeScript strict — Zustand (localStorage) — Recharts — Vitest — Playwright — Global CSS
 
-## Routes
+## Design System v3 — Terminal Gold
 
-`/` `/import` `/workspace` `/research/filing` `/research/trends` `/research/growth` `/tools/dcf` `/tools/wc` `/tools/ratios` `/tools/peer` `/about`
+- **Dark default:** Deep charcoal (`#0E0E0F`) with gold accent (`#C8962E`)
+- **Light mode:** Warm off-white (`#FAF9F6`) with deeper gold (`#B07D1F`)
+- **Theme toggle:** Nav bar button cycles auto/light/dark (persisted to localStorage)
+- **Auto-detect:** Respects `prefers-color-scheme`; explicit toggle wins
+- **Caution (warning only):** `#C2703D` (distinct hue from gold accent)
+- **Full CSS token system:** elevation scale (`--shadow-sm/base/md/lg`), radius scale (`--radius-pill`), type scale (`--text-3xs` floor 11px), spacing grid (`--space-*`)
+- **Chart colors:** Derived from CSS tokens at runtime via `getChartColors()` etc.
+- **Accessibility:** `change-up/down/flat` include `::before` arrows for color-blind users
 
 ## Key Files
 
@@ -29,9 +36,11 @@ Next.js 16 App Router — React 19 — TypeScript strict — Zustand (localStora
 | `src/lib/calculations.ts` | Pure financial engine — DCF, WC, ratios, institutional analytics |
 | `src/lib/calculation-trace.ts` | Source-fact trace helpers + provenance helpers |
 | `src/lib/memo-export.ts` | Investment memo generation (markdown/HTML) |
+| `src/lib/chart-theme.ts` | Chart config — dynamic CSS token readers for Recharts |
+| `src/components/layout/Nav.tsx` | Nav bar with desktop tabs, mobile hamburger, theme toggle |
 | `src/components/shared/CalculationTrace.tsx` | Reusable "Show sources" panel |
 | `src/components/shared/MissingMetricsNotice.tsx` | Missing-metric alert per tool |
-| `src/components/shared/ProvenanceBadge.tsx` | Provenance badge (imported/manual/default/inferred/unavailable) |
+| `src/components/shared/ProvenanceBadge.tsx` | Provenance badge (theme-aware CSS vars) |
 | `src/components/input/SpreadsheetInput.tsx` | Excel-like grid with ARIA roles, undo/redo, paste support |
 | `src/store/financial-model-selectors.ts` | Tool-specific data extractors |
 
@@ -47,6 +56,12 @@ npm.cmd run test:e2e  # 25 passed
 ## Audit
 
 `xlsx` high-severity advisory (no fix). Mitigated with 15s timeout + `structuredClone()` sandboxing. See `docs/xlsx-risk-plan.md`.
+
+## Theme info
+
+- Toggle in nav bar (sun icon = light, moon icon = dark, sun+rays icon = auto)
+- `localStorage` key: `fundalyst-theme` (values: `light`, `dark`, or absent for auto)
+- No flash-of-wrong-theme: CSS `@media (prefers-color-scheme: light)` handles auto mode before JS hydrates
 
 ## Next Work
 
