@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { parseLines, computeDiff, generateRiskFlags, fmtINR, fmtChangeTrend } from '@/lib/calculations';
 import { downloadCSV } from '@/lib/helpers';
 import { useFilingStore, useAnalysisStore } from '@/store';
@@ -13,7 +13,7 @@ import {
 } from '@/components/ui';
 import { SpreadsheetInput } from '@/components/input';
 import type { SpreadsheetRow } from '@/components/input';
-import { useActiveDataset, getPeriods, datasetToSpreadsheetRows } from '@/store/financial-model-selectors';
+import { useActiveDataset } from '@/store/financial-model-selectors';
 import { writeSpreadsheetToModel } from '@/store/canonical-helpers';
 import { useGlobalImportFill, extractFilingInputs } from '@/lib/importer/import-hooks';
 import { useGlobalDataStore } from '@/store/global-data-store';
@@ -78,24 +78,8 @@ export default function FilingPage() {
   );
 
   // ── Pre-fill from canonical model (if data exists in global store) ──
+  // Filled via useGlobalImportFill above — no duplicate effect needed.
   const activeDataset = useActiveDataset();
-
-  // ── Load data on mount from canonical model when available ──
-  useEffect(() => {
-    if (clearedRef.current) return;
-    if (activeDataset && activeDataset.facts.length >= 4) {
-      const periods = getPeriods(activeDataset);
-      if (periods.length >= 2) {
-        const rows = datasetToSpreadsheetRows(activeDataset);
-        const timer = setTimeout(() => {
-          setSheetPeriods(periods);
-          setSheetRows(rows.map((r) => ({ metric: r.metric, values: r.values })));
-          setIsSampleLoaded(false);
-        }, 0);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [activeDataset]);
 
   // ── Run comparison ──
   function runCompare(rows: SpreadsheetRow[], periods: string[]) {
