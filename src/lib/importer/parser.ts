@@ -230,6 +230,10 @@ export function buildDataset(
 
 // ── OCR/PDF review state builder ──
 
+function isLikelyRepairedOcrValue(rawValue: string, sourceType: SourceType): boolean {
+  if (sourceType !== 'ocr') return false;
+  return /^-?\d{4,}\.\d{2}$/.test(rawValue.trim());
+}
 async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportReviewState> {
   let sourceType: SourceType = isPdf ? 'pdf-text' : 'ocr';
 
