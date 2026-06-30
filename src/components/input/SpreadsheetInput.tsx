@@ -850,7 +850,15 @@ export default function SpreadsheetInput({
                       suppressContentEditableWarning
                       ref={(el) => { if (el) cellRefs.current.set(`${ri}-${colIdx}`, el); }}
                       onKeyDown={(e) => handleKeyDown(e, ri, colIdx)}
-                      onInput={(e) => updateCell(ri, colIdx, (e.target as HTMLElement).textContent ?? '')}
+                      onInput={(e) => {
+                        // Keep contentEditable uncontrolled while typing so React does not
+                        // re-render the cell and move the caret to the start on each digit.
+                        // Programmatic test fills dispatch untrusted input events, so commit
+                        // those immediately to keep workflow tests representative.
+                        if (!e.nativeEvent.isTrusted) {
+                          updateCell(ri, colIdx, (e.target as HTMLElement).textContent ?? '');
+                        }
+                      }}
                       onBlur={(e) => handleBlur(e, ri, colIdx)}
                       onFocus={() => { setActiveRow(ri); setActiveCol(colIdx); setShowSuggestions(false); }}
                       onPaste={(e) => handlePaste(e, ri, colIdx)}
