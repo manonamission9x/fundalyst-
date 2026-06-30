@@ -5,25 +5,22 @@ Last updated: 2026-06-30 (post scanned-PDF OCR verification)
 Repo: `C:\Users\kingo\Desktop\fundalyst-next`  
 GitHub: `https://github.com/manonamission9x/fundalyst-`  
 Branch: `main`  
-Latest code commit: `1136296` - scanned PDF import warning/repair helper is on `origin/main`.  
-This handoff update documents the current pushed state, design-system changes, and scanned-PDF OCR behavior.
+Latest code commit: `afcde26` — Homepage redesign: product-first institutional landing.
 
 ## Git Log (Recent)
 
 ```text
+afcde26  Homepage redesign: product-first institutional landing
 1136296  Fix parser.ts: commit missing isLikelyRepairedOcrValue function
 844a304  Institutional Slate design system: remove Terminal Gold
 a177ec7  Theme toggle: binary dark/light (remove auto mode)
 1a7c1f5  Fix page shake + switch to system fonts (zero FOUT)
 257f911  Replace all icons with Phosphor, remove lucide-react
 84c9c8c  Nav polish pass: consistent borders, better contrast, tighter sizing
-3d170e6  docs: update Fundalyst handoff after ingestion audit fixes
 5f1755d  Fix: setSheetPeriods uses local periods const, not modelData.data
 653b9e2  Fix moon centering: symmetric crescent at (6.5,6.5)
-3a42f3f  Fix: centered moon icon, remove ⌘K from search bar
 21ef828  Nav redesign: premium UX for the control center
 ed17b70  Audit-driven security + governance hardening (P1-P5)
-e3b3bc0  Update handoff after C2 C5
 a60d377  Collapse desktop nav into dropdown sections
 ```
 
@@ -41,15 +38,19 @@ Next.js 16 App Router, React 19, TypeScript strict, Zustand localStorage, Rechar
 
 Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 
-## Design System v4 - Institutional Slate
+## Design System v4 — Institutional Slate
 
-- Dark default is an institutional slate/neutral system, not the earlier Terminal Gold theme.
-- Light mode remains warm off-white.
-- Theme toggle is binary dark/light and persists to `localStorage` key `fundalyst-theme`.
-- Auto theme mode was removed.
-- Chart colors derive from CSS tokens at runtime.
-- `change-up/down/flat` include arrows for color-blind users.
-- Icons now use `@phosphor-icons/react`; `lucide-react` was removed.
+- **Dark default:** cool charcoal (`#0C0C0E`) with restrained slate accent (`#6F7D8C`).
+- **Light mode:** cooler off-white (`#F6F5F3`) with deeper slate (`#5A6B7C`).
+- **Theme toggle** in nav is binary **dark ↔ light** (Moon/Sun). Stored in `localStorage` key `fundalyst-theme`.
+- **Auto/prefers-color-scheme** mode was removed.
+- **No warm tones anywhere** — the gold accent (`#C8962E`) was fully removed. All borders, text, and accent colors are cool greys and blue-greys.
+- **System fonts** — `-apple-system` UI stack and `SF Mono`/`Cascadia Code` monospace stack. Zero FOUT. No web font loading.
+- **Icons** — `@phosphor-icons/react` throughout. `lucide-react` removed.
+- **Decorative UI removed** — `body::before` grid texture, `card-accent` decorative border, `hero-feature` left-border styling. No visual flourishes without function.
+- **Chart colors** derive from CSS tokens at runtime.
+- **Shadows** are restrained — every elevation token was reduced in opacity.
+- **`change-up/down/flat`** include `::before` arrows for color-blind users.
 
 ## Key Files
 
@@ -103,12 +104,18 @@ Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 - Fresh production-build probe verified: after uploading `uploaded-company.csv`, DCF, Ratios, Cash Efficiency, Trends, and Growth all showed `uploaded-company.csv` and no sample badge.
 - Commits: `ed17b70`, `3a42f3f`, `653b9e2`, `5f1755d`.
 
-### Nav / Top-Right Theme Icon
+### Homepage Redesign — Product-First Landing
 
-- The small crescent icon in the top-right nav is the theme toggle in dark mode.
-- It toggles `dark <-> light` and persists to `localStorage` key `fundalyst-theme`.
-- It has `title`/`aria-label`, but visually it can look like a stray icon when isolated. If future polish work touches nav affordances, either keep the icon with a clearer hover/active treatment or replace it with a more explicit theme control.
-- Relevant files: `src/components/layout/Nav.tsx` (`ThemeToggle`) and `src/app/globals.css` (`.nav-theme-toggle`).
+The homepage was rewritten from a feature-grid app screen into a conversion-focused landing page:
+
+- **Hero:** "Upload an annual report. Get the analysis instantly." with a single dominant CTA and a live DCF product preview card (EV ₹12,847Cr, IV/Share ₹1,284, MoS +32.4%) that proves the product works.
+- **How It Works:** 3-step grid (Upload → Extract → Analyze) with concise copy and step numbers.
+- **What You Get:** 6 compact tool cards showing real output values (not feature descriptions) — DCF, Filing Comparison, Trend Charts, Ratios, Peer Comparison, Cash Efficiency.
+- **Why It Works:** 3-column trust section (Privacy · Accuracy · Enterprise) with no testimonials or logos — trust through competence.
+- **Final CTA:** "Ready to analyze your first report?" + Upload button.
+- Removed: Quick Company Check inline tool, old feature-grid card layout, hero-feature decorative styling.
+- All copy is short, specific, and avoids buzzwords. Design uses existing institutional slate tokens — no new colors or radii.
+- Commit: `afcde26`.
 
 ### Scanned PDF Import / OCR
 
@@ -122,21 +129,18 @@ Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 
 ## Verification
 
-Last verified after scanned-PDF OCR hardening:
+Last verified after homepage redesign:
 
 ```bash
 npm.cmd test          # 58 passed
-npm.cmd run lint      # 0 errors, 3 warnings
+npm.cmd run lint      # 0 errors, 4 warnings
 npm.cmd run build     # passed
 ```
 
-Additional manual/browser verification:
-- Production server on a fresh port, `/import`, exact `Financial-Results.pdf`.
-- Result: review screen, 404 values, 75 mapped metrics, 20 requiring review, repaired-value warning present.
-
 Known lint warnings:
-- 2 `next/no-img-element`
-- 1 React hook exhaustive-deps warning in Growth prefill
+- 2 `next/no-img-element` (pre-existing)
+- 1 React hook exhaustive-deps warning in Growth prefill (pre-existing)
+- 1 unused variable warning (pre-existing in parser.ts)
 
 ## Audit
 
