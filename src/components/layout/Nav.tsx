@@ -53,18 +53,18 @@ function ThemeToggle() {
       aria-label={`Theme: ${theme}. Click to switch.`}
     >
       {theme === 'auto' ? (
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="6" cy="6" r="2.5" />
-          <path d="M6 1v1M6 10v1M1 6h1M10 6h1M2.1 2.1l.7.7M9.2 9.2l.7.7M2.1 9.9l.7-.7M9.2 2.8l.7-.7" />
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="6.5" cy="6.5" r="2.5" />
+          <path d="M6.5 1v1.5M6.5 10.5v1.5M1 6.5h1.5M10.5 6.5h1.5M2.3 2.3l1 1M9.7 9.7l1 1M2.3 10.7l1-1M9.7 3.3l1-1" />
         </svg>
       ) : theme === 'light' ? (
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
-          <circle cx="6" cy="6" r="3" />
-          <path d="M6 1v2M6 9v2M1 6h2M9 6h2M2.8 2.8l1.4 1.4M7.8 7.8l1.4 1.4M2.8 9.2l1.4-1.4M7.8 4.2l1.4-1.4" />
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+          <circle cx="6.5" cy="6.5" r="3" />
+          <path d="M6.5 1v2.5M6.5 9.5v2.5M1 6.5h2.5M9.5 6.5h2.5M3 3l1.8 1.8M8.2 8.2l1.8 1.8M3 10l1.8-1.8M8.2 4.8l1.8-1.8" />
         </svg>
       ) : (
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
-          <path d="M9.5 8.5A5 5 0 013.5 2.5 5 5 0 109.5 8.5z" />
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+          <path d="M10 2a5 5 0 00-5 5 5 5 0 005 5 4 4 0 110-10z" />
         </svg>
       )}
     </button>
@@ -356,7 +356,6 @@ export default function Nav() {
               <circle cx="6.5" cy="6.5" r="4" /><path d="M13 13l-3-3" />
             </svg>
             <span>Search</span>
-            <kbd>⌘K</kbd>
           </button>
           {activeDataset && activeDataset.facts.length > 0 && (
             <span

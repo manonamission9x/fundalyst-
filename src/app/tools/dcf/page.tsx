@@ -109,31 +109,35 @@ export default function DCFPage() {
 
   // Pre-fill from canonical model when available
   const prefilledRef = useRef(false);
+  const loadedDatasetIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (prefilledRef.current) return;
-    if (!modelData.data || sheetRows.length > 0) return;
+    if (!modelData.data) return;
+    if (activeDataset?.id && loadedDatasetIdRef.current === activeDataset.id) return;
     const { fcf, shares, netDebt } = modelData.data;
     if (fcf !== null || shares !== null || netDebt !== null) {
       const timer = setTimeout(() => {
-        setSheetRows((prev) => {
-          if (prev.length > 0) return prev;
-          return [
-            { metric: 'Free Cash Flow', values: [fcf !== null ? String(fcf) : ''] },
-            { metric: 'Growth Rate (%)', values: ['8'] },
-            { metric: 'Projection Years', values: ['5'] },
-            { metric: 'WACC (%)', values: ['10'] },
-            { metric: 'Terminal Growth (%)', values: ['3'] },
-            { metric: 'Net Debt', values: [netDebt !== null ? String(netDebt) : ''] },
-            { metric: 'Shares Outstanding', values: [shares !== null ? String(shares) : ''] },
-            { metric: 'Current Price (₹)', values: [''] },
-          ];
-        });
+        setClearVersion(v => v + 1);
+        setSheetRows([
+          { metric: 'Free Cash Flow', values: [fcf !== null ? String(fcf) : ''] },
+          { metric: 'Growth Rate (%)', values: ['8'] },
+          { metric: 'Projection Years', values: ['5'] },
+          { metric: 'WACC (%)', values: ['10'] },
+          { metric: 'Terminal Growth (%)', values: ['3'] },
+          { metric: 'Net Debt', values: [netDebt !== null ? String(netDebt) : ''] },
+          { metric: 'Shares Outstanding', values: [shares !== null ? String(shares) : ''] },
+          { metric: 'Current Price (₹)', values: [''] },
+        ]);
+        setShow(false);
+        setSummary(null);
+        setSens([]);
+        setErrors({});
         setIsSampleLoaded(false);
       }, 0);
+      loadedDatasetIdRef.current = activeDataset?.id ?? null;
       prefilledRef.current = true;
       return () => clearTimeout(timer);
     }
-  }, [modelData.data, sheetRows.length]);
+  }, [activeDataset?.id, modelData.data, setSens, setShow, setSummary]);
 
   function runDCF() {
     const mapped = rowsToDCFInputs(sheetRows);

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { FundalystDataset, ImportReviewState, MetricMapping } from '@/lib/importer/types';
 import { buildReviewState, applyMappingOverrides } from '@/lib/importer/parser';
 import { useGlobalDataStore, generateDatasetId } from '@/store/global-data-store';
+import { clearAllToolStores } from '@/store';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -45,6 +46,12 @@ export const useImporterStore = create<ImporterState>()(
         set({ isImporting: true, error: null });
         try {
           const review = await buildReviewState(file);
+          if (!review.dataset || review.rawFacts.length === 0) {
+            const detail = review.warnings.length > 0
+              ? review.warnings.join(' ')
+              : 'No financial values were detected in this file.';
+            throw new Error(`No usable financial data was parsed. ${detail}`);
+          }
           // Apply any saved mappings to auto-correct
           const saved = get().savedMappings;
           if (Object.keys(saved).length > 0) {
@@ -82,14 +89,20 @@ export const useImporterStore = create<ImporterState>()(
         const review = get().review;
         if (!review) return null;
         const dataset = applyMappingOverrides(review, review.mappings);
-        const fallbackCompanyName = review.fileName === 'sample-financial-data.csv' ? 'Sample Company' : undefined;
+        const isSample = review.fileName === 'sample-financial-data.csv';
+        const fallbackCompanyName = isSample ? 'Sample Company' : undefined;
+        const sourceType = isSample ? 'sample' : review.sourceType;
+        const facts = dataset.facts.map((fact) => ({ ...fact, sourceType }));
         // Ensure dataset has ID and push to global store
         const fullDataset: FundalystDataset = {
           ...dataset,
+          facts,
+          sourceType,
           companyName: dataset.companyName || fallbackCompanyName,
           id: dataset.id || generateDatasetId(),
           createdAt: dataset.createdAt || new Date().toISOString(),
         };
+        clearAllToolStores();
         set({ lastDataset: fullDataset, review: null });
         // Push into global data store so all tools can access it
         useGlobalDataStore.getState().addDataset(fullDataset);

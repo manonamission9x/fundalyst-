@@ -196,7 +196,8 @@ export function rowsToFacts(
 export function buildDataset(
   facts: CanonicalFact[],
   metadata: FileMetadata,
-  companyOverride?: string
+  companyOverride?: string,
+  sourceType: SourceType = 'csv',
 ): FundalystDataset {
   // Detect missing fields
   const present = new Set(facts.map((f) => f.metric));
@@ -214,7 +215,7 @@ export function buildDataset(
 
   return {
     id: 'ds_' + Date.now(),
-    sourceType: metadata.currency === 'UNKNOWN' ? 'csv' as const : 'csv' as const,
+    sourceType,
     companyName: companyOverride || metadata.company || undefined,
     currency: metadata.currency,
     unit: metadata.unit,
@@ -437,7 +438,7 @@ export async function buildReviewState(file: File): Promise<ImportReviewState> {
     return b.confidence - a.confidence;
   });
 
-  const dataset = buildDataset(facts, metadata);
+  const dataset = buildDataset(facts, metadata, undefined, sourceType);
 
   return {
     fileName: file.name,
@@ -483,5 +484,5 @@ export function applyMappingOverrides(
     return f;
   });
 
-  return buildDataset(updatedFacts, review.metadata);
+  return buildDataset(updatedFacts, review.metadata, undefined, review.sourceType);
 }

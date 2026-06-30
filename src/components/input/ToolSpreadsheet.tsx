@@ -43,9 +43,9 @@ const TOOL_DEFAULTS: Record<string, SpreadsheetRow[]> = {
     { metric: 'Total Debt', values: [''] },
   ],
   growth: [
-    { metric: 'Revenue', values: ['1000', '1150', '1240'] },
-    { metric: 'Net Profit', values: ['160', '155', '142'] },
-    { metric: 'EBITDA', values: ['280', '295', '310'] },
+    { metric: 'Revenue', values: ['', '', ''] },
+    { metric: 'Net Profit', values: ['', '', ''] },
+    { metric: 'EBITDA', values: ['', '', ''] },
   ],
 };
 

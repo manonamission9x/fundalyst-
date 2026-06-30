@@ -248,3 +248,14 @@ export const useYoyStore = create<YoyState>()(
     { name: 'fundalyst-yoy', version: 2 }
   )
 );
+
+export function clearAllToolStores(): void {
+  useFilingStore.getState().clear();
+  useDCFStore.getState().clear();
+  useWCStore.getState().clear();
+  useRatiosStore.getState().clear();
+  usePeerStore.getState().clear();
+  useTrendsStore.getState().clear();
+  useYoyStore.getState().clear();
+  useAnalysisStore.setState({ filingData: null, dcfData: null });
+}

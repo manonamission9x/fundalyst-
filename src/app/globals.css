@@ -1294,7 +1294,6 @@ details[open] .details-summary::before {
 .nav-cmdk-trigger { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-inter); font-size: 11px; color: var(--text-tertiary); background: var(--bg-hover); border: none; border-radius: var(--radius-md); padding: 3px 10px; cursor: pointer; transition: background var(--transition-fast), color var(--transition-fast); min-height: unset; min-width: 100px; }
 .nav-cmdk-trigger:hover { background: var(--bg-surface); color: var(--text-secondary); }
 .nav-cmdk-trigger svg { width: 13px; height: 13px; flex-shrink: 0; }
-.nav-cmdk-trigger kbd { display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-ibm-plex-mono); font-size: 8px; line-height: 1; padding: 1px 4px; background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text-muted); margin-left: auto; letter-spacing: -0.02em; }
 @media (max-width: 640px) { .cmdk-backdrop { padding-top: 8vh; } .nav-cmdk-trigger { display: none; } }
 
 .site-footer { text-align: center; padding: var(--space-5) var(--space-4); border-top: 1px solid var(--border); font-size: 10px; font-family: var(--font-ibm-plex-mono); color: var(--text-muted); position: relative; z-index: 1; }
