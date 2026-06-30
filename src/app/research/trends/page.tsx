@@ -21,6 +21,13 @@ const TrendsChart = dynamic(() => import('@/components/tools/trends/TrendsChart'
   loading: () => <div className="skeleton" style={{ width: '100%', height: 250 }} />,
 });
 
+const SAMPLE_TREND_PERIODS = ['FY22', 'FY23', 'FY24', 'FY25', 'FY26'];
+const SAMPLE_TREND_ROWS: SpreadsheetRow[] = [
+  { metric: 'Revenue', values: ['1000', '1150', '1240', '1380', '1530'] },
+  { metric: 'Net Profit', values: ['160', '155', '142', '130', '119'] },
+  { metric: 'Total Assets', values: ['2000', '2200', '2450', '2700', '3000'] },
+];
+
 export default function TrendsPage() {
   const showToast = useToast();
   usePageTitle('Trend Charts');
@@ -34,17 +41,18 @@ export default function TrendsPage() {
   const [sheetPeriods, setSheetPeriods] = useState<string[]>([]);
   const [trendRows, setTrendRows] = useState<TrendRow[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const [isSampleLoaded, setIsSampleLoaded] = useState(false);
 
-  // Period labels: use imported periods when available, otherwise demo defaults
+  // Period labels: use imported periods when available, otherwise start empty.
   const defaultPeriods = useMemo(() => {
     if (activeDataset && modelData.data && modelData.data.periods.length >= 3) {
       return modelData.data.periods;
     }
-    return ['FY22', 'FY23', 'FY24', 'FY25', 'FY26'];
+    return ['', '', ''];
   }, [activeDataset, modelData.data]);
   const clearedPeriods = useMemo(() => ['', '', ''], []);
 
-  // Spreadsheet rows: use imported metrics when available, otherwise demo data
+  // Spreadsheet rows: use imported metrics when available, otherwise start empty.
   const defaultRows = useMemo<SpreadsheetRow[]>(() => {
     if (activeDataset && modelData.data && modelData.data.periods.length > 0 && Object.keys(modelData.data.metrics).length > 0) {
       return Object.entries(modelData.data.metrics).map(([metric, vals]) => ({
@@ -52,11 +60,7 @@ export default function TrendsPage() {
         values: vals.map((v) => (v !== null ? String(v) : '')),
       }));
     }
-    return [
-      { metric: 'Revenue', values: ['1000', '1150', '1240', '1380', '1530'] },
-      { metric: 'Net Profit', values: ['160', '155', '142', '130', '119'] },
-      { metric: 'Total Assets', values: ['2000', '2200', '2450', '2700', '3000'] },
-    ];
+    return [];
   }, [activeDataset, modelData.data]);
 
   // Build trace items for the CalculationTracePanel
@@ -87,6 +91,7 @@ export default function TrendsPage() {
   const handleSheetChange = useCallback((newRows: SpreadsheetRow[], periods: string[]) => {
     setSheetRows(newRows);
     setSheetPeriods(periods);
+    const hasValues = newRows.some((r) => r.values.some((v) => v.trim()));
     const trendData: TrendRow[] = newRows.map((r) => ({
       label: r.metric,
       vals: r.values.map((v) => {
@@ -95,7 +100,7 @@ export default function TrendsPage() {
       }),
     }));
     setTrendRows(trendData);
-    setShowResults(true);
+    setShowResults(hasValues);
   }, []);
 
   async function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -114,6 +119,7 @@ export default function TrendsPage() {
       setSheetRows(dataRows);
       setTrendRows(dataRows.map((r) => ({ label: r.metric, vals: r.values.map((v) => parseFloat(v) || 0) })));
       setShowResults(true);
+      setIsSampleLoaded(false);
       showToast('Loaded data');
     } catch (err: unknown) {
       showToast('Error reading file: ' + (err instanceof Error ? err.message : 'unknown'));
@@ -124,6 +130,11 @@ export default function TrendsPage() {
   function parse() {
     if (sheetRows.length === 0) {
       showToast('Add data to the spreadsheet first.');
+      return;
+    }
+    if (!sheetRows.some((r) => r.values.some((v) => v.trim()))) {
+      showToast('Add values to the spreadsheet first.');
+      setShowResults(false);
       return;
     }
     const trendData: TrendRow[] = sheetRows.map((r) => ({
@@ -142,6 +153,19 @@ export default function TrendsPage() {
     setCleared(true);
     setClearVersion(v => (v ?? 0) + 1);
     setSheetRows([]); setSheetPeriods([]); setTrendRows([]); setShowResults(false);
+    setIsSampleLoaded(false);
+  }
+
+  function loadSample() {
+    clearedRef.current = false;
+    setCleared(false);
+    setClearVersion(v => (v ?? 0) + 1);
+    setSheetPeriods(SAMPLE_TREND_PERIODS);
+    setSheetRows(SAMPLE_TREND_ROWS);
+    setTrendRows(SAMPLE_TREND_ROWS.map((r) => ({ label: r.metric, vals: r.values.map((v) => parseFloat(v) || 0) })));
+    setShowResults(true);
+    setIsSampleLoaded(true);
+    showToast('Loaded sample trend data');
   }
 
   return (
@@ -153,12 +177,12 @@ export default function TrendsPage() {
       />
       <DataQualityBar source={activeDataset?.companyName || undefined} />
       <div className="flex items-center gap-2 mb-2 mt-1">
-        <DataSourceBadge variant={modelData.companyName ? 'imported' : 'none'} />
+        <DataSourceBadge variant={isSampleLoaded ? 'sample' : modelData.companyName ? 'imported' : 'none'} />
         {activeDataset && modelData.data && modelData.data.periods.length > 0 && (
           <ProvenanceBadge kind="imported" label="Imported data" />
         )}
         {(!activeDataset || !modelData.data || modelData.data.periods.length === 0) && (
-          <ProvenanceBadge kind="default" label="Demo data" />
+          <ProvenanceBadge kind={isSampleLoaded ? 'default' : 'unavailable'} label={isSampleLoaded ? 'Sample data' : 'No data'} />
         )}
       </div>
       <UploadBar onUpload={handleCsvFile} hint="CSV: Metric, Period1, Period2, Period3, ..." />
@@ -173,12 +197,17 @@ export default function TrendsPage() {
             initialData={
               cleared ? [] : (sheetRows.length > 0
                 ? sheetRows
-                : defaultRows)
+                : defaultRows.length > 0 ? defaultRows : undefined)
             }
             onDataChange={handleSheetChange}
             hint="First row = period labels. Each row below = one metric. Values update the chart instantly."
           />
           <Toolbar onClear={handleClear} onAction={parse} actionLabel="Plot" />
+          <div className="card-actions" style={{ borderTop: 0 }}>
+            <button type="button" className="btn-ghost btn-sm" onClick={loadSample}>
+              Load sample
+            </button>
+          </div>
         </div>
       </Card>
 
@@ -220,13 +249,20 @@ export default function TrendsPage() {
 
           <NextLinks links={[{ label: 'Growth rates', href: '/research/growth' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
           <CalcTimestamp />
-          <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label={`Values from: ${activeDataset?.companyName || 'Sample data'}`} variant="source" /><TrustBadge label="₹ Indian Market" /></div>
+          <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label={`Values from: ${isSampleLoaded ? 'Sample data' : activeDataset?.companyName || 'User entry'}`} variant="source" /><TrustBadge label="₹ Indian Market" /></div>
           <Disclaimer />
         </div>
       )}
 
       {!showResults && (
-        <EmptyState title="Trend Charts" desc="Enter period labels as column headers and metrics below in the spreadsheet, or import a file, then click Plot. Data can also be pre-filled from Filing Comparison or Import." action={{ label: 'Import data', href: '/import' }} />
+        <>
+          <EmptyState title="Trend Charts" desc="Enter period labels as column headers and metrics below in the spreadsheet, import a file, or load the sample, then click Plot." action={{ label: 'Import data', href: '/import' }} />
+          <div className="flex justify-center mt-3">
+            <button type="button" className="btn-secondary btn-sm" onClick={loadSample}>
+              Load sample
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

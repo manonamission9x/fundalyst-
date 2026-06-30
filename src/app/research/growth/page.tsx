@@ -30,6 +30,19 @@ import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculati
 
 import { usePageTitle } from '@/lib/use-page-title';
 
+const EMPTY_GROWTH_ROWS: SpreadsheetRow[] = [
+  { metric: 'Revenue', values: ['', '', ''] },
+  { metric: 'Net Profit', values: ['', '', ''] },
+  { metric: 'EBITDA', values: ['', '', ''] },
+];
+
+const SAMPLE_GROWTH_PERIODS = ['FY22', 'FY23', 'FY24', 'FY25', 'FY26'];
+const SAMPLE_GROWTH_ROWS: SpreadsheetRow[] = [
+  { metric: 'Revenue', values: ['1000', '1150', '1240', '1380', '1530'] },
+  { metric: 'Net Profit', values: ['160', '155', '142', '130', '119'] },
+  { metric: 'EBITDA', values: ['280', '295', '310', '290', '270'] },
+];
+
 export default function YoyPage() {
   const showToast = useToast();
   usePageTitle('Growth Rates');
@@ -38,6 +51,7 @@ export default function YoyPage() {
   const clearedRef = useRef(false);
   const [cleared, setCleared] = useState(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
+  const [isSampleLoaded, setIsSampleLoaded] = useState(false);
 
   const dataInfo = useGlobalImportFill(
     (vals) => { setYears(vals.years); setCsv(vals.csv); },
@@ -79,6 +93,7 @@ export default function YoyPage() {
       const csvText = rows.map((r) => `${r.metric},${r.values.join(',')}`).join('\n');
       setCsv(csvText);
       parseWithText(csvText);
+      setIsSampleLoaded(false);
     }, 0);
     prefilledRef.current = true;
     return () => clearTimeout(timer);
@@ -86,11 +101,14 @@ export default function YoyPage() {
 
   const handleDataChange = (newRows: SpreadsheetRow[], newPeriods: string[]) => {
     setSheetRows(newRows);
-    // Convert to growth format
     const labels = newPeriods.join(',');
     setYears(labels);
     const csvText = newRows.map((r) => `${r.metric},${r.values.join(',')}`).join('\n');
     setCsv(csvText);
+    if (!newRows.some((r) => r.values.some((v) => v.trim()))) {
+      setRows([]);
+      return;
+    }
     parseWithText(csvText);
   };
 
@@ -112,6 +130,7 @@ export default function YoyPage() {
         setSheetRows(parsedRows);
         setYears(periods.join(','));
       }
+      setIsSampleLoaded(false);
       showToast('Loaded data');
     } catch (err: unknown) {
       showToast('Error reading file: ' + (err instanceof Error ? err.message : 'unknown'));
@@ -120,6 +139,11 @@ export default function YoyPage() {
   }
 
   function parse() {
+    if (!csv.split('\n').some((line) => line.split(',').slice(1).some((v) => v.trim()))) {
+      setRows([]);
+      showToast('Add values to the spreadsheet first.');
+      return;
+    }
     parseWithText(csv);
     const lines = csv.split('\n').filter(Boolean);
     if (lines.length > 0) {
@@ -127,7 +151,20 @@ export default function YoyPage() {
     }
   }
 
-  function handleClear() { clearedRef.current = true; setCleared(true); setClearVersion(v => (v ?? 0) + 1); clearStore(); setSheetRows([]); }
+  function handleClear() { clearedRef.current = true; setCleared(true); setClearVersion(v => (v ?? 0) + 1); clearStore(); setSheetRows([]); setIsSampleLoaded(false); }
+
+  function loadSample() {
+    clearedRef.current = false;
+    setCleared(false);
+    setClearVersion(v => (v ?? 0) + 1);
+    setSheetRows(SAMPLE_GROWTH_ROWS);
+    const csvText = SAMPLE_GROWTH_ROWS.map((r) => `${r.metric},${r.values.join(',')}`).join('\n');
+    setYears(SAMPLE_GROWTH_PERIODS.join(','));
+    setCsv(csvText);
+    parseWithText(csvText);
+    setIsSampleLoaded(true);
+    showToast('Loaded sample growth data');
+  }
 
   const yearList = years.split(',').map((s) => s.trim()).filter(Boolean);
   const colLabels = rows.length > 0
@@ -148,7 +185,8 @@ export default function YoyPage() {
       }).filter((m) => m.avg < 0).sort((a, b) => a.avg - b.avg)[0]
     : null;
 
-  const provenanceKind = dataInfo.dataSource === 'sample' ? 'manual' as const
+  const provenanceKind = isSampleLoaded ? 'default' as const
+    : dataInfo.dataSource === 'sample' ? 'manual' as const
     : dataInfo.dataSource === 'manual' ? 'manual' as const
     : dataInfo.dataSource && dataInfo.dataSource !== 'none' ? 'imported' as const
     : 'unavailable' as const;
@@ -193,7 +231,7 @@ export default function YoyPage() {
 
       <DataQualityBar source={getDataSourceLabel(dataInfo.dataSource, dataInfo.companyName)} />
       <div className="flex items-center gap-2 mb-2 mt-1">
-        <DataSourceBadge variant={dataInfo.dataSource === 'sample' ? 'sample' : dataInfo.dataSource === 'manual' ? 'manual' : dataInfo.dataSource && dataInfo.dataSource !== 'none' ? 'imported' : 'none'} />
+        <DataSourceBadge variant={isSampleLoaded ? 'sample' : dataInfo.dataSource === 'sample' ? 'sample' : dataInfo.dataSource === 'manual' ? 'manual' : dataInfo.dataSource && dataInfo.dataSource !== 'none' ? 'imported' : 'none'} />
         <ProvenanceBadge kind={provenanceKind} showLabel />
       </div>
       <UploadBar onUpload={handleCsvFile} hint="CSV: Metric, Year1, Year2, Year3, ..." />
@@ -203,13 +241,18 @@ export default function YoyPage() {
           <ToolSpreadsheet
             tool="growth"
             multiColumn
-            initialData={cleared ? undefined : (sheetRows.length > 0 ? sheetRows : undefined)}
+            initialData={cleared ? EMPTY_GROWTH_ROWS : (sheetRows.length > 0 ? sheetRows : EMPTY_GROWTH_ROWS)}
             resetKey={clearVersion}
-            initialPeriods={cleared ? ['', '', ''] : (yearList.length >= 3 ? yearList : ['FY22', 'FY23', 'FY24'])}
+            initialPeriods={cleared ? ['', '', ''] : (yearList.length >= 3 ? yearList : ['', '', ''])}
             onDataChange={handleDataChange}
             hint="Add rows for each metric. Tab to navigate between cells."
           />
           <Toolbar onClear={handleClear} onAction={parse} actionLabel="Calculate growth" />
+          <div className="card-actions" style={{ borderTop: 0 }}>
+            <button type="button" className="btn-ghost btn-sm" onClick={loadSample}>
+              Load sample
+            </button>
+          </div>
         </div>
       </Card>
 
@@ -250,14 +293,21 @@ export default function YoyPage() {
           <div className="mt-4">
             <NextLinks links={[{ label: 'Trend charts', href: '/research/trends' }, { label: 'Review filings', href: '/research/filing' }]} />
             <CalcTimestamp />
-            <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label={`Values from: ${getDataSourceLabel(dataInfo.dataSource, dataInfo.companyName)}`} variant="source" /><TrustBadge label="₹ Indian Market" /></div>
+            <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label={`Values from: ${isSampleLoaded ? 'Sample data' : getDataSourceLabel(dataInfo.dataSource, dataInfo.companyName)}`} variant="source" /><TrustBadge label="₹ Indian Market" /></div>
             <Disclaimer />
           </div>
         </div>
       )}
 
       {!rows.length && (
-        <EmptyState title="Growth Rates" desc="Enter year labels and metrics in the spreadsheet, or import a file, then click Calculate. The tool computes year-over-year percentage changes for every line item." action={{ label: 'Import data', href: '/import' }} />
+        <>
+          <EmptyState title="Growth Rates" desc="Enter year labels and metrics in the spreadsheet, import a file, or load the sample, then click Calculate. The tool computes year-over-year percentage changes for every line item." action={{ label: 'Import data', href: '/import' }} />
+          <div className="flex justify-center mt-3">
+            <button type="button" className="btn-secondary btn-sm" onClick={loadSample}>
+              Load sample
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

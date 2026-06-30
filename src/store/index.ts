@@ -43,10 +43,10 @@ interface FilingState {
 export const useFilingStore = create<FilingState>()(
   persist(
     (set) => ({
-      labelA: 'Q4 FY25',
-      labelB: 'Q4 FY26',
-      periodA: 'Revenue: 1240\nNet Profit: 142\nEBITDA Margin: 18.2\nTotal Debt: 410\nPromoter Holding: 72.5',
-      periodB: 'Revenue: 1530\nNet Profit: 119\nEBITDA Margin: 14.6\nTotal Debt: 590\nPromoter Holding: 68.3',
+      labelA: '',
+      labelB: '',
+      periodA: '',
+      periodB: '',
       diffs: [],
       flags: [],
       showResults: false,
@@ -87,7 +87,7 @@ interface DCFState {
 
 export const useDCFStore = create<DCFState>()(
   (set) => ({
-    inputs: { fcf: 1240, growth: 8, years: 5, discount: 10, terminal: 3, netDebt: 180, shares: 100, price: 450 },
+    inputs: { fcf: '', growth: '', years: '', discount: '', terminal: '', netDebt: '', shares: '', price: '' },
     show: false,
     summary: null,
     sens: [],
@@ -119,7 +119,7 @@ interface WCState {
 export const useWCStore = create<WCState>()(
   persist(
     (set) => ({
-      inputs: { revenue: 5000, cogs: 3000, receivables: 1200, inventory: 800, payables: 600, cash: 200 },
+      inputs: { revenue: '', cogs: '', receivables: '', inventory: '', payables: '', cash: '' },
       res: null,
       setInput: (key, value) => set((s) => ({ inputs: { ...s.inputs, [key]: value } })),
       setRes: (v) => set({ res: v }),
@@ -146,7 +146,7 @@ interface RatiosState {
 export const useRatiosStore = create<RatiosState>()(
   persist(
     (set) => ({
-      data: { revenue: 5000, cogs: 3000, netProfit: 500, totalAssets: 8000, totalEquity: 4000, totalDebt: 1500, currentAssets: 3000, currentLiab: 1500, inventory: 800, interest: 200, ebit: 800 },
+      data: { revenue: null, cogs: null, netProfit: null, totalAssets: null, totalEquity: null, totalDebt: null, currentAssets: null, currentLiab: null, inventory: null, interest: null, ebit: null },
       res: null,
       setData: (v) => set({ data: v }),
       setField: (key, value) => set((s) => ({ data: { ...s.data, [key]: value === '' ? null : value } })),
@@ -176,7 +176,7 @@ interface PeerState {
 export const usePeerStore = create<PeerState>()(
   persist(
     (set) => ({
-      csv: 'Company A, 5000, 3000, 500, 8000\nCompany B, 4200, 2800, 380, 7200\nCompany C, 3800, 2100, 420, 6500',
+      csv: '',
       rows: [],
       setCsv: (v) => set({ csv: v }),
       setRows: (v) => set({ rows: v }),
@@ -204,7 +204,7 @@ interface TrendsState {
 export const useTrendsStore = create<TrendsState>()(
   persist(
     (set) => ({
-      csv: 'Period, FY22, FY23, FY24, FY25, FY26\nRevenue, 1000, 1150, 1240, 1380, 1530\nCOGS, 700, 800, 870, 980, 1100\nNet Profit, 160, 155, 142, 130, 119',
+      csv: '',
       headers: [],
       rows: [],
       setCsv: (v) => set({ csv: v }),
@@ -234,8 +234,8 @@ interface YoyState {
 export const useYoyStore = create<YoyState>()(
   persist(
     (set) => ({
-      years: 'FY22, FY23, FY24, FY25, FY26',
-      csv: 'Metric, FY22, FY23, FY24, FY25, FY26\nRevenue, 1000, 1150, 1240, 1380, 1530\nNet Profit, 160, 155, 142, 130, 119\nEBITDA, 280, 295, 310, 290, 270',
+      years: '',
+      csv: '',
       rows: [],
       setYears: (v) => set({ years: v }),
       setCsv: (v) => set({ csv: v }),

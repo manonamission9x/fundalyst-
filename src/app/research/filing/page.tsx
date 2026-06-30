@@ -22,7 +22,8 @@ import { usePageTitle } from '@/lib/use-page-title';
 import CalculationTracePanel from '@/components/shared/CalculationTrace';
 import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
 
-const DEFAULT_FILING_ROWS: SpreadsheetRow[] = [
+const SAMPLE_FILING_PERIODS = ['Q1', 'Q2', 'Q3', 'Q4'];
+const SAMPLE_FILING_ROWS: SpreadsheetRow[] = [
   { metric: 'Revenue', values: ['1000', '1150', '1240', '1380'] },
   { metric: 'Gross Profit', values: ['400', '470', '500', '550'] },
   { metric: 'EBITDA', values: ['220', '250', '270', '300'] },
@@ -79,26 +80,9 @@ export default function FilingPage() {
   // ── Pre-fill from canonical model (if data exists in global store) ──
   const activeDataset = useActiveDataset();
 
-  // ── Load data on mount: canonical model > demo data (only once) ──
-  const autoDemoRef = useRef(false);
-  const clearCountRef = useRef(0);
+  // ── Load data on mount from canonical model when available ──
   useEffect(() => {
-    if (clearedRef.current) {
-      clearCountRef.current = clearVersion;
-      return;
-    }
-    if (autoDemoRef.current) {
-      // Block re-fill after clear
-      if (clearCountRef.current !== clearVersion) {
-        clearCountRef.current = clearVersion;
-        return;
-      }
-      return;
-    }
-    autoDemoRef.current = true;
-    clearCountRef.current = clearVersion;
-
-    // Priority 1: pre-fill from canonical model
+    if (clearedRef.current) return;
     if (activeDataset && activeDataset.facts.length >= 4) {
       const periods = getPeriods(activeDataset);
       if (periods.length >= 2) {
@@ -106,27 +90,10 @@ export default function FilingPage() {
         const timer = setTimeout(() => {
           setSheetPeriods(periods);
           setSheetRows(rows.map((r) => ({ metric: r.metric, values: r.values })));
+          setIsSampleLoaded(false);
         }, 0);
         return () => clearTimeout(timer);
       }
-    }
-
-    // Priority 2: demo data (first visit) — only if spreadsheet hasn't been populated yet
-    if (sheetRows.length === 0 || !sheetRows.some(r => r.values.some(v => v.trim()))) {
-      // Defer to let SpreadsheetInput mount first, then override with demo data
-      const timer = setTimeout(() => {
-        setSheetPeriods(['Q1', 'Q2', 'Q3', 'Q4']);
-        setSheetRows([
-          { metric: 'Revenue', values: ['1000', '1150', '1240', '1380'] },
-          { metric: 'Gross Profit', values: ['400', '470', '500', '550'] },
-          { metric: 'EBITDA', values: ['220', '250', '270', '300'] },
-          { metric: 'Net Profit', values: ['90', '105', '115', '130'] },
-          { metric: 'Total Debt', values: ['250', '230', '200', '180'] },
-          { metric: 'Cash & Equivalents', values: ['50', '80', '100', '140'] },
-        ]);
-        setIsSampleLoaded(true);
-      }, 50);
-      return () => clearTimeout(timer);
     }
   }, [activeDataset]);
 
@@ -194,6 +161,19 @@ export default function FilingPage() {
     clear();
     setSheetRows([]);
     setSheetPeriods([]);
+    setIsSampleLoaded(false);
+  }
+
+  function loadSample() {
+    clearedRef.current = false;
+    setCleared(false);
+    setClearVersion(v => v + 1);
+    setSheetPeriods(SAMPLE_FILING_PERIODS);
+    setSheetRows(SAMPLE_FILING_ROWS);
+    setDiffs([]);
+    setFlags([]);
+    setShowResults(false);
+    setIsSampleLoaded(true);
   }
 
   function handleExportCSV() {
@@ -281,7 +261,7 @@ export default function FilingPage() {
     [sheetPeriods],
   );
   const spreadsheetInitialData = useMemo(
-    () => (cleared ? [] : sheetRows.length > 0 ? sheetRows : DEFAULT_FILING_ROWS),
+    () => (cleared ? [] : sheetRows.length > 0 ? sheetRows : undefined),
     [cleared, sheetRows],
   );
 
@@ -318,6 +298,11 @@ export default function FilingPage() {
           actionLabel={loading ? 'Comparing...' : 'Compare periods'}
           hint="Tab to navigate · Paste from Excel"
         />
+        <div className="card-actions" style={{ borderTop: 0 }}>
+          <button type="button" className="btn-ghost btn-sm" onClick={loadSample}>
+            Load sample
+          </button>
+        </div>
       </Card>
 
       {/* ── Results — Insight First ── */}
@@ -488,11 +473,18 @@ export default function FilingPage() {
 
       {/* ── Empty state ── */}
       {!showResults && (
-        <EmptyState
-          title="Filing Comparison"
-          desc="Enter metrics and periods in the spreadsheet above, or import a file. The tool highlights revenue growth, margin changes, and debt shifts automatically."
-          action={{ label: 'Import data', href: '/import' }}
-        />
+        <>
+          <EmptyState
+            title="Filing Comparison"
+            desc="Enter metrics and periods in the spreadsheet above, import a file, or load the sample. The tool highlights revenue growth, margin changes, and debt shifts automatically."
+            action={{ label: 'Import data', href: '/import' }}
+          />
+          <div className="flex justify-center mt-3">
+            <button type="button" className="btn-secondary btn-sm" onClick={loadSample}>
+              Load sample
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

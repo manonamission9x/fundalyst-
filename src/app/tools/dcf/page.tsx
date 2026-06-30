@@ -40,13 +40,24 @@ const DCFChart = dynamic(() => import('@/components/tools/dcf/DCFChart'), {
 
 const EMPTY_DCF_ROWS: SpreadsheetRow[] = [
   { metric: 'Free Cash Flow', values: [''] },
+  { metric: 'Growth Rate (%)', values: [''] },
+  { metric: 'Projection Years', values: [''] },
+  { metric: 'WACC (%)', values: [''] },
+  { metric: 'Terminal Growth (%)', values: [''] },
+  { metric: 'Net Debt', values: [''] },
+  { metric: 'Shares Outstanding', values: [''] },
+  { metric: 'Current Price (₹)', values: [''] },
+];
+
+const SAMPLE_DCF_ROWS: SpreadsheetRow[] = [
+  { metric: 'Free Cash Flow', values: ['1240'] },
   { metric: 'Growth Rate (%)', values: ['8'] },
   { metric: 'Projection Years', values: ['5'] },
   { metric: 'WACC (%)', values: ['10'] },
   { metric: 'Terminal Growth (%)', values: ['3'] },
-  { metric: 'Net Debt', values: [''] },
-  { metric: 'Shares Outstanding', values: [''] },
-  { metric: 'Current Price (₹)', values: [''] },
+  { metric: 'Net Debt', values: ['180'] },
+  { metric: 'Shares Outstanding', values: ['100'] },
+  { metric: 'Current Price (₹)', values: ['450'] },
 ];
 const METRIC_TO_FIELD: Record<string, keyof import('@/types/financial').DCFInputs> = {
   'Free Cash Flow': 'fcf',
@@ -90,7 +101,7 @@ export default function DCFPage() {
   const clearedRef = useRef(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
-  const [isAutoDemo, setIsAutoDemo] = useState(false);
+  const [isSampleLoaded, setIsSampleLoaded] = useState(false);
 
   // Model pre-fill via universal hook
   const modelData = useModelData((ds) => extractDCFInputsFromModel(ds));
@@ -117,46 +128,12 @@ export default function DCFPage() {
             { metric: 'Current Price (₹)', values: [''] },
           ];
         });
+        setIsSampleLoaded(false);
       }, 0);
       prefilledRef.current = true;
       return () => clearTimeout(timer);
     }
   }, [modelData.data, sheetRows.length]);
-
-  // Auto-demo on first visit
-  const autoDemoRef = useRef(false);
-  useEffect(() => {
-    if (clearedRef.current) return;
-    if (autoDemoRef.current) return;
-    autoDemoRef.current = true;
-    if (!show && summary === null && sheetRows.length === 0) {
-      // Defer to let SpreadsheetInput notifyChange fire first, then override
-      const timer = setTimeout(() => {
-        setSheetRows([
-          { metric: 'Free Cash Flow', values: ['1240'] },
-          { metric: 'Growth Rate (%)', values: ['8'] },
-          { metric: 'Projection Years', values: ['5'] },
-          { metric: 'WACC (%)', values: ['10'] },
-          { metric: 'Terminal Growth (%)', values: ['3'] },
-          { metric: 'Net Debt', values: ['180'] },
-          { metric: 'Shares Outstanding', values: ['100'] },
-          { metric: 'Current Price (₹)', values: ['450'] },
-        ]);
-        setIsAutoDemo(true);
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  // Auto-calculate when demo data is populated (separate effect to avoid stale closure)
-  useEffect(() => {
-    if (autoDemoRef.current && !show && summary === null && sheetRows.length >= 8) {
-      const fcfRow = sheetRows.find(r => r.metric === 'Free Cash Flow');
-      if (!fcfRow || !fcfRow.values[0]?.trim()) return;
-      const timer = setTimeout(() => runDCF(), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [sheetRows]);
 
   function runDCF() {
     const mapped = rowsToDCFInputs(sheetRows);
@@ -241,7 +218,19 @@ export default function DCFPage() {
     setSummary(null);
     setSens([]);
     setErrors({});
+    setIsSampleLoaded(false);
   }, [setShow, setSummary, setSens]);
+
+  function loadSample() {
+    clearedRef.current = false;
+    setClearVersion(v => v + 1);
+    setSheetRows(SAMPLE_DCF_ROWS);
+    setShow(false);
+    setSummary(null);
+    setSens([]);
+    setErrors({});
+    setIsSampleLoaded(true);
+  }
 
   const priceVal = useMemo(() => {
     const mapped = rowsToDCFInputs(sheetRows);
@@ -276,7 +265,7 @@ export default function DCFPage() {
         metrics={sheetRows.filter((r) => r.values[0]?.trim()).length}
       />
       <div className="flex items-center gap-2 mb-2 mt-1">
-        <DataSourceBadge variant={isAutoDemo ? 'sample' : modelData.companyName ? 'imported' : 'manual'} />
+        <DataSourceBadge variant={isSampleLoaded ? 'sample' : modelData.companyName ? 'imported' : 'manual'} />
       </div>
 
       {/* ── Unified ToolSpreadsheet input — same UX as Filing page ── */}
@@ -285,16 +274,7 @@ export default function DCFPage() {
           <SectionTitle>DCF Assumptions</SectionTitle>
           <ToolSpreadsheet
             tool="dcf"
-            initialData={clearedRef.current ? EMPTY_DCF_ROWS : (sheetRows.length > 0 ? sheetRows : [
-              { metric: 'Free Cash Flow', values: ['1240'] },
-              { metric: 'Growth Rate (%)', values: ['8'] },
-              { metric: 'Projection Years', values: ['5'] },
-              { metric: 'WACC (%)', values: ['10'] },
-              { metric: 'Terminal Growth (%)', values: ['3'] },
-              { metric: 'Net Debt', values: ['180'] },
-              { metric: 'Shares Outstanding', values: ['100'] },
-              { metric: 'Current Price (₹)', values: ['450'] },
-            ])}
+            initialData={sheetRows.length > 0 ? sheetRows : EMPTY_DCF_ROWS}
             resetKey={clearVersion}
             singleColumnLabel="Value"
             onDataChange={(rows) => setSheetRows(rows)}
@@ -321,6 +301,11 @@ export default function DCFPage() {
           </div>
         )}
         <Toolbar onClear={handleClear} onAction={runDCF} actionLabel="Calculate value" />
+        <div className="card-actions" style={{ borderTop: 0 }}>
+          <button type="button" className="btn-ghost btn-sm" onClick={loadSample}>
+            Load sample
+          </button>
+        </div>
       </Card>
 
       {show && summary && (
@@ -330,7 +315,7 @@ export default function DCFPage() {
           priceVal={priceVal}
           discount={(() => { const r = sheetRows.find(r => r.metric === 'WACC (%)'); return r ? Number(r.values[0]) || 10 : 10; })()}
           years={(() => { const r = sheetRows.find(r => r.metric === 'Projection Years'); return r ? Number(r.values[0]) || 5 : 5; })()}
-          isAutoDemo={isAutoDemo}
+          isSampleLoaded={isSampleLoaded}
           companyName={modelData.companyName || ''}
           dataset={activeDataset}
           sheetRows={sheetRows}
@@ -338,11 +323,18 @@ export default function DCFPage() {
       )}
 
       {!show && (
-        <EmptyState
-          title="DCF Valuation"
-          desc="Fill in Free Cash Flow, Growth Rate, WACC, and other assumptions above, then click Calculate. Defaults are pre-filled with sample data."
-          action={{ label: 'Load from import', href: '/import' }}
-        />
+        <>
+          <EmptyState
+            title="DCF Valuation"
+            desc="Fill in Free Cash Flow, Growth Rate, WACC, and other assumptions above, import a file, or load the sample, then click Calculate."
+            action={{ label: 'Load from import', href: '/import' }}
+          />
+          <div className="flex justify-center mt-3">
+            <button type="button" className="btn-secondary btn-sm" onClick={loadSample}>
+              Load sample
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
@@ -356,7 +348,7 @@ function DCFResults({
   priceVal,
   discount,
   years,
-  isAutoDemo,
+  isSampleLoaded,
   companyName,
   dataset,
   sheetRows,
@@ -366,7 +358,7 @@ function DCFResults({
   priceVal: number;
   discount: number;
   years: number;
-  isAutoDemo: boolean;
+  isSampleLoaded: boolean;
   companyName: string;
   dataset: FundalystDataset | null;
   sheetRows: SpreadsheetRow[];
@@ -526,7 +518,7 @@ function DCFResults({
 
       <CalcTimestamp />
       <div className="flex gap-2 flex-wrap mt-2">
-        <TrustBadge label={`Values from: ${isAutoDemo ? 'Sample data' : companyName || 'User entry'}`} variant="source" />
+        <TrustBadge label={`Values from: ${isSampleLoaded ? 'Sample data' : companyName || 'User entry'}`} variant="source" />
         <TrustBadge label="₹ Indian Market" />
       </div>
       <Disclaimer extra="Method: DCF with Gordon Growth terminal value" />

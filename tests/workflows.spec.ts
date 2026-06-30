@@ -25,18 +25,16 @@ test.describe('Sample import workflow', () => {
   });
 });
 
-test.describe('Tool auto-calculation', () => {
-  test('DCF page auto-calculates with demo data', async ({ page }) => {
+test.describe('Tool sample data', () => {
+  test('DCF page calculates after explicit sample load', async ({ page }) => {
     await page.goto('/tools/dcf');
     await expect(page).toHaveTitle(/DCF|Valuation/i);
 
-    // Wait for auto-calculation (50ms effect delay + computation)
-    await page.waitForTimeout(300);
+    await expect(page.getByText('DCF Valuation').last()).toBeVisible();
+    await page.getByRole('button', { name: /load sample/i }).first().click();
+    await page.getByRole('button', { name: /calculate value/i }).click();
 
-    // DCF auto-calculates with demo data — wait for results panel
     await expect(page.getByText('Intrinsic Value Summary')).toBeVisible({ timeout: 10000 });
-
-    // Verify key metrics appear
     await expect(page.locator('.metric-label').filter({ hasText: 'Enterprise Value' }).first()).toBeVisible();
     await expect(page.locator('.metric-label').filter({ hasText: 'Intrinsic Value / Share' }).first()).toBeVisible();
     await expect(page.locator('.metric-label').filter({ hasText: 'Margin of Safety' }).first()).toBeVisible();
@@ -110,7 +108,10 @@ test.describe('Console error regression', () => {
     await page.goto('/research/trends');
     await expect(page).toHaveTitle(/Trend/i);
 
-    // Wait for data table to render (contains default rows)
+    await expect(page.getByText('Trend Charts').last()).toBeVisible();
+    await expect(page.getByRole('button', { name: /load sample/i }).first()).toBeVisible();
+
+    await page.getByRole('button', { name: /load sample/i }).first().click();
     await expect(page.locator('table.diff-table')).toBeVisible({ timeout: 10000 });
 
     // Check no "Maximum update depth" errors
