@@ -83,6 +83,7 @@ export default function PeerPage() {
   const { clear: clearStore } = usePeerStore();
   const dsCount = useGlobalDataStore((s) => s.datasets.length);
   const activeDataset = useActiveDataset();
+  const datasets = useGlobalDataStore((s) => s.datasets);
 
   const modelData = useModelData((ds) => extractPeersFromModel(ds));
 
@@ -216,6 +217,31 @@ Infosys, 156000, 28700, 172000, 24000`;
     showToast('Loaded 4 sample companies');
   }
 
+  function loadSavedCompanies() {
+    const withData = datasets
+      .map((ds) => extractPeersFromModel(ds))
+      .filter((p) => p.revenue !== null || p.netProfit !== null || p.totalAssets !== null || p.totalDebt !== null);
+    if (withData.length < 2) {
+      showToast('Need at least 2 saved companies with data. Import more from the Import page.');
+      return;
+    }
+    const parsed: PeerRow[] = withData.map((p) => ({
+      name: p.companyName || 'Company',
+      vals: [p.revenue ?? NaN, p.netProfit ?? NaN, p.totalAssets ?? NaN, p.totalDebt ?? NaN],
+    }));
+    const companies = parsed.map((r) => r.name);
+    setSheetPeriods(companies);
+    setSheetRows(LABELS.map((label, li) => ({
+      metric: label,
+      values: parsed.map((r) => (isNaN(r.vals[li]) ? '' : String(r.vals[li]))),
+    })));
+    setPeerResults(parsed);
+    setShowResults(true);
+    setIsSampleLoaded(false);
+    prefilledRef.current = true;
+    showToast(`Loaded ${parsed.length} saved companies`);
+  }
+
   function handleClear() { clearedRef.current = true; setCleared(true); setClearVersion(v => v + 1); clearStore(); setSheetRows([]); setSheetPeriods([]); setPeerResults([]); setShowResults(false); setIsSampleLoaded(false); prefilledRef.current = false; }
 
   // ── Data source label ──
@@ -303,6 +329,11 @@ Infosys, 156000, 28700, 172000, 24000`;
       <UploadBar onUpload={handleCsvFile} hint="Company, Revenue, Profit, Assets, Debt" />
 
       <div className="flex items-center gap-2 mb-2">
+        {datasets.length >= 2 && (
+          <button type="button" className="btn-primary btn-sm" onClick={loadSavedCompanies}>
+            Compare {datasets.length} saved companies
+          </button>
+        )}
         <button type="button" className="btn-ghost btn-sm" onClick={loadSample}>
           Try with example data
         </button>

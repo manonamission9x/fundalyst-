@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { openCommandPalette } from '@/components/layout/CommandPalette';
+import { generateMemo, downloadMemoMarkdown } from '@/lib/memo-export';
 import {
   IconNavImport,
   IconNavFiling,
@@ -227,6 +228,24 @@ export default function Nav() {
               <span className="nav-badge-dot" />
               {activeDataset.companyName || `${activeDataset.facts.length} metrics`}
             </span>
+          )}
+          {activeDataset && activeDataset.facts.length > 0 && (
+            <button
+              type="button"
+              className="nav-cta"
+              onClick={() => {
+                const ds = useGlobalDataStore.getState().getActiveDataset();
+                if (!ds) return;
+                downloadMemoMarkdown(generateMemo({ companyName: ds.companyName || 'Company', dataset: ds }));
+              }}
+              aria-label="Export investment memo"
+              title="Export investment memo (Markdown)"
+            >
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M7 2v8M4 7l3 3 3-3" /><path d="M2 11v1h10v-1" />
+              </svg>
+              <span>Memo</span>
+            </button>
           )}
           <Link href="/import" className="nav-cta">
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
