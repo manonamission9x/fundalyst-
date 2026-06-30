@@ -5,11 +5,12 @@ Last updated: 2026-06-30 (night)
 Repo: `C:\Users\kingo\Desktop\fundalyst-next`
 GitHub: `https://github.com/manonamission9x/fundalyst-`
 Branch: `main`
-Latest: `e789b79` — feat: multi-company peer compare from saved datasets (C3) + global memo export in nav (C4)
+Latest: `6182760` — full DeepSeek fix-queue (theme/P0-P3, D1-D6) + C1 palette + C3/C4, all merged & verified (58 tests, build, 25 e2e green)
 
 ## Git log (recent)
 ```
-e789b79  feat: multi-company peer compare + global memo export
+6182760  Add GitHub details + git log to handoff
+e789b79  feat: multi-company peer compare (C3) + global memo export (C4)
 4069571  feat: command palette (Cmd-K), Terminal Gold + light mode, dead-code cleanup
 8892f27  D1-D6: Product tasks complete
 8a41dc6  Update HANDoFF.md with Terminal Gold theme info
@@ -73,7 +74,26 @@ npm.cmd run test:e2e  # 25 passed
 - `localStorage` key: `fundalyst-theme` (values: `light`, `dark`, or absent for auto)
 - No flash-of-wrong-theme: CSS `@media (prefers-color-scheme: light)` handles auto mode before JS hydrates
 
-## Next Work
+## Pending — C2 & C5 (implement in the dev + e2e loop; both break current e2e)
+
+These need the app running + e2e updates; do NOT push blind to green main. Specs are exact (file/line refs verified against `6182760`).
+
+### C2 — Remove auto-injected demo data; explicit "Load sample" instead
+Goal: no fake company data auto-loads. Fresh users get the (already-polished, D5) empty states + an explicit per-tool "Load sample" button. Keep all canonical-model prefill (real imported data) untouched.
+- `src/store/index.ts` — blank initial sample defaults to match each store's own `clear()` state: Filing `labelA/labelB/periodA/periodB` → `''`; DCF `inputs` → all `''`; WC `inputs` → all `''`; Ratios `data` → all `null`; Peer `csv` → `''`; Trends `csv` → `''`; YoY `years/csv` → `''`. Do NOT bump `version` (preserve existing users' persisted data).
+- `src/app/research/filing/page.tsx` (~L114-130) — delete the "Priority 2: demo data" block (keep Priority 1 canonical prefill). Move the Q1-Q4 sample into a `loadSample()` fn behind a button; clean now-unused `isSampleLoaded`/refs.
+- `src/app/tools/dcf/page.tsx` (~L126-159) — delete the "Auto-demo on first visit" effect AND the auto-calculate-on-demo effect; move the 8-row sample into a `loadSample()` button.
+- `src/app/research/trends/page.tsx` (~L43-60) — `defaultPeriods`/`defaultRows` return empty (`['','','']` / `[]`) when no imported data; add a "Load sample" button injecting the FY22-26 demo.
+- `src/app/research/growth/page.tsx` (~L76) — same: neutralize the on-mount demo, add a button.
+- WC / Ratios / Peer — already clean (canonical prefill; peer already has an on-demand `loadSample()`); no change.
+- **e2e impact:** specs asserting demo values (filing Q1-Q4, DCF intrinsic value, trends series) will fail — update them to import a fixture OR click "Load sample" before asserting. Preserve route coverage.
+- Verify: `npm run build`, `npm test`, `npm run test:e2e` (update to green), dev pass (each tool: empty state + working "Load sample").
+
+### C5 — Nav IA: collapse 9 flat tabs; resolve Workspace redundancy
+- `src/components/layout/Nav.tsx` renders Research/Valuation/Data/Tools as flat tabs. Collapse desktop to ~4 section triggers that open a dropdown/popover of their tools (mobile overlay already groups — keep). Position Workspace as the primary hub/landing; tools remain deep-links from Workspace + command palette.
+- Risk: interaction-heavy (hover/click/keyboard focus-trap, mobile, active-state, no layout shift — F-17 already reserves the 2px). MUST be built with dev server open; tsc won't catch nav interaction bugs.
+
+## Later Work
 
 1. **DCF scenario manager** — Bull/Base/Bear cases with assumption versioning and sensitivity export.
 2. **Backend API boundary scaffold** — Typed service interfaces to replace Zustand.
