@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { fmtNum } from '@/lib/calculations';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
@@ -62,6 +62,30 @@ export default function TrendsPage() {
     }
     return [];
   }, [activeDataset, modelData.data]);
+
+  const loadedDatasetIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (clearedRef.current) return;
+    if (!activeDataset?.id || loadedDatasetIdRef.current === activeDataset.id) return;
+    if (!modelData.data || modelData.data.periods.length === 0 || defaultRows.length === 0) return;
+    const timer = setTimeout(() => {
+      const nextRows: TrendRow[] = defaultRows.map((r) => ({
+        label: r.metric,
+        vals: r.values.map((v) => {
+          const n = parseFloat(v.replace(/,/g, ''));
+          return isNaN(n) ? 0 : n;
+        }),
+      }));
+      setClearVersion(v => (v ?? 0) + 1);
+      setSheetPeriods(modelData.data.periods);
+      setSheetRows(defaultRows);
+      setTrendRows(nextRows);
+      setShowResults(defaultRows.some((r) => r.values.some((v) => v.trim())));
+      setIsSampleLoaded(false);
+      loadedDatasetIdRef.current = activeDataset.id;
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [activeDataset?.id, defaultRows, modelData.data]);
 
   // Build trace items for the CalculationTracePanel
   const traceItems = useMemo<CalculationTrace[]>(() => {

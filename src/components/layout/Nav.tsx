@@ -64,7 +64,7 @@ function ThemeToggle() {
         </svg>
       ) : (
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-          <path d="M10 2a5 5 0 00-5 5 5 5 0 005 5 4 4 0 110-10z" />
+          <path d="M6.5 1.5A5 5 0 1 0 6.5 11.5A4 4 0 1 1 6.5 1.5Z" />
         </svg>
       )}
     </button>

@@ -96,16 +96,18 @@ export default function PeerPage() {
   const [showResults, setShowResults] = useState(false);
   const [isSampleLoaded, setIsSampleLoaded] = useState(false);
   const prefilledRef = useRef(false);
+  const loadedDatasetIdRef = useRef<string | null>(null);
 
   // Pre-fill from imported dataset
   useEffect(() => {
     if (clearedRef.current) return;
-    if (prefilledRef.current) return;
-    if (!modelData.data || sheetRows.length > 0) return;
+    if (!modelData.data) return;
+    if (activeDataset?.id && loadedDatasetIdRef.current === activeDataset.id) return;
     const { companyName, revenue, netProfit, totalAssets, totalDebt } = modelData.data;
     if (revenue !== null && netProfit !== null && totalAssets !== null && totalDebt !== null) {
       const timer = setTimeout(() => {
         const companies = [companyName];
+        setClearVersion(v => v + 1);
         setSheetPeriods(companies);
         setSheetRows(LABELS.map((label, li) => {
           const vals: Record<number, number | null> = {
@@ -123,12 +125,14 @@ export default function PeerPage() {
         }];
         setPeerResults(parsed);
         setShowResults(false); // needs at least 2 companies
+        setIsSampleLoaded(false);
+        loadedDatasetIdRef.current = activeDataset?.id ?? null;
         prefilledRef.current = true;
         showToast(`Pre-filled from imported data: ${companyName}`);
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [modelData.data, sheetRows.length]);
+  }, [activeDataset?.id, modelData.data, showToast]);
 
   // Compute institutional analytics when active dataset has enough data
   const institutionalAnalyticsResult = useMemo(() => {

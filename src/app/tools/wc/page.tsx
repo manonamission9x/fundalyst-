@@ -62,13 +62,15 @@ export default function WCPage() {
   const activeDataset = useActiveDataset();
 
   const prefilledRef = useRef(false);
+  const loadedDatasetIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (clearedRef.current) return;
-    if (prefilledRef.current) return;
-    if (!modelData.data || sheetRows.length > 0) return;
+    if (!modelData.data) return;
+    if (activeDataset?.id && loadedDatasetIdRef.current === activeDataset.id) return;
     const { revenue, cogs, receivables, inventory, payables, cash } = modelData.data;
     if (revenue !== null || cogs !== null || receivables !== null) {
       const timer = setTimeout(() => {
+        setClearVersion(v => (v ?? 0) + 1);
         setSheetRows([
           { metric: 'Revenue (annual)', values: [revenue !== null ? String(revenue) : ''] },
           { metric: 'Cost of Goods Sold', values: [cogs !== null ? String(cogs) : ''] },
@@ -77,11 +79,14 @@ export default function WCPage() {
           { metric: 'Payables', values: [payables !== null ? String(payables) : ''] },
           { metric: 'Cash & Equivalents', values: [cash !== null ? String(cash) : ''] },
         ]);
+        setRes(null);
+        setShowResults(false);
+        loadedDatasetIdRef.current = activeDataset?.id ?? null;
       }, 0);
       prefilledRef.current = true;
       return () => clearTimeout(timer);
     }
-  }, [modelData.data, sheetRows.length]);
+  }, [activeDataset?.id, modelData.data, setRes]);
 
   function analyze() {
     const inputs = rowsToWCInputs(sheetRows);

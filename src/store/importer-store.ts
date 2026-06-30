@@ -98,7 +98,7 @@ export const useImporterStore = create<ImporterState>()(
           ...dataset,
           facts,
           sourceType,
-          companyName: dataset.companyName || fallbackCompanyName,
+          companyName: dataset.companyName || fallbackCompanyName || review.metadata.company || review.fileName,
           id: dataset.id || generateDatasetId(),
           createdAt: dataset.createdAt || new Date().toISOString(),
         };

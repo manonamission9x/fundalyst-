@@ -75,11 +75,12 @@ export default function YoyPage() {
 
   // Pre-fill from canonical model when available
   const prefilledRef = useRef(false);
+  const loadedDatasetIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (clearedRef.current) return;
-    if (prefilledRef.current) return;
+    if (activeDataset?.id && loadedDatasetIdRef.current === activeDataset.id) return;
     if (!modelData.data || !modelData.isLoaded) return;
-    if (dataInfo.dataSource === 'none' || dataInfo.dataSource === undefined) return;
+    if (!activeDataset && (dataInfo.dataSource === 'none' || dataInfo.dataSource === undefined)) return;
     const td = modelData.data;
     if (!td || !td.periods || td.periods.length < 2) return;
     const periods = td.periods;
@@ -88,16 +89,18 @@ export default function YoyPage() {
       values: vals.map(v => v !== null ? String(v) : ''),
     }));
     const timer = setTimeout(() => {
+      setClearVersion(v => (v ?? 0) + 1);
       setSheetRows(rows);
       setYears(periods.join(','));
       const csvText = rows.map((r) => `${r.metric},${r.values.join(',')}`).join('\n');
       setCsv(csvText);
       parseWithText(csvText);
       setIsSampleLoaded(false);
+      loadedDatasetIdRef.current = activeDataset?.id ?? null;
     }, 0);
     prefilledRef.current = true;
     return () => clearTimeout(timer);
-  }, [modelData.data, modelData.isLoaded, dataInfo.dataSource]);
+  }, [activeDataset, modelData.data, modelData.isLoaded, dataInfo.dataSource, setCsv, setRows, setYears]);
 
   const handleDataChange = (newRows: SpreadsheetRow[], newPeriods: string[]) => {
     setSheetRows(newRows);

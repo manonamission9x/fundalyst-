@@ -161,13 +161,15 @@ export default function RatiosPage() {
   const activeDataset = useActiveDataset();
 
   const prefilledRef = useRef(false);
+  const loadedDatasetIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (clearedRef.current) return;
-    if (prefilledRef.current) return;
-    if (!modelData.data || sheetRows.length > 0) return;
+    if (!modelData.data) return;
+    if (activeDataset?.id && loadedDatasetIdRef.current === activeDataset.id) return;
     const { revenue, netProfit, totalAssets, totalEquity, totalDebt, ebit } = modelData.data;
     if (revenue !== null || netProfit !== null || totalAssets !== null) {
       const timer = setTimeout(() => {
+        setClearVersion(v => (v ?? 0) + 1);
         setSheetRows([
           { metric: 'Revenue', values: [revenue !== null ? String(revenue) : ''] },
           { metric: 'Net Profit', values: [netProfit !== null ? String(netProfit) : ''] },
@@ -176,11 +178,14 @@ export default function RatiosPage() {
           { metric: 'Total Equity', values: [totalEquity !== null ? String(totalEquity) : ''] },
           { metric: 'Total Debt', values: [totalDebt !== null ? String(totalDebt) : ''] },
         ]);
+        setRes(null);
+        setShowResults(false);
+        loadedDatasetIdRef.current = activeDataset?.id ?? null;
       }, 0);
       prefilledRef.current = true;
       return () => clearTimeout(timer);
     }
-  }, [modelData.data, sheetRows.length]);
+  }, [activeDataset?.id, modelData.data, setRes]);
 
   function analyze() {
     const data = rowsToRatioData(sheetRows);

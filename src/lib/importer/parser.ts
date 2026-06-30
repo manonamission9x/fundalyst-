@@ -412,6 +412,9 @@ export async function buildReviewState(file: File): Promise<ImportReviewState> {
 
   const metadata = detectMetadata(rows);
   const { facts, warnings } = rowsToFacts(rows, metadata, sourceType);
+  if (warnings.length > 0) {
+    warnings.unshift('Partial parse: some rows could not be confidently mapped. Review the mappings before using this data in analysis.');
+  }
 
   // Build initial mappings (all unconfirmed)
   const seen = new Set<string>();
@@ -438,7 +441,10 @@ export async function buildReviewState(file: File): Promise<ImportReviewState> {
     return b.confidence - a.confidence;
   });
 
-  const dataset = buildDataset(facts, metadata, undefined, sourceType);
+  const dataset = {
+    ...buildDataset(facts, metadata, undefined, sourceType),
+    warnings,
+  };
 
   return {
     fileName: file.name,
@@ -484,5 +490,8 @@ export function applyMappingOverrides(
     return f;
   });
 
-  return buildDataset(updatedFacts, review.metadata, undefined, review.sourceType);
+  return {
+    ...buildDataset(updatedFacts, review.metadata, undefined, review.sourceType),
+    warnings: review.warnings,
+  };
 }
