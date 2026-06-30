@@ -82,7 +82,11 @@ export default function ImportPage() {
         if (!deep.valid) return; // Don't proceed
       }
 
-      await startImport(file);
+      try {
+        await startImport(file);
+      } catch (e) {
+        console.error('Import failed:', e);
+      }
       e.target.value = '';
     },
     [startImport]
@@ -185,10 +189,11 @@ Price, 185, 210, 230`;
                   <span>·</span>
                   <span>XLSX</span>
                   <span>·</span>
-                  <span>PDF</span>
+                  <span>PDF<span className="nav-badge" style={{fontSize:7,padding:'0 4px',marginLeft:2,verticalAlign:'super'}}>BETA</span></span>
                   <span>·</span>
                   <span>Screenshot</span>
                   <span style={{ color: 'var(--caution)', fontSize: 'var(--text-3xs)' }}>NEW</span>
+                  <br /><span style={{fontSize:9,color:'var(--text-muted)'}}>PDF/OCR/XBRL import is BETA — review all extractions before analysis</span>
                 </div>
                 <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', marginTop: 6 }}>
                   Or paste a screenshot from clipboard (Ctrl+V)

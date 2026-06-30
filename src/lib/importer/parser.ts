@@ -1,11 +1,12 @@
-import * as XLSX from 'xlsx';
+// ── Parse raw file content into rows ──
 import type { RawRow, FundalystDataset, CanonicalFact, FileMetadata, ImportReviewState, MetricMapping, SourceType, StatementType } from './types';
 import { detectMetadata } from './detector';
 import { normalizeValue, convertToOnes } from './normalizer';
 import { findBestMetricMatch } from './metric-aliases';
 import { parseCsvWithDetection } from './csv-detector';
 
-// ── Parse raw file content into rows ──
+const MAX_XLSX_BYTES = 10 * 1024 * 1024; // 10MB
+const XLSX_PARSE_TIMEOUT_MS = 15000; // 15s real timeout via Worker.terminate()
 
 /** Parse CSV text into RawRow[] */
 export function parseCSVToRows(text: string): RawRow[] {
@@ -13,65 +14,110 @@ export function parseCSVToRows(text: string): RawRow[] {
   return rows.map((cells, i) => ({ rowIndex: i, cells }));
 }
 
-/** Parse a single CSV line respecting quoted fields */
-export function parseXLSXToRows(buffer: ArrayBuffer): RawRow[] {
-  const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array' });
-  const sheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[sheetName];
-  const json = XLSX.utils.sheet_to_json<(string | number | null)[]>(sheet, { header: 1 });
+/**
+ * Parse XLSX via a Web Worker with a real timeout.
+ *
+ * Security: xlsx is loaded only inside the worker, isolating the main thread
+ * from its prototype pollution and ReDoS vulnerabilities. The worker can be
+ * terminated mid-parse, which actually works (unlike the old setTimeout trick).
+ */
+let _workerId = 0;
+let _worker: Worker | null = null;
 
-  const rows: RawRow[] = [];
-  for (let i = 0; i < json.length; i++) {
-    const row = json[i];
-    if (!row || row.length === 0) continue;
-    const cells = row.map((cell) => {
-      if (cell === null || cell === undefined) return '';
-      return String(cell).trim();
-    });
-    // Skip completely empty rows
-    if (cells.every((c) => !c)) continue;
-    rows.push({ rowIndex: i, cells });
+function getWorker(): Worker {
+  if (!_worker) {
+    _worker = new Worker('/xlsx-worker.js');
   }
+  return _worker;
+}
+
+function terminateWorker(): void {
+  if (_worker) {
+    _worker.terminate();
+    _worker = null;
+  }
+}
+
+export async function parseXLSXToRows(buffer: ArrayBuffer): Promise<RawRow[]> {
+  // File size gate — reject before touching the worker
+  if (buffer.byteLength > MAX_XLSX_BYTES) {
+    throw new Error(
+      `File too large (${(buffer.byteLength / 1024 / 1024).toFixed(1)}MB). ` +
+      `Maximum XLSX size is ${MAX_XLSX_BYTES / 1024 / 1024}MB. ` +
+      'Try reducing file size or saving as CSV.'
+    );
+  }
+
+  const worker = getWorker();
+  const id = ++_workerId;
+
+  const result = await Promise.race([
+    new Promise<{ id: number; rows: string[][] | null; error: string | null }>(
+      (resolve) => {
+        const handler = (e: MessageEvent) => {
+          if (e.data.id === id) {
+            worker.removeEventListener('message', handler);
+            resolve(e.data);
+          }
+        };
+        worker.addEventListener('message', handler);
+        worker.postMessage({ id, buffer }, [buffer]);
+      }
+    ),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => {
+        terminateWorker(); // kills the hung worker and creates a fresh one next time
+        reject(new Error('XLSX parsing timed out. The file may be corrupt or too complex. Try saving as CSV.'));
+      }, XLSX_PARSE_TIMEOUT_MS)
+    ),
+  ]);
+
+  if (result.error) {
+    throw new Error(result.error);
+  }
+
+  const rows: RawRow[] = (result.rows || []).map((cells, i) => ({
+    rowIndex: i,
+    cells: cells.map((c: string) => (c || '').trim()),
+  }));
 
   return rows;
 }
 
 /**
  * XLSX parsing with timeout + prototype pollution guard.
- * Aborts after 15s to prevent ReDoS tab hangs.
- * Uses structuredClone to isolate prototype pollution from xlsx output.
+ * Uses structuredClone to strip prototype pollution from worker output.
  */
 export async function parseXLSXToRowsSafe(buffer: ArrayBuffer): Promise<RawRow[]> {
-  const result = await parseWithTimeout<RawRow[]>(buffer, 15000);
-  // structuredClone strips prototype pollution and produces plain objects
+  const result = await parseXLSXToRows(buffer);
   return structuredClone(result);
-}
-
-function parseWithTimeout<T>(buffer: ArrayBuffer, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error('XLSX parsing timed out. The file may be corrupt or too complex. Try saving as CSV.'));
-    }, ms);
-    try {
-      const result = parseXLSXToRows(buffer) as unknown as T;
-      clearTimeout(timer);
-      resolve(result);
-    } catch (err) {
-      clearTimeout(timer);
-      reject(err);
-    }
-  });
 }
 
 // ── Read file to RawRow[] ──
 
 export async function readFileToRows(file: File): Promise<RawRow[]> {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+
+  // Size gate for all files
+  if (file.size > MAX_XLSX_BYTES && (ext === 'xlsx' || ext === 'xls')) {
+    throw new Error(
+      `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). ` +
+      `Maximum XLSX size is ${MAX_XLSX_BYTES / 1024 / 1024}MB.`
+    );
+  }
+
   if (ext === 'xlsx' || ext === 'xls') {
     const buffer = await file.arrayBuffer();
     return parseXLSXToRowsSafe(buffer);
   }
+
   const text = await file.text();
+
+  // Reject empty files
+  if (!text || text.trim().length === 0) {
+    throw new Error('The file is empty. Please upload a file with data.');
+  }
+
   return parseCSVToRows(text);
 }
 

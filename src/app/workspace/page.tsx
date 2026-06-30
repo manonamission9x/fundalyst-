@@ -801,8 +801,17 @@ function GovernancePanel() {
     <div>
       <SectionTitle>Governance</SectionTitle>
       <div className="flex flex-col gap-4 mt-4">
+        <div className="workspace-card" style={{ borderColor: 'var(--caution)', marginBottom: 8 }}>
+          <div className="workspace-card-header" style={{ color: 'var(--caution)' }}>Local Simulation Mode</div>
+          <div className="p-4 text-xs text-tertiary leading-normal">
+            All governance controls, roles, and audit features shown here are LOCAL SIMULATIONS.
+            They are NOT enforced by any server. Data is stored in unencrypted browser localStorage
+            and can be cleared by the user at any time. Production enforcement requires a backend
+            with authentication, permission checks, encrypted storage, and immutable audit retention.
+          </div>
+        </div>
         <div className="workspace-card">
-          <div className="workspace-card-header">Project Controls</div>
+          <div className="workspace-card-header">Project Controls ⚡ local simulation</div>
           <div className="p-4 grid grid-cols-3 gap-4">
             <div>
               <div className="ws-metric-label">Approval Gate</div>
@@ -825,7 +834,7 @@ function GovernancePanel() {
         </div>
 
         <div className="workspace-card">
-          <div className="workspace-card-header">Role Simulation</div>
+          <div className="workspace-card-header">Role Simulation ⚡ local simulation</div>
           <div className="p-4">
             <table className="diff-table">
               <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Role</th></tr></thead>
@@ -850,7 +859,7 @@ function GovernancePanel() {
         <div className="workspace-card">
           <div className="workspace-card-header">Backend Boundary</div>
           <div className="p-4 text-xs text-tertiary leading-normal">
-            These controls are enforced as local product state today. Production enforcement still requires server-side auth, permission checks, encrypted storage, audit retention, and organization tenancy.
+            These controls are LOCAL-ONLY and NOT enforced. They simulate what a production server would enforce. All data is stored in unencrypted browser localStorage.
           </div>
         </div>
       </div>

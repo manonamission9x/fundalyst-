@@ -35,7 +35,7 @@ const aboutCards = [
   },
   {
     title: 'Private by Design',
-    text: 'All file parsing, normalization, and calculations happen in your browser. <strong>No data is sent to any server.</strong> No accounts. No database. Your work lives in localStorage — close the tab and come back, it&apos;s still there.',
+    text: 'All file parsing, normalization, and calculations happen in your browser. <strong>No data is sent to any server.</strong> No accounts. No database. Your work lives in <strong>unencrypted browser localStorage</strong> — do not store sensitive or confidential data. Clearing browser data will remove all your work. Export backups regularly.',
     svg: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="7" width="10" height="8" rx="1.5" />
@@ -117,7 +117,7 @@ export default function AboutPage() {
           <p className="p-0">
             Fundalyst is an open-source, client-side-only financial analysis tool.
             No user data is collected, stored, or transmitted.
-            If you encounter issues, clear your browser data and reload — all state is in localStorage.
+            If you encounter issues, export a backup from the Workspace first, then clear your browser data and reload. All state is in localStorage and will be lost if cleared without backup.
             For feature requests or bug reports, visit the project repository on GitHub.
           </p>
         </div>
