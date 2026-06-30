@@ -226,7 +226,7 @@ export default function TrendsPage() {
       )}
 
       {!showResults && (
-        <EmptyState title="No trend data yet" desc="Enter period labels as the first column headers and metrics below in the spreadsheet, then click Plot. Data can also be pre-filled from the Filing Comparison or Import tools." action={{ label: 'Import data', href: '/import' }} />
+        <EmptyState title="Trend Charts" desc="Enter period labels as column headers and metrics below in the spreadsheet, or import a file, then click Plot. Data can also be pre-filled from Filing Comparison or Import." action={{ label: 'Import data', href: '/import' }} />
       )}
     </div>
   );

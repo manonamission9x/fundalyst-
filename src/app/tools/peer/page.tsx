@@ -450,7 +450,7 @@ Infosys, 156000, 28700, 172000, 24000`;
       )}
 
       {!showResults && (
-        <EmptyState title="No peer comparison data yet" desc="Type company names as column headers and enter financial data in the spreadsheet above, then click Compare. Or load sample companies to see how the tool works." action={{ label: 'Import data', href: '/import' }} />
+        <EmptyState title="Peer Comparison" desc="Type company names as column headers and enter financial data in the spreadsheet, or import a file, then click Compare. Try sample companies to see how the tool works." action={{ label: 'Import data', href: '/import' }} />
       )}
     </div>
   );

@@ -339,8 +339,8 @@ export default function DCFPage() {
 
       {!show && (
         <EmptyState
-          title="Fill in the DCF assumptions above, then click Calculate value."
-          desc="Defaults pre-filled with sample data. Adjust Free Cash Flow, Growth Rate, WACC, and other assumptions to see how they affect intrinsic value."
+          title="DCF Valuation"
+          desc="Fill in Free Cash Flow, Growth Rate, WACC, and other assumptions above, then click Calculate. Defaults are pre-filled with sample data."
           action={{ label: 'Load from import', href: '/import' }}
         />
       )}

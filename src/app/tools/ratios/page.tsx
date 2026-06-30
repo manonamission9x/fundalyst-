@@ -309,7 +309,7 @@ export default function RatiosPage() {
       )}
 
       {!showResults && (
-        <EmptyState title="No ratio data yet" desc="Enter 6 key numbers in the spreadsheet above, then click Calculate. The tool unlocks Net Profit Margin, ROE, Debt/Equity, Debt/Assets, and Asset Turnover." action={{ label: 'Import data', href: '/import' }} />
+        <EmptyState title="Financial Ratios" desc="Enter 6 key numbers in the spreadsheet, or import a file, then click Calculate. The tool computes Net Profit Margin, ROE, Debt/Equity, Debt/Assets, and Asset Turnover." action={{ label: 'Import data', href: '/import' }} />
       )}
     </div>
   );

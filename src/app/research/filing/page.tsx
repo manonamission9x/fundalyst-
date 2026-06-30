@@ -478,8 +478,8 @@ export default function FilingPage() {
       {/* ── Empty state ── */}
       {!showResults && (
         <EmptyState
-          title="Enter data in the spreadsheet above"
-          desc="Type metrics and values directly in the grid, or paste from Excel/Google Sheets. Tab and arrow keys navigate between cells. The comparison highlights revenue growth, margin compression, and debt changes automatically."
+          title="Filing Comparison"
+          desc="Enter metrics and periods in the spreadsheet above, or import a file. The tool highlights revenue growth, margin changes, and debt shifts automatically."
           action={{ label: 'Import data', href: '/import' }}
         />
       )}

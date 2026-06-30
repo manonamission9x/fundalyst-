@@ -14,22 +14,19 @@ import {
   IconNavRatios,
   IconNavPeer,
   IconNavWorkspace,
-  IconNavAbout,
 } from '@/components/ui';
 
 function ThemeToggle() {
-  const [theme, setTheme] = useState<'auto' | 'light' | 'dark'>('auto');
-
-  useEffect(() => {
-    const saved = localStorage.getItem('fundalyst-theme');
-    if (saved === 'light' || saved === 'dark') {
-      setTheme(saved);
-      document.documentElement.setAttribute('data-theme', saved);
-    } else {
-      setTheme('auto');
-      document.documentElement.removeAttribute('data-theme');
+  const [theme, setTheme] = useState<'auto' | 'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('fundalyst-theme');
+      if (saved === 'light' || saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', saved);
+        return saved;
+      }
     }
-  }, []);
+    return 'auto';
+  });
 
   const toggle = useCallback(() => {
     const next = theme === 'auto' ? 'light' : theme === 'light' ? 'dark' : 'auto';
@@ -114,11 +111,6 @@ const sections: NavSection[] = [
     ],
   },
 ];
-
-const aboutItem: NavItem = { id: 'about', label: 'About', href: '/about', icon: <IconNavAbout /> };
-
-const allNavItems: NavItem[] = sections.flatMap((s) => s.items);
-allNavItems.push(aboutItem);
 
 export default function Nav() {
   const pathname = usePathname();
@@ -210,16 +202,6 @@ export default function Nav() {
           ))}
 
           <span className="nav-sep" />
-          <Link
-            href={aboutItem.href}
-            className={`nav-tab${isActive(aboutItem.href) ? ' active' : ''}`}
-            id={`${aboutItem.id}-tab`}
-            role="tab"
-            aria-selected={isActive(aboutItem.href)}
-          >
-            {aboutItem.icon}
-            <span>{aboutItem.label}</span>
-          </Link>
         </div>
 
         <div className="nav-right">
@@ -303,16 +285,6 @@ export default function Nav() {
         </div>
 
         <div className="nav-mobile-footer">
-          <Link
-            href={aboutItem.href}
-            className={`nav-mobile-item${isActive(aboutItem.href) ? ' active' : ''}`}
-            onClick={handleNavClick}
-            role="tab"
-            aria-selected={isActive(aboutItem.href)}
-          >
-            {aboutItem.icon}
-            <span>{aboutItem.label}</span>
-          </Link>
           {activeDataset && (
             <button
               type="button"

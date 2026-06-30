@@ -233,8 +233,8 @@ export default function WCPage() {
 
       {!showResults && (
         <EmptyState
-          title="No cash efficiency data yet"
-          desc="Enter revenue, COGS, and balance sheet figures in the spreadsheet above, then click Analyze. The tool calculates DSO, DIO, DPO, and the Cash Conversion Cycle."
+          title="Cash Efficiency"
+          desc="Enter revenue, COGS, and balance sheet figures in the spreadsheet, or import a file, then click Analyze. The tool calculates DSO, DIO, DPO, and the Cash Conversion Cycle."
           action={{ label: 'Import data', href: '/import' }}
         />
       )}

@@ -26,30 +26,13 @@ import type { FundalystDataset } from '@/lib/importer/types';
 
 // ── Helpers ──
 
+import { fmtINR, fmtPct, fmtNum } from '@/lib/format';
+
 let _memoCounter = 0;
+
 function makeMemoId(): string {
   _memoCounter++;
   return `memo_${Date.now()}_${_memoCounter}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function fmtNum(n: number | null | undefined, decimals = 2): string {
-  if (n === null || n === undefined) return '—';
-  return n.toLocaleString('en-IN', { maximumFractionDigits: decimals });
-}
-
-function fmtPct(n: number | null | undefined): string {
-  if (n === null || n === undefined) return '—';
-  const sign = n > 0 ? '+' : '';
-  return sign + n.toFixed(2) + '%';
-}
-
-function fmtINR(n: number | null | undefined): string {
-  if (n === null || n === undefined) return '—';
-  const abs = Math.abs(n);
-  const sign = n < 0 ? '−' : '';
-  if (abs >= 1e7) return sign + '₹' + (abs / 1e7).toFixed(1) + ' Cr';
-  if (abs >= 1e5) return sign + '₹' + (abs / 1e5).toFixed(1) + ' L';
-  return sign + '₹' + abs.toLocaleString('en-IN');
 }
 
 function nowISO(): string {

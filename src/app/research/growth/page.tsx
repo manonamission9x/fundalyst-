@@ -257,7 +257,7 @@ export default function YoyPage() {
       )}
 
       {!rows.length && (
-        <EmptyState title="No growth data yet" desc="Enter year labels and metrics in the spreadsheet above (or upload a CSV), then click Calculate growth. The tool computes year-over-year percentage changes." action={{ label: 'Import data', href: '/import' }} />
+        <EmptyState title="Growth Rates" desc="Enter year labels and metrics in the spreadsheet, or import a file, then click Calculate. The tool computes year-over-year percentage changes for every line item." action={{ label: 'Import data', href: '/import' }} />
       )}
     </div>
   );

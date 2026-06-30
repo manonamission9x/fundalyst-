@@ -215,6 +215,15 @@ export default function HomePage() {
               </Link>
             </div>
           )}
+
+          <div className="mt-4" style={{ display: 'flex', justifyContent: 'center' }}>
+            <span className="trust-badge source">
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="5" width="8" height="6" rx="1" /><path d="M4 5V3a2 2 0 014 0v2" />
+              </svg>
+              Runs entirely in your browser. Your data never leaves this device.
+            </span>
+          </div>
         </div>
       </section>
 

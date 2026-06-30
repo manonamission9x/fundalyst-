@@ -100,18 +100,10 @@ export function getTooltipStyle() {
 }
 
 /** Format a number as Indian rupees for charts */
-export function fmtINR(v: number): string {
-  if (v >= 1e7) return '₹' + (v / 1e7).toFixed(1) + 'Cr';
-  if (v >= 1e5) return '₹' + (v / 1e5).toFixed(1) + 'L';
-  if (v >= 1000) return '₹' + (v / 1000).toFixed(1) + 'K';
-  return '₹' + v.toFixed(0);
-}
+export { fmtINR } from '@/lib/format';
 
 /** Format a percentage */
-export function fmtPct(v: number): string {
-  const sign = v > 0 ? '+' : '';
-  return sign + v.toFixed(1) + '%';
-}
+export { fmtPct } from '@/lib/format';
 
 /** Get color for a change value */
 export function changeColor(v: number): string {

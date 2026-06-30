@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { Inter, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/layout/Nav';
@@ -50,6 +51,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Your data never leaves your machine
               <span className="nav-sep" aria-hidden="true" />
               For research purposes only. Not financial advice.
+              <span className="nav-sep" aria-hidden="true" />
+              <Link href="/about" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>About</Link>
             </div>
             <div>&copy; 2026 Fundalyst</div>
           </footer>
