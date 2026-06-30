@@ -5,6 +5,16 @@ Last updated: 2026-06-30 (night)
 Repo: `C:\Users\kingo\Desktop\fundalyst-next`
 GitHub: `https://github.com/manonamission9x/fundalyst-`
 Branch: `main`
+Latest: `e789b79` — feat: multi-company peer compare from saved datasets (C3) + global memo export in nav (C4)
+
+## Git log (recent)
+```
+e789b79  feat: multi-company peer compare + global memo export
+4069571  feat: command palette (Cmd-K), Terminal Gold + light mode, dead-code cleanup
+8892f27  D1-D6: Product tasks complete
+8a41dc6  Update HANDoFF.md with Terminal Gold theme info
+6c12d6c  P0-P3 fixes + Terminal Gold theme re-skin + light mode toggle
+```
 
 ## Current Product State
 

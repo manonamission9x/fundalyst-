@@ -1,58 +1,39 @@
-# Codex — Visual Verification & Push (Fundalyst)
+# Codex — Verify & Push (Fundalyst, round 2)
 
-You are on the Windows machine where the app actually runs (native build binaries present). Claude did the work on a Linux sandbox and could typecheck/lint but **could not run the app**. Your job: visually verify, run the test suite, and if green, commit + push.
+You're on the Windows machine (native binaries work; Claude's Linux sandbox can't run the app or push — no git creds there).
 
-## What changed (verify these specifically)
-- **Command palette (NEW, by Claude)** — `src/components/layout/CommandPalette.tsx`, mounted in `src/app/layout.tsx`, opener also wired to a `⌘K` button in `src/components/layout/Nav.tsx`. Styles `.cmdk-*` / `.nav-cmdk-trigger` in `src/app/globals.css`.
-- **Terminal Gold theme + light mode (by DeepSeek)** — `globals.css` v3 tokens, `ThemeToggle` in `Nav.tsx`.
-- **Dead-code cleanup (by Claude)** — removed unused `provenanceMap` param in `lib/memo-export.ts` and unused `InstitutionalResult` import in `tools/peer/page.tsx`.
+## State
+- Local `main` has commit **`e789b79`** on top of pushed `4069571`. It contains ONLY two files (a clean +50-line delta, no deletions):
+  - `src/app/tools/peer/page.tsx` — **C3**
+  - `src/components/layout/Nav.tsx` — **C4**
+- `tsc --noEmit` = 0 errors. `eslint` = 0 errors (pre-existing warnings only).
 
-## Setup
+## ⚠️ Important — reconcile the working tree first
+`git status` shows OTHER modified files NOT in commit `e789b79`: `globals.css`, `research/filing/page.tsx`, `calculations.ts`, `calculations.test.ts`, `importer/ocr.ts`, `importer/xbrl-parser.ts`, `HANDoFF.md`. Claude did NOT touch these this round. They are either (a) DeepSeek's uncommitted D1–D6 work, or (b) noise from a flaky sandbox filesystem that was truncating files. **Decide per file:** if it's real D1–D6 work, commit it; if it's truncated/garbage, `git checkout -- <file>` to restore from HEAD. Verify each isn't cut off (ends properly) before committing.
+
+## What changed (verify these)
+**C3 — multi-company peer compare**
+- Import 2+ companies (so `datasets.length >= 2`). Go to `/tools/peer`.
+- [ ] A gold "Compare N saved companies" button appears above the spreadsheet.
+- [ ] Clicking it fills the grid + results table with one column per saved company, pulled from the canonical model (revenue/profit/assets/debt), and highlights best/worst.
+- [ ] With <2 saved companies the button is hidden; CSV paste + "Try with example data" still work.
+
+**C4 — global memo export**
+- [ ] With an active dataset, the nav shows a "Memo" button (download icon). Clicking downloads a `.md` investment memo for the active company.
+- [ ] With no dataset, the button is absent. (Palette's "Export investment memo" still routes to /import when empty.)
+
+## Checks
 ```
-npm install        # ensure deps present
-npm run dev        # start Next dev server
-```
-Open the app in a browser. Keep the devtools console visible.
-
-## Automated checks (must pass)
-```
-npx tsc --noEmit           # expect: 0 errors
-npx eslint .               # expect: 0 errors, ~7 pre-existing warnings (img + exhaustive-deps) — OK
-npm test                   # vitest — expect all pass
-```
-
-## Visual checklist
-**Boot**
-- [ ] App loads, no red console errors.
-- [ ] Default theme is dark gold (`--primary #C8962E`). Body font is Inter, numerics are IBM Plex Mono (NOT system Arial).
-
-**Theme**
-- [ ] Theme toggle (nav) cycles dark → light → auto; light mode is readable, gold accent becomes the darker `#B07D1F`.
-- [ ] Floating surfaces cast a shadow (open a dropdown / right-click the spreadsheet context menu / the command palette) — no flat, shadowless panels.
-
-**Command palette (the new feature)**
-- [ ] `Ctrl/Cmd+K` opens it; the nav `⌘K` button also opens it; `Esc` and backdrop click close it.
-- [ ] Typing filters fuzzily (e.g. "dcf", "peer", "import"). ↑/↓ move the highlight, `Enter` runs it, mouse hover highlights.
-- [ ] "Navigate" entries route to the right page.
-- [ ] Import a dataset, reopen palette: a **Companies** section appears. Selecting a company switches the active dataset (nav badge updates). "Export investment memo" downloads a `.md`. "Clear all data" works.
-- [ ] With NO data, "Export investment memo" routes to /import instead of erroring.
-
-**Regression sweep (each must load + render, no crash)**
-- [ ] /research/filing, /research/trends, /research/growth
-- [ ] /tools/dcf, /tools/wc, /tools/ratios, /tools/peer
-- [ ] /import, /workspace, /about, / (home)
-- [ ] Charts render (DCF bars, trend lines). Tables render. Mobile width (≤640px): hamburger nav works, palette button hidden, layout intact.
-
-## If everything is green
-```
-git add -A
-git commit -m "feat: command palette (Cmd-K), Terminal Gold theme + light mode, dead-code cleanup"
-git push
+npx tsc --noEmit      # 0 errors
+npx eslint .          # 0 errors, ~7 known warnings
+npm test              # vitest
+npm run dev           # click through C3/C4 + a quick page sweep (filing, dcf, ratios, peer, workspace, home)
 ```
 
-## Report back to the user
-- Anything broken, any console error, any visual glitch (with the page + what you saw).
-- Confirm tsc/eslint/test results.
-- Confirm the push succeeded (branch + commit hash).
+## Push
+If green: `git push origin main` (commit `e789b79`, plus any D1–D6 commits you reconciled above).
 
-> Note: the Linux sandbox had a flaky filesystem (it truncated several files mid-write during the session; Claude rebuilt them from `git show HEAD` + verified). If anything looks truncated/cut-off, flag it — but tsc was clean, so it should be intact.
+## Still TODO (Claude's lane, not done)
+- **C2** — remove demo-data injection + real empty states (invasive: all stores + filing page).
+- **C5** — nav IA restructure + Workspace identity (invasive: routing/nav).
+Claude is holding these for a verified batch rather than pushing invasive UI to main unseen.
