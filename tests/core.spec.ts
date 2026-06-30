@@ -42,3 +42,41 @@ test.describe('localStorage data flow', () => {
     await page.evaluate(() => localStorage.removeItem('test-key'));
   });
 });
+
+test.describe('Workspace resilience', () => {
+  test('loads when persisted Fundalyst state has malformed shapes', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.setItem('fundalyst-enterprise', JSON.stringify({
+        state: {
+          projects: null,
+          members: {},
+          auditEvents: 'not-an-array',
+          versions: null,
+          integrations: false,
+          activeProjectId: 'missing-project',
+        },
+        version: 1,
+      }));
+      localStorage.setItem('fundalyst-global-data', JSON.stringify({
+        state: {
+          datasets: null,
+          activeDatasetId: 'missing-dataset',
+        },
+        version: 0,
+      }));
+      localStorage.setItem('fundalyst-importer', JSON.stringify({
+        state: {
+          savedMappings: [],
+          lastDataset: { companyName: 'Broken Persisted Dataset' },
+        },
+        version: 0,
+      }));
+    });
+
+    await page.goto('/workspace');
+    await expect(page).toHaveTitle(/Workspace/i);
+    await expect(page.getByText('Research Workspace')).toBeVisible();
+    await expect(page.locator('.ws-metric-value', { hasText: 'Local Research Project' })).toBeVisible();
+  });
+});

@@ -4,6 +4,13 @@ import type { FundalystDataset, ImportReviewState, MetricMapping } from '@/lib/i
 import { buildReviewState, applyMappingOverrides } from '@/lib/importer/parser';
 import { useGlobalDataStore, generateDatasetId } from '@/store/global-data-store';
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+function isDataset(value: unknown): value is FundalystDataset {
+  return isRecord(value) && Array.isArray(value.facts) && Array.isArray(value.periods);
+}
+
 interface ImporterState {
   /** The current import review (null = no active import) */
   review: ImportReviewState | null;
@@ -117,6 +124,16 @@ export const useImporterStore = create<ImporterState>()(
         savedMappings: state.savedMappings,
         lastDataset: state.lastDataset,
       }),
+      merge: (persisted, current) => {
+        if (!isRecord(persisted)) return current;
+        return {
+          ...current,
+          savedMappings: isRecord(persisted.savedMappings)
+            ? persisted.savedMappings as Record<string, string>
+            : current.savedMappings,
+          lastDataset: isDataset(persisted.lastDataset) ? persisted.lastDataset : current.lastDataset,
+        };
+      },
     }
   )
 );

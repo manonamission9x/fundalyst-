@@ -6,6 +6,9 @@ import { runValidationChecks } from '@/lib/importer/tool-validation';
 import { usePipelineStore } from './pipeline-store';
 import { useEnterpriseStore } from './enterprise-store';
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 interface GlobalDataState {
   /** All imported datasets (multi-file support) */
   datasets: FundalystDataset[];
@@ -147,6 +150,21 @@ export const useGlobalDataStore = create<GlobalDataState>()(
         datasets: state.datasets,
         activeDatasetId: state.activeDatasetId,
       }),
+      merge: (persisted, current) => {
+        if (!isRecord(persisted)) return current;
+        const datasets = Array.isArray(persisted.datasets)
+          ? persisted.datasets as FundalystDataset[]
+          : current.datasets;
+        const activeDatasetId = datasets.some((dataset) => dataset.id === persisted.activeDatasetId)
+          ? String(persisted.activeDatasetId)
+          : datasets[0]?.id ?? null;
+
+        return {
+          ...current,
+          datasets,
+          activeDatasetId,
+        };
+      },
     }
   )
 );

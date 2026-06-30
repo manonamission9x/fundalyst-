@@ -8,7 +8,7 @@ export default defineConfig({
     headless: true,
   },
   webServer: {
-    command: 'npm run dev',
+    command: process.platform === 'win32' ? 'npm.cmd run dev' : 'npm run dev',
     port: 3000,
     reuseExistingServer: true,
   },

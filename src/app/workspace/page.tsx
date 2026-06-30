@@ -88,15 +88,32 @@ export default function WorkspacePage() {
   const companyName = lastDataset?.companyName || datasets[0]?.companyName || activeProject?.companyName || 'No company selected';
   const hasData = datasets.length > 0 || lastDataset !== null;
   const totalFacts = datasets.reduce((sum, d) => sum + d.facts.length, 0);
+  const activeProjectSyncId = activeProject?.id;
+  const activeProjectCompanyName = activeProject?.companyName;
+  const activeProjectDatasetId = activeProject?.activeDatasetId ?? null;
 
   useEffect(() => {
-    if (activeProject && hasData && (activeProject.companyName === 'No company selected' || activeProject.activeDatasetId !== activeDatasetId)) {
-      updateProject(activeProject.id, {
-        companyName,
-        activeDatasetId,
+    if (!activeProjectSyncId || !hasData) return;
+
+    const shouldUpdateCompany =
+      activeProjectCompanyName === 'No company selected' && companyName !== activeProjectCompanyName;
+    const shouldUpdateDataset = activeProjectDatasetId !== activeDatasetId;
+
+    if (shouldUpdateCompany || shouldUpdateDataset) {
+      updateProject(activeProjectSyncId, {
+        ...(shouldUpdateCompany ? { companyName } : {}),
+        ...(shouldUpdateDataset ? { activeDatasetId } : {}),
       });
     }
-  }, [activeDatasetId, activeProject, companyName, hasData, updateProject]);
+  }, [
+    activeDatasetId,
+    activeProjectSyncId,
+    activeProjectCompanyName,
+    activeProjectDatasetId,
+    companyName,
+    hasData,
+    updateProject,
+  ]);
 
   // Track completed steps based on actual state
   const completedSteps: Set<StepId> = new Set();

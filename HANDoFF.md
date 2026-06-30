@@ -7,6 +7,7 @@ GitHub: `https://github.com/manonamission9x/fundalyst-`
 Branch: `main`
 
 Latest relevant commits:
+- `e7226fc` - Fix Workspace React update loop and persisted state recovery
 - `6e41857` - Harden local workflows and polish responsive UI
 - `04012a7` - Add source-linked calculation traces
 - `1840ddc` - Add backendless enterprise workspace foundation
@@ -148,6 +149,10 @@ Source-linked analysis:
 - Trace panels show formula, result, source metric, period, original label, location, confidence, and manual override state where available.
 
 Reliability and security hardening:
+- `/workspace` no longer hits React minified error #185 / maximum update depth when syncing active project metadata.
+- Persisted Zustand state for enterprise, global data, and importer stores is shape-checked during hydration so old/malformed localStorage does not crash Workspace.
+- Playwright now includes a Workspace resilience regression for malformed persisted Fundalyst state.
+- Playwright web server command uses `npm.cmd run dev` on Windows to avoid PowerShell `npm.ps1` execution-policy failures.
 - `/research/trends` no longer emits a maximum update depth runtime error.
 - Plain and encrypted workspace restore now only restore known Fundalyst localStorage keys.
 - Import files over 20 MB are rejected before parser libraries run.
@@ -170,13 +175,13 @@ Older audit fixes still relevant:
 
 ## Verification Status
 
-Last verified after `6e41857`:
+Last verified after Workspace React #185 fix:
 
 ```bash
 npm.cmd test          # 58 passed
 npm.cmd run lint      # 0 errors, 6 existing warnings
 npm.cmd run build     # passed
-npm.cmd run test:e2e  # 17 passed
+npm.cmd run test:e2e  # 18 passed
 ```
 
 Known lint warnings:

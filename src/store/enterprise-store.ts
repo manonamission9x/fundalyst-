@@ -80,6 +80,8 @@ interface EnterpriseState {
 
 const nowIso = () => new Date().toISOString();
 const makeId = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
 const defaultUser: EnterpriseMember = {
   id: 'user_local_owner',
@@ -267,6 +269,26 @@ export const useEnterpriseStore = create<EnterpriseState>()(
     {
       name: 'fundalyst-enterprise',
       version: 1,
+      merge: (persisted, current) => {
+        if (!isRecord(persisted)) return current;
+        const next = { ...current, ...persisted } as EnterpriseState;
+
+        next.currentUser = isRecord(persisted.currentUser)
+          ? { ...defaultUser, ...persisted.currentUser } as EnterpriseMember
+          : current.currentUser;
+        next.members = Array.isArray(persisted.members) ? persisted.members as EnterpriseMember[] : current.members;
+        next.projects = Array.isArray(persisted.projects) && persisted.projects.length > 0
+          ? persisted.projects as EnterpriseProject[]
+          : current.projects;
+        next.auditEvents = Array.isArray(persisted.auditEvents) ? persisted.auditEvents as AuditEvent[] : current.auditEvents;
+        next.versions = Array.isArray(persisted.versions) ? persisted.versions as WorkspaceVersion[] : current.versions;
+        next.integrations = Array.isArray(persisted.integrations) ? persisted.integrations as EnterpriseIntegration[] : current.integrations;
+        next.activeProjectId = next.projects.some((project) => project.id === persisted.activeProjectId)
+          ? String(persisted.activeProjectId)
+          : next.projects[0].id;
+
+        return next;
+      },
     },
   ),
 );
