@@ -24,11 +24,9 @@ import { useGlobalImportFill, extractYoYInputs, getDataSourceLabel } from '@/lib
 import { useModelData } from '@/store/use-model-data';
 import { extractTrendData } from '@/store/financial-model-selectors';
 import { useActiveDataset } from '@/store/financial-model-selectors';
-import { useGlobalDataStore } from '@/store/global-data-store';
 import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
 import CalculationTracePanel from '@/components/shared/CalculationTrace';
 import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
-import MissingMetricsNotice from '@/components/shared/MissingMetricsNotice';
 
 import { usePageTitle } from '@/lib/use-page-title';
 
@@ -36,7 +34,7 @@ export default function YoyPage() {
   const showToast = useToast();
   usePageTitle('Growth Rates');
   const { years, csv, rows, setYears, setCsv, setRows, clear: clearStore } = useYoyStore();
-  const [clearVersion, setClearVersion] = useState(0);
+  const [clearVersion, setClearVersion] = useState<number | undefined>(undefined);
   const clearedRef = useRef(false);
   const [cleared, setCleared] = useState(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
@@ -129,7 +127,7 @@ export default function YoyPage() {
     }
   }
 
-  function handleClear() { clearedRef.current = true; setCleared(true); setClearVersion(v => v + 1); clearStore(); setSheetRows([]); }
+  function handleClear() { clearedRef.current = true; setCleared(true); setClearVersion(v => (v ?? 0) + 1); clearStore(); setSheetRows([]); }
 
   const yearList = years.split(',').map((s) => s.trim()).filter(Boolean);
   const colLabels = rows.length > 0
@@ -150,7 +148,6 @@ export default function YoyPage() {
       }).filter((m) => m.avg < 0).sort((a, b) => a.avg - b.avg)[0]
     : null;
 
-  const toolReadiness = useGlobalDataStore((s) => s.getToolReadiness('growth'));
   const provenanceKind = dataInfo.dataSource === 'sample' ? 'manual' as const
     : dataInfo.dataSource === 'manual' ? 'manual' as const
     : dataInfo.dataSource && dataInfo.dataSource !== 'none' ? 'imported' as const
@@ -199,11 +196,6 @@ export default function YoyPage() {
         <DataSourceBadge variant={dataInfo.dataSource === 'sample' ? 'sample' : dataInfo.dataSource === 'manual' ? 'manual' : dataInfo.dataSource && dataInfo.dataSource !== 'none' ? 'imported' : 'none'} />
         <ProvenanceBadge kind={provenanceKind} showLabel />
       </div>
-      <MissingMetricsNotice
-        toolName={toolReadiness.toolName}
-        missingMetrics={toolReadiness.missingMetrics}
-        presentMetrics={toolReadiness.presentMetrics}
-      />
       <UploadBar onUpload={handleCsvFile} hint="CSV: Metric, Year1, Year2, Year3, ..." />
 
       <Card label="Data">

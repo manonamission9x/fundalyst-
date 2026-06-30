@@ -26,10 +26,8 @@ import { extractWCFromModel } from '@/store/financial-model-selectors';
 import { useModelData } from '@/store/use-model-data';
 import { useEnterpriseStore } from '@/store/enterprise-store';
 import CalculationTracePanel from '@/components/shared/CalculationTrace';
-import MissingMetricsNotice from '@/components/shared/MissingMetricsNotice';
 import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
 import { useActiveDataset } from '@/store/financial-model-selectors';
-import { useGlobalDataStore } from '@/store/global-data-store';
 import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
 
 function rowsToWCInputs(rows: SpreadsheetRow[]) {
@@ -54,7 +52,7 @@ export default function WCPage() {
   const showToast = useToast();
   const addAuditEvent = useEnterpriseStore((s) => s.addAuditEvent);
   const { res, setRes, clear: clearStore } = useWCStore();
-  const [clearVersion, setClearVersion] = useState(0);
+  const [clearVersion, setClearVersion] = useState<number | undefined>(undefined);
   const clearedRef = useRef(false);
   const [cleared, setCleared] = useState(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
@@ -62,7 +60,6 @@ export default function WCPage() {
 
   const modelData = useModelData((ds) => extractWCFromModel(ds));
   const activeDataset = useActiveDataset();
-  const toolReadiness = useGlobalDataStore((s) => s.getToolReadiness('wc'));
 
   const prefilledRef = useRef(false);
   useEffect(() => {
@@ -108,7 +105,7 @@ export default function WCPage() {
   const handleClear = useCallback(() => {
     clearedRef.current = true;
     setCleared(true);
-    setClearVersion(v => v + 1);
+    setClearVersion(v => (v ?? 0) + 1);
     clearStore();
     setSheetRows([]);
     setShowResults(false);
@@ -182,11 +179,6 @@ export default function WCPage() {
         <ProvenanceBadge kind={modelData.companyName ? 'imported' : 'unavailable'} />
       </div>
 
-      <MissingMetricsNotice
-        toolName={toolReadiness.toolName}
-        missingMetrics={toolReadiness.missingMetrics}
-        presentMetrics={toolReadiness.presentMetrics}
-      />
 
       <Card label="Cash Efficiency Inputs">
         <div className="card-body">

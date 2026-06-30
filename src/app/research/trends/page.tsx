@@ -10,13 +10,11 @@ import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import dynamic from 'next/dynamic';
 import { extractTrendData, useActiveDataset } from '@/store/financial-model-selectors';
 import { useModelData } from '@/store/use-model-data';
-import { useGlobalDataStore } from '@/store/global-data-store';
 import type { TrendRow } from '@/types/financial';
 import { usePageTitle } from '@/lib/use-page-title';
 import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
 import CalculationTracePanel from '@/components/shared/CalculationTrace';
 import { findRow, type CalculationTrace } from '@/lib/calculation-trace';
-import MissingMetricsNotice from '@/components/shared/MissingMetricsNotice';
 
 const TrendsChart = dynamic(() => import('@/components/tools/trends/TrendsChart'), {
   ssr: false,
@@ -28,9 +26,8 @@ export default function TrendsPage() {
   usePageTitle('Trend Charts');
   const modelData = useModelData((ds) => extractTrendData(ds));
   const activeDataset = useActiveDataset();
-  const toolReadiness = useGlobalDataStore((s) => s.getToolReadiness('trends'));
 
-  const [clearVersion, setClearVersion] = useState(0);
+  const [clearVersion, setClearVersion] = useState<number | undefined>(undefined);
   const clearedRef = useRef(false);
   const [cleared, setCleared] = useState(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
@@ -67,6 +64,7 @@ export default function TrendsPage() {
     if (!showResults || trendRows.length === 0) return [];
     return trendRows.map((row) => {
       const sheetRow = findRow(sheetRows, [row.label]);
+      void sheetRow; // used for provenance lookup
       return {
         label: row.label,
         value: row.vals.map((v) => (isNaN(v) ? '—' : fmtNum(v))).join(', '),
@@ -142,7 +140,7 @@ export default function TrendsPage() {
   function handleClear() {
     clearedRef.current = true;
     setCleared(true);
-    setClearVersion(v => v + 1);
+    setClearVersion(v => (v ?? 0) + 1);
     setSheetRows([]); setSheetPeriods([]); setTrendRows([]); setShowResults(false);
   }
 
@@ -163,11 +161,6 @@ export default function TrendsPage() {
           <ProvenanceBadge kind="default" label="Demo data" />
         )}
       </div>
-      <MissingMetricsNotice
-        toolName={toolReadiness.toolName}
-        missingMetrics={toolReadiness.missingMetrics}
-        presentMetrics={toolReadiness.presentMetrics}
-      />
       <UploadBar onUpload={handleCsvFile} hint="CSV: Metric, Period1, Period2, Period3, ..." />
 
       <Card label="Data">

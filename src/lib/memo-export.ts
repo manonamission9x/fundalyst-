@@ -52,11 +52,6 @@ function fmtINR(n: number | null | undefined): string {
   return sign + '₹' + abs.toLocaleString('en-IN');
 }
 
-function fmtMult(n: number | null | undefined): string {
-  if (n === null || n === undefined) return '—';
-  return n.toFixed(2) + 'x';
-}
-
 function nowISO(): string {
   return new Date().toISOString();
 }
@@ -320,8 +315,7 @@ function buildInstitutionalSection(
   institutional: InstitutionalResult | null,
   provenanceMap?: Record<string, ProvenanceSource>,
 ): MemoSection | null {
-  if (!institutional) return null;
-  if (institutional.valuation.length === 0 && institutional.profitability.length === 0) return null;
+  if (!institutional || (!institutional.valuation.length && !institutional.profitability.length)) return null;
 
   const subsections: MemoSection['subsections'] = [];
 
@@ -575,7 +569,6 @@ export function exportMemoMarkdown(memo: MemoExport): string {
  */
 export function exportMemoHTML(memo: MemoExport): string {
   const encodedTitle = escapeHtml(memo.title);
-  const encodedCompany = escapeHtml(memo.companyName);
   const dateStr = new Date(memo.generatedAt).toLocaleString('en-IN', {
     year: 'numeric',
     month: 'long',
