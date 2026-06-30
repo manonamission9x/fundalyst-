@@ -18,6 +18,7 @@ import {
   IconNavWorkspace,
   IconNavAbout,
 } from '@/components/ui';
+import { MagnifyingGlass, DownloadSimple, Sun, Moon, ArrowFatDown } from '@phosphor-icons/react';
 
 function ThemeToggle() {
   const [theme, setTheme] = useState<'auto' | 'light' | 'dark'>(() => {
@@ -53,19 +54,11 @@ function ThemeToggle() {
       aria-label={`Theme: ${theme}. Click to switch.`}
     >
       {theme === 'auto' ? (
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="6.5" cy="6.5" r="2.5" />
-          <path d="M6.5 1v1.5M6.5 10.5v1.5M1 6.5h1.5M10.5 6.5h1.5M2.3 2.3l1 1M9.7 9.7l1 1M2.3 10.7l1-1M9.7 3.3l1-1" />
-        </svg>
+        <Sun size={13} weight="regular" />
       ) : theme === 'light' ? (
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-          <circle cx="6.5" cy="6.5" r="3" />
-          <path d="M6.5 1v2.5M6.5 9.5v2.5M1 6.5h2.5M9.5 6.5h2.5M3 3l1.8 1.8M8.2 8.2l1.8 1.8M3 10l1.8-1.8M8.2 4.8l1.8-1.8" />
-        </svg>
+        <Sun size={13} weight="fill" />
       ) : (
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-          <path d="M6.5 1.5A5 5 0 1 0 6.5 11.5A4 4 0 1 1 6.5 1.5Z" />
-        </svg>
+        <Moon size={13} weight="fill" />
       )}
     </button>
   );
@@ -352,9 +345,7 @@ export default function Nav() {
             aria-label="Open command palette"
             title="Open command palette"
           >
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="6.5" cy="6.5" r="4" /><path d="M13 13l-3-3" />
-            </svg>
+            <MagnifyingGlass size={13} weight="regular" />
             <span>Search</span>
           </button>
           {activeDataset && activeDataset.facts.length > 0 && (
@@ -378,15 +369,11 @@ export default function Nav() {
               aria-label="Export investment memo"
               title="Export memo (Markdown)"
             >
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M7 2v8M4 7l3 3 3-3" /><path d="M2 11v1h10v-1" />
-              </svg>
+              <DownloadSimple size={13} weight="regular" />
             </button>
           )}
           <Link href="/import" className="nav-cta nav-cta-primary">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M7 2v7M4 6l3 3 3-3" /><path d="M2 11v1h10v-1" />
-            </svg>
+            <ArrowFatDown size={13} weight="regular" />
             <span>Import</span>
           </Link>
           <ThemeToggle />

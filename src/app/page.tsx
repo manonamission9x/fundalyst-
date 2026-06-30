@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useMemo, type ReactNode } from 'react';
 import { Card, MetricGrid } from '@/components/ui';
-import { FileText, TrendingUp, BarChart3, Calculator, DollarSign, PieChart, Users } from 'lucide-react';
+import { FileText, ChartLineUp, ChartBar, Calculator, CurrencyDollar, ChartPie, UsersThree } from '@phosphor-icons/react';
 import { useGlobalDataStore } from '@/store/global-data-store';
 
 // ── Quick Company Check (inline tool) ──
@@ -158,16 +158,16 @@ const tools: { section: string; items: HomeTool[] }[] = [
   {
     section: 'Research',
     items: [
-      { href: '/research/trends', label: 'Trend Charts', icon: <TrendingUp size={16} />, desc: 'Plot revenue, profit, and costs over 3+ years. Spot inflection points at a glance.', cta: 'Plot trends →' },
-      { href: '/research/growth', label: 'Growth Rates', icon: <BarChart3 size={16} />, desc: 'Year-over-year growth for every line item. Automatically color-coded for direction.', cta: 'Calculate growth →' },
+      { href: '/research/trends', label: 'Trend Charts', icon: <ChartLineUp size={16} />, desc: 'Plot revenue, profit, and costs over 3+ years. Spot inflection points at a glance.', cta: 'Plot trends →' },
+      { href: '/research/growth', label: 'Growth Rates', icon: <ChartBar size={16} />, desc: 'Year-over-year growth for every line item. Automatically color-coded for direction.', cta: 'Calculate growth →' },
     ],
   },
   {
     section: 'Valuation & Analysis',
     items: [
-      { href: '/tools/wc', label: 'Cash Efficiency', icon: <DollarSign size={16} />, desc: 'DSO, DIO, DPO, and the Cash Conversion Cycle. See where cash is trapped.', cta: 'Analyze cash →' },
-      { href: '/tools/ratios', label: 'Financial Ratios', icon: <PieChart size={16} />, desc: 'Liquidity, leverage, profitability, and efficiency — 9 ratios, one click.', cta: 'View ratios →' },
-      { href: '/tools/peer', label: 'Peer Comparison', icon: <Users size={16} />, desc: 'Compare up to 10 companies side-by-side. Leaders and laggards highlighted instantly.', cta: 'Compare peers →' },
+      { href: '/tools/wc', label: 'Cash Efficiency', icon: <CurrencyDollar size={16} />, desc: 'DSO, DIO, DPO, and the Cash Conversion Cycle. See where cash is trapped.', cta: 'Analyze cash →' },
+      { href: '/tools/ratios', label: 'Financial Ratios', icon: <ChartPie size={16} />, desc: 'Liquidity, leverage, profitability, and efficiency — 9 ratios, one click.', cta: 'View ratios →' },
+      { href: '/tools/peer', label: 'Peer Comparison', icon: <UsersThree size={16} />, desc: 'Compare up to 10 companies side-by-side. Leaders and laggards highlighted instantly.', cta: 'Compare peers →' },
     ],
   },
 ];

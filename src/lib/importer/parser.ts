@@ -231,12 +231,13 @@ export function buildDataset(
 // ── OCR/PDF review state builder ──
 
 async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportReviewState> {
-  const sourceType: SourceType = isPdf ? 'pdf-text' : 'ocr';
+  let sourceType: SourceType = isPdf ? 'pdf-text' : 'ocr';
 
   if (isPdf) {
     // PDF text extraction — use existing pipeline
     const { importPdf } = await import('./pdf-importer');
-    const ocrResult = await importPdf(file, undefined, 'text');
+    const ocrResult = await importPdf(file);
+    sourceType = ocrResult.sourceType;
 
     // Build facts from tables
     const facts: CanonicalFact[] = [];
@@ -271,8 +272,9 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
         for (let colIdx = 1; colIdx < row.length; colIdx++) {
           const rawValue = row[colIdx]?.trim() || '';
           if (!rawValue) continue;
-          const value = parseFloat(rawValue.replace(/[^0-9.-]/g, ''));
-          if (isNaN(value)) continue;
+          const normalized = normalizeValue(rawValue);
+          if (normalized.value === null) continue;
+          const value = convertToOnes(normalized.value, normalized.detectedUnit);
 
           const { findBestMetricMatch } = await import('./metric-aliases');
           const match = findBestMetricMatch(label);
@@ -290,6 +292,7 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
             metric: match?.canonical || 'unknown',
             labelOriginal: label,
             value,
+            rawValue,
             periodLabel,
             currency: 'UNKNOWN',
             unit: 'ones',
@@ -323,6 +326,7 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
       confidence: facts.length > 0
         ? Math.round(facts.reduce((s, f) => s + f.confidence, 0) / facts.length * 100) / 100
         : 0,
+      periodType: 'unknown',
       createdAt: new Date().toISOString(),
     };
 
@@ -338,6 +342,9 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
       }));
 
     warnings.push('[PDF BETA] Results are experimental. Please review all mappings before confirming.');
+    if (ocrResult.method === 'fallback-ocr' || ocrResult.method === 'scanned-ocr') {
+      warnings.push('This PDF appears to be scanned/image-based, so OCR was used. Please double-check extracted numbers against the source document.');
+    }
 
     return {
       fileName: file.name,
