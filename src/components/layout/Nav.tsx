@@ -21,45 +21,32 @@ import {
 import { MagnifyingGlass, DownloadSimple, Sun, Moon, ArrowFatDown } from '@phosphor-icons/react';
 
 function ThemeToggle() {
-  const [theme, setTheme] = useState<'auto' | 'light' | 'dark'>(() => {
+  const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('fundalyst-theme');
-      if (saved === 'light' || saved === 'dark') {
-        document.documentElement.setAttribute('data-theme', saved);
-        return saved;
-      }
-      document.documentElement.setAttribute('data-theme', 'dark');
+      const dark = saved !== 'light';
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      return dark;
     }
-    return 'dark';
+    return true;
   });
 
   const toggle = useCallback(() => {
-    const next = theme === 'dark' ? 'light' : theme === 'light' ? 'auto' : 'dark';
-    setTheme(next);
-    if (next === 'auto') {
-      localStorage.removeItem('fundalyst-theme');
-      document.documentElement.removeAttribute('data-theme');
-    } else {
-      localStorage.setItem('fundalyst-theme', next);
-      document.documentElement.setAttribute('data-theme', next);
-    }
-  }, [theme]);
+    const next = !isDark;
+    setIsDark(next);
+    localStorage.setItem('fundalyst-theme', next ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light');
+  }, [isDark]);
 
   return (
     <button
       type="button"
       className="nav-theme-toggle"
       onClick={toggle}
-      title={theme === 'auto' ? 'Auto theme' : theme === 'light' ? 'Light theme' : 'Dark theme'}
-      aria-label={`Theme: ${theme}. Click to switch.`}
+      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={`${isDark ? 'Light' : 'Dark'} mode. Click to switch.`}
     >
-      {theme === 'auto' ? (
-        <Sun size={13} weight="regular" />
-      ) : theme === 'light' ? (
-        <Sun size={13} weight="fill" />
-      ) : (
-        <Moon size={13} weight="fill" />
-      )}
+      {isDark ? <Moon size={13} weight="fill" /> : <Sun size={13} weight="fill" />}
     </button>
   );
 }

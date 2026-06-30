@@ -550,6 +550,8 @@ function parseOcrTextToTables(rawText: string, sourceName: string): ImportedTabl
         const cells2 = line.split(/\s{2,}/).map((c) => c.trim());
         if (cells2.length >= 2) return cells2;
       }
+      const financialCells = splitCollapsedFinancialRow(line);
+      if (financialCells.length >= 2) return financialCells;
       return cells;
     });
 
@@ -563,6 +565,42 @@ function parseOcrTextToTables(rawText: string, sourceName: string): ImportedTabl
   }
 
   return tables;
+}
+
+/**
+ * OCR often collapses table columns into single-space text:
+ * "Revenue from operations 5,660.90 8,457.33 ...".
+ * Recover these as [label, value1, value2, ...] so downstream metric mapping
+ * can still work without relying on perfect whitespace alignment.
+ */
+function splitCollapsedFinancialRow(line: string): string[] {
+  const trimmed = line.trim();
+  if (!/[a-zA-Z]/.test(trimmed) || !/\d/.test(trimmed)) return [trimmed];
+
+  const valuePattern = /\(?-?(?:\d{1,3}(?:,\d{2,3})+|\d+)(?:\.\d+)?\)?%?/g;
+  const matches = [...trimmed.matchAll(valuePattern)]
+    .filter((match) => {
+      const raw = match[0];
+      const start = match.index ?? 0;
+      const before = trimmed[start - 1] || ' ';
+      const after = trimmed[start + raw.length] || ' ';
+      return !/[A-Za-z]/.test(before) && !/[A-Za-z]/.test(after);
+    });
+
+  if (matches.length < 2) return [trimmed];
+
+  const firstValueAt = matches[0].index ?? -1;
+  const label = trimmed
+    .slice(0, firstValueAt)
+    .replace(/^[^\w(]+/, '')
+    .replace(/^\(?[a-z]\)?\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (label.length < 3 || !/[a-zA-Z]/.test(label)) return [trimmed];
+
+  const values = matches.map((match) => match[0].trim());
+  return [label, ...values];
 }
 
 // ── Clean OCR tables ────────────────────────────────────────────────────────
