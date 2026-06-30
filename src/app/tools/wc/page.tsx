@@ -25,6 +25,9 @@ import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import { extractWCFromModel } from '@/store/financial-model-selectors';
 import { useModelData } from '@/store/use-model-data';
 import { useEnterpriseStore } from '@/store/enterprise-store';
+import CalculationTracePanel from '@/components/shared/CalculationTrace';
+import { useActiveDataset } from '@/store/financial-model-selectors';
+import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
 
 function rowsToWCInputs(rows: SpreadsheetRow[]) {
   const result: Record<string, number | null> = {};
@@ -55,6 +58,7 @@ export default function WCPage() {
   const [showResults, setShowResults] = useState(false);
 
   const modelData = useModelData((ds) => extractWCFromModel(ds));
+  const activeDataset = useActiveDataset();
 
   const prefilledRef = useRef(false);
   useEffect(() => {
@@ -105,6 +109,57 @@ export default function WCPage() {
     setSheetRows([]);
     setShowResults(false);
   }, [clearStore]);
+
+  const traceItems: CalculationTrace[] = res ? [
+    {
+      label: 'DSO',
+      value: res.dso !== null ? `${Math.round(res.dso)}d` : 'not available',
+      formula: '(Trade Receivables / Revenue) x 365',
+      sources: [
+        makeTraceSource('Trade Receivables', activeDataset, ['receivables', 'tradeReceivables'], findRow(sheetRows, ['Trade Receivables'])),
+        makeTraceSource('Revenue', activeDataset, ['revenue'], findRow(sheetRows, ['Revenue (annual)', 'Revenue'])),
+      ],
+    },
+    {
+      label: 'DIO',
+      value: res.dio !== null ? `${Math.round(res.dio)}d` : 'not available',
+      formula: '(Inventory / COGS) x 365',
+      sources: [
+        makeTraceSource('Inventory', activeDataset, ['inventory'], findRow(sheetRows, ['Inventory'])),
+        makeTraceSource('COGS', activeDataset, ['cogs', 'costOfGoodsSold'], findRow(sheetRows, ['Cost of Goods Sold'])),
+      ],
+    },
+    {
+      label: 'DPO',
+      value: res.dpo !== null ? `${Math.round(res.dpo)}d` : 'not available',
+      formula: '(Payables / COGS) x 365',
+      sources: [
+        makeTraceSource('Payables', activeDataset, ['payables', 'tradePayables'], findRow(sheetRows, ['Payables'])),
+        makeTraceSource('COGS', activeDataset, ['cogs', 'costOfGoodsSold'], findRow(sheetRows, ['Cost of Goods Sold'])),
+      ],
+    },
+    {
+      label: 'CCC',
+      value: `${Math.round(res.ccc)}d`,
+      formula: 'DSO + DIO - DPO',
+      sources: [
+        makeTraceSource('DSO', null, [], undefined, res.dso !== null ? `${Math.round(res.dso)}d` : '0d'),
+        makeTraceSource('DIO', null, [], undefined, res.dio !== null ? `${Math.round(res.dio)}d` : '0d'),
+        makeTraceSource('DPO', null, [], undefined, res.dpo !== null ? `${Math.round(res.dpo)}d` : '0d'),
+      ],
+    },
+    {
+      label: 'Net Working Capital',
+      value: String(Math.round(res.nwc)),
+      formula: 'Receivables + Inventory + Cash - Payables',
+      sources: [
+        makeTraceSource('Trade Receivables', activeDataset, ['receivables', 'tradeReceivables'], findRow(sheetRows, ['Trade Receivables'])),
+        makeTraceSource('Inventory', activeDataset, ['inventory'], findRow(sheetRows, ['Inventory'])),
+        makeTraceSource('Cash & Equivalents', activeDataset, ['cash', 'cashAndEquivalents'], findRow(sheetRows, ['Cash & Equivalents'])),
+        makeTraceSource('Payables', activeDataset, ['payables', 'tradePayables'], findRow(sheetRows, ['Payables'])),
+      ],
+    },
+  ] : [];
 
   return (
     <div>
@@ -160,6 +215,8 @@ export default function WCPage() {
             {res.ccc < 0 && <InsightCard type="positive" title="Negative CCC" text={`A negative CCC (${Math.round(res.ccc)} days) is a strong cash position.`} />}
             {res.nwc < 0 && <WarningCard level="caution" label="Negative Net Working Capital" text="Payables exceed receivables + inventory + cash." />}
           </Card>
+
+          <CalculationTracePanel traces={traceItems} />
 
           <NextLinks links={[{ label: 'Financial ratios', href: '/tools/ratios' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
           <CalcTimestamp />

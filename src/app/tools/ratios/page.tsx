@@ -28,6 +28,9 @@ import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import { useModelData } from '@/store/use-model-data';
 import type { RatioInputs, RatioResult } from '@/types/financial';
 import { useEnterpriseStore } from '@/store/enterprise-store';
+import CalculationTracePanel from '@/components/shared/CalculationTrace';
+import { useActiveDataset } from '@/store/financial-model-selectors';
+import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
 
 const unlockedFormulas: Record<string, string> = {
   'Net Profit Margin': 'Net Profit ÷ Revenue',
@@ -43,6 +46,44 @@ const lockedRatios = [
   { label: 'Interest Coverage', formula: 'EBIT ÷ Interest Expense', hint: 'Add interest expense' },
   { label: 'Gross Margin', formula: '(Revenue − COGS) ÷ Revenue', hint: 'Add COGS' },
 ];
+
+const ratioTraceConfig: Record<string, { formula: string; sources: { label: string; rowLabels: string[]; metricKeys: string[] }[] }> = {
+  'Net Profit Margin': {
+    formula: 'Net Profit / Revenue',
+    sources: [
+      { label: 'Net Profit', rowLabels: ['Net Profit'], metricKeys: ['netProfit'] },
+      { label: 'Revenue', rowLabels: ['Revenue'], metricKeys: ['revenue'] },
+    ],
+  },
+  ROE: {
+    formula: 'Net Profit / Total Equity',
+    sources: [
+      { label: 'Net Profit', rowLabels: ['Net Profit'], metricKeys: ['netProfit'] },
+      { label: 'Total Equity', rowLabels: ['Total Equity'], metricKeys: ['equity', 'totalEquity'] },
+    ],
+  },
+  'Debt/Equity': {
+    formula: 'Total Debt / Total Equity',
+    sources: [
+      { label: 'Total Debt', rowLabels: ['Total Debt'], metricKeys: ['totalDebt'] },
+      { label: 'Total Equity', rowLabels: ['Total Equity'], metricKeys: ['equity', 'totalEquity'] },
+    ],
+  },
+  'Debt/Assets': {
+    formula: 'Total Debt / Total Assets',
+    sources: [
+      { label: 'Total Debt', rowLabels: ['Total Debt'], metricKeys: ['totalDebt'] },
+      { label: 'Total Assets', rowLabels: ['Total Assets'], metricKeys: ['totalAssets'] },
+    ],
+  },
+  'Asset Turnover': {
+    formula: 'Revenue / Total Assets',
+    sources: [
+      { label: 'Revenue', rowLabels: ['Revenue'], metricKeys: ['revenue'] },
+      { label: 'Total Assets', rowLabels: ['Total Assets'], metricKeys: ['totalAssets'] },
+    ],
+  },
+};
 
 function insightFor(r: RatioResult): { type: 'positive' | 'risk' | 'warning' | 'info'; title: string; text: string } {
   switch (r.label) {
@@ -116,6 +157,7 @@ export default function RatiosPage() {
   const [showResults, setShowResults] = useState(false);
 
   const modelData = useModelData((ds) => extractRatiosFromModel(ds));
+  const activeDataset = useActiveDataset();
 
   const prefilledRef = useRef(false);
   useEffect(() => {
@@ -170,6 +212,23 @@ export default function RatiosPage() {
   }, [clearStore]);
 
   const grouped = res ? groupBySection(res) : [];
+  const traceItems = res
+    ? res.map((ratio): CalculationTrace | null => {
+        const config = ratioTraceConfig[ratio.label];
+        if (!config) return null;
+        return {
+          label: ratio.label,
+          value: ratio.value,
+          formula: config.formula,
+          sources: config.sources.map((source) => makeTraceSource(
+            source.label,
+            activeDataset,
+            source.metricKeys,
+            findRow(sheetRows, source.rowLabels),
+          )),
+        };
+      }).filter((item): item is CalculationTrace => item !== null)
+    : [];
 
   return (
     <div>
@@ -212,6 +271,8 @@ export default function RatiosPage() {
           </div>
         </div>
       ))}
+
+      {showResults && <CalculationTracePanel traces={traceItems} />}
 
       {res && showResults && (
         <>

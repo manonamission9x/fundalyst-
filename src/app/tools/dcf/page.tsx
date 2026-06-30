@@ -23,10 +23,14 @@ import {
 } from '@/components/ui';
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
+import CalculationTracePanel from '@/components/shared/CalculationTrace';
 import dynamic from 'next/dynamic';
 import { useModelData } from '@/store/use-model-data';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useEnterpriseStore } from '@/store/enterprise-store';
+import { useActiveDataset } from '@/store/financial-model-selectors';
+import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
+import type { FundalystDataset } from '@/lib/importer/types';
 
 const DCFChart = dynamic(() => import('@/components/tools/dcf/DCFChart'), {
   ssr: false,
@@ -89,6 +93,7 @@ export default function DCFPage() {
 
   // Model pre-fill via universal hook
   const modelData = useModelData((ds) => extractDCFInputsFromModel(ds));
+  const activeDataset = useActiveDataset();
 
   // Pre-fill from canonical model when available
   const prefilledRef = useRef(false);
@@ -299,6 +304,8 @@ export default function DCFPage() {
           years={(() => { const r = sheetRows.find(r => r.metric === 'Projection Years'); return r ? Number(r.values[0]) || 5 : 5; })()}
           isAutoDemo={isAutoDemo}
           companyName={modelData.companyName || ''}
+          dataset={activeDataset}
+          sheetRows={sheetRows}
         />
       )}
 
@@ -323,6 +330,8 @@ function DCFResults({
   years,
   isAutoDemo,
   companyName,
+  dataset,
+  sheetRows,
 }: {
   summary: NonNullable<ReturnType<typeof useDCFStore.getState>['summary']>;
   sens: ReturnType<typeof useDCFStore.getState>['sens'];
@@ -331,6 +340,8 @@ function DCFResults({
   years: number;
   isAutoDemo: boolean;
   companyName: string;
+  dataset: FundalystDataset | null;
+  sheetRows: SpreadsheetRow[];
 }) {
   const iv = summary.iv;
   const isUndervalued = iv > priceVal;
@@ -344,6 +355,59 @@ function DCFResults({
     price: '₹' + fmtNum(priceVal),
     mos: summary.mos.toFixed(1) + '%',
   }), [iv, summary.ev, summary.eq, summary.mos, priceVal]);
+
+  const traceItems = useMemo<CalculationTrace[]>(() => {
+    const fcf = findRow(sheetRows, ['Free Cash Flow']);
+    const growth = findRow(sheetRows, ['Growth Rate (%)', 'Growth Rate']);
+    const projectionYears = findRow(sheetRows, ['Projection Years']);
+    const wacc = findRow(sheetRows, ['WACC (%)', 'WACC']);
+    const terminal = findRow(sheetRows, ['Terminal Growth (%)', 'Terminal Growth']);
+    const netDebt = findRow(sheetRows, ['Net Debt']);
+    const shares = findRow(sheetRows, ['Shares Outstanding']);
+    const price = findRow(sheetRows, ['Current Price (₹)', 'Current Price (?)', 'Current Price']);
+
+    return [
+      {
+        label: 'Enterprise Value',
+        value: formatted.ev,
+        formula: 'PV of projected FCF + PV of terminal value',
+        sources: [
+          makeTraceSource('Free Cash Flow', dataset, ['freeCashFlow', 'operatingCashFlow'], fcf),
+          makeTraceSource('Growth Rate', dataset, ['growthRate'], growth),
+          makeTraceSource('Projection Years', dataset, ['projectionYears'], projectionYears),
+          makeTraceSource('WACC', dataset, ['wacc', 'discountRate'], wacc),
+          makeTraceSource('Terminal Growth', dataset, ['terminalGrowth'], terminal),
+        ],
+      },
+      {
+        label: 'Equity Value',
+        value: formatted.eq,
+        formula: 'Enterprise Value - Net Debt',
+        sources: [
+          makeTraceSource('Enterprise Value', null, [], undefined, formatted.ev),
+          makeTraceSource('Net Debt', dataset, ['netDebt', 'totalDebt'], netDebt),
+        ],
+      },
+      {
+        label: 'Intrinsic Value / Share',
+        value: formatted.iv,
+        formula: 'Equity Value / Shares Outstanding',
+        sources: [
+          makeTraceSource('Equity Value', null, [], undefined, formatted.eq),
+          makeTraceSource('Shares Outstanding', dataset, ['sharesOutstanding'], shares),
+        ],
+      },
+      {
+        label: 'Margin of Safety',
+        value: formatted.mos,
+        formula: '(Intrinsic Value - Current Price) / Current Price',
+        sources: [
+          makeTraceSource('Intrinsic Value / Share', null, [], undefined, formatted.iv),
+          makeTraceSource('Current Price', dataset, ['price', 'currentPrice'], price),
+        ],
+      },
+    ];
+  }, [dataset, formatted.eq, formatted.ev, formatted.iv, formatted.mos, sheetRows]);
 
   const verdictText = isUndervalued
     ? `Intrinsic value of ${formatted.iv} is above the current price of ${formatted.price}, suggesting the stock may be undervalued.`
@@ -371,6 +435,8 @@ function DCFResults({
           formula="Intrinsic Value = (Enterprise Value − Net Debt) / Shares Outstanding"
         />
       </Card>
+
+      <CalculationTracePanel traces={traceItems} />
 
       <Card label="Chart" className="mt-4">
         <div className="chart-wrap">
