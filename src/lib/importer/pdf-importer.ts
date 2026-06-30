@@ -69,13 +69,6 @@ export interface PdfImportResult {
  * A basic heuristic: if the PDF's text content is very sparse relative to
  * the number of pages, it's likely scanned.
  */
-const MIN_TEXT_LENGTH_PER_PAGE = 20;
-
-function isLikelyScanned(rawText: string, numPages: number): boolean {
-  const textLength = rawText.replace(/\s+/g, '').length;
-  return textLength < numPages * MIN_TEXT_LENGTH_PER_PAGE;
-}
-
 // ── Main import ─────────────────────────────────────────────────────────────
 
 /**
@@ -151,12 +144,9 @@ export async function importPdf(
     emit('extracting-text', 'Extracting PDF text…', 10);
     result = await extractPdfText(file, makeOcrCallback(emit));
 
-    // Check if the result seems scanned
-    if (
-      isLikelyScanned(result.rawText, 1) &&
-      result.tables.length === 0 &&
-      ocrOk
-    ) {
+    // Check if the result seems scanned or tableless. Some scanned PDFs expose
+    // hidden/noisy text, but not enough row structure to import.
+    if (result.tables.length === 0 && ocrOk) {
       emit(
         'extracting-scanned',
         'PDF appears scanned. Falling back to OCR…',

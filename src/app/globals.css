@@ -33,9 +33,9 @@
   --caution: #C2703D;         /* was --amber; warning-only, distinct from gold */
   --caution-subtle: rgba(194, 112, 61, 0.08);
 
-  /* Fonts — defined here, loaded by next/font via CSS vars in layout.tsx */
-  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-ibm-plex-mono: 'IBM Plex Mono', 'SF Mono', 'Cascadia Code', ui-monospace, monospace;
+  /* Fonts — system-first stacks for zero FOUT */
+  --font-inter: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Roboto, Helvetica, Arial, sans-serif;
+  --font-ibm-plex-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'DejaVu Sans Mono', 'Liberation Mono', Menlo, Monaco, monospace;
   /* For inline `var(--font-mono)` references in components */
   --font-mono: var(--font-ibm-plex-mono);
 
@@ -212,7 +212,7 @@ body::before {
 /* ── Nav ── */
 .nav { position: sticky; top: 0; z-index: 100; background: rgba(14,14,15,0.98); border-bottom: 1px solid var(--border); }
 [data-theme="light"] .nav { background: rgba(250,249,246,0.98); }
-.nav-inner { width: 100%; max-width: var(--content-max); margin: 0 auto; display: flex; align-items: center; padding: 0 var(--space-5); gap: 0; overflow: visible; }
+.nav-inner { width: 100%; max-width: var(--content-max); margin: 0 auto; display: flex; align-items: center; padding: 0 var(--space-5); gap: 0; }
 .nav-brand { font-size: 13px; font-weight: 500; color: var(--text-secondary); padding: 8px 0; margin-right: var(--space-4); flex-shrink: 0; display: flex; align-items: center; gap: 7px; text-decoration: none; }
 .nav-brand:hover { color: var(--text); }
 .nav-desktop-tabs { display: flex; align-items: center; gap: 2px; position: relative; }

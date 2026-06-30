@@ -236,7 +236,14 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
   if (isPdf) {
     // PDF text extraction — use existing pipeline
     const { importPdf } = await import('./pdf-importer');
-    const ocrResult = await importPdf(file);
+    let ocrResult = await importPdf(file);
+    if (
+      ocrResult.sourceType === 'pdf-text' &&
+      (!ocrResult.dataset || ocrResult.dataset.facts.length === 0)
+    ) {
+      ocrResult = await importPdf(file, undefined, 'scanned');
+      ocrResult.warnings.unshift('No usable financial facts were found in embedded PDF text, so OCR was attempted.');
+    }
     sourceType = ocrResult.sourceType;
 
     // Build facts from tables

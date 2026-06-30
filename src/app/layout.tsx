@@ -1,23 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Inter, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/layout/Nav';
 import CommandPalette from '@/components/layout/CommandPalette';
 import ToastProvider from '@/components/shared/ToastProvider';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
-
-const inter = Inter({
-  variable: '--font-inter',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: '--font-ibm-plex-mono',
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-});
 
 export const metadata: Metadata = {
   title: { template: '%s — Fundalyst', default: 'Fundalyst — Financial analysis tool for Indian markets' },
@@ -32,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable}`}>
+    <html lang="en">
       <body>
         <a href="#main-content" className="skip-link">
           Skip to content
