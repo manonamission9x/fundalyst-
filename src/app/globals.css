@@ -212,16 +212,31 @@ body::before {
 /* ── Nav ── */
 .nav { position: sticky; top: 0; z-index: 100; background: rgba(14,14,15,0.98); border-bottom: 1px solid var(--border); }
 [data-theme="light"] .nav { background: rgba(250,249,246,0.98); }
-.nav-inner { width: 100%; max-width: var(--content-max); margin: 0 auto; display: flex; align-items: center; padding: 0 var(--space-5); gap: 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+.nav-inner { width: 100%; max-width: var(--content-max); margin: 0 auto; display: flex; align-items: center; padding: 0 var(--space-5); gap: 0; overflow: visible; }
 .nav-brand { font-size: 13px; font-weight: 500; color: var(--text-secondary); padding: 8px 0; margin-right: var(--space-4); flex-shrink: 0; display: flex; align-items: center; gap: 7px; text-decoration: none; }
 .nav-brand:hover { color: var(--text); }
+.nav-desktop-tabs { display: flex; align-items: center; gap: 2px; position: relative; }
 .nav-tab { font-size: 13px; font-weight: 500; color: var(--text-tertiary); padding: 8px 12px; cursor: pointer; border: none; background: none; transition: color var(--transition), background var(--transition-fast); white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; position: relative; min-height: unset; }
 .nav-tab svg { flex-shrink: 0; }
 .nav-tab:hover { color: var(--text-secondary); background: var(--primary-subtle); }
 .nav-tab.active { color: var(--primary); font-weight: 600; background: var(--primary-subtle); border-bottom: 2px solid var(--primary); }
+.nav-tab-primary { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 5px 10px; margin-right: 4px; }
+.nav-tab-primary.active { border-color: var(--primary); border-bottom: 1px solid var(--primary); }
 /* Reserve border-bottom space on all tabs to prevent layout shift */
 .nav-tab::after { content: ''; display: block; position: absolute; bottom: 0; left: 12px; right: 12px; height: 2px; }
 .nav-tab.active::after { background: var(--primary); }
+.nav-section { position: relative; display: inline-flex; align-items: center; }
+.nav-section-trigger { font-size: 13px; font-weight: 500; color: var(--text-tertiary); padding: 8px 10px; cursor: pointer; border: none; background: none; transition: color var(--transition), background var(--transition-fast); white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; position: relative; min-height: unset; border-bottom: 2px solid transparent; }
+.nav-section-trigger svg { flex-shrink: 0; transition: transform var(--transition-fast); }
+.nav-section-trigger:hover, .nav-section-trigger.open { color: var(--text-secondary); background: var(--primary-subtle); }
+.nav-section-trigger.active { color: var(--primary); font-weight: 600; background: var(--primary-subtle); border-bottom-color: var(--primary); }
+.nav-section-trigger.open svg { transform: rotate(180deg); }
+.nav-dropdown { position: absolute; top: calc(100% + 1px); left: 0; z-index: 220; min-width: 210px; padding: 6px; background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 2px; }
+.nav-dropdown-item { display: flex; align-items: center; gap: 8px; padding: 8px 9px; border-radius: var(--radius-sm); color: var(--text-secondary); text-decoration: none; font-size: 13px; white-space: nowrap; outline: none; }
+.nav-dropdown-item svg { width: 15px; height: 15px; color: var(--text-muted); flex-shrink: 0; }
+.nav-dropdown-item:hover, .nav-dropdown-item:focus-visible { color: var(--text); background: var(--primary-subtle); }
+.nav-dropdown-item.active { color: var(--primary); background: var(--primary-subtle); font-weight: 600; }
+.nav-dropdown-item.active svg { color: var(--primary); }
 .nav-cta { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--text-tertiary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 4px 9px; cursor: pointer; text-decoration: none; transition: all var(--transition); background: transparent; min-height: unset; }
 .nav-cta:hover { border-color: var(--border-strong); color: var(--text-secondary); }
 .nav-cta svg { width: 12px; height: 12px; flex-shrink: 0; }
@@ -594,6 +609,7 @@ textarea.num-input { resize: vertical; min-height: 72px; line-height: 1.6; }
 @media (max-width: 1600px) {
   .nav-section-label { display: none; }
   .nav-tab { padding: 8px 9px; }
+  .nav-section-trigger { padding: 8px 8px; }
   .nav-brand { margin-right: var(--space-2); }
   .nav-right .nav-cta { display: none; }
 }
@@ -601,13 +617,16 @@ textarea.num-input { resize: vertical; min-height: 72px; line-height: 1.6; }
 /* ── Desktop nav fit at 1366px-1440px ── */
 @media (max-width: 1440px) {
   .nav-tab { padding: 7px 7px; font-size: 12px; gap: 4px; }
+  .nav-section-trigger { padding: 7px 7px; font-size: 12px; gap: 4px; }
   .nav-inner { padding: 0 var(--space-3); }
   .nav-brand { margin-right: var(--space-2); font-size: 12px; }
   .nav-right .nav-cta { display: none; }
 }
 @media (max-width: 1366px) {
   .nav-tab { padding: 6px 5px; font-size: 11px; gap: 3px; }
+  .nav-section-trigger { padding: 6px 5px; font-size: 11px; gap: 3px; }
   .nav-tab svg { width: 14px; height: 14px; }
+  .nav-dropdown-item { font-size: 12px; }
   .nav-inner { padding: 0 var(--space-2); gap: 0; }
   .nav-brand { margin-right: var(--space-1); font-size: 11px; }
   .nav-brand svg { width: 14px; height: 14px; }
@@ -1309,6 +1328,7 @@ details[open] .details-summary::before {
 
   /* ── Nav: desktop tabs hidden, hamburger visible ── */
   .nav-desktop-tabs { display: none; }
+  .nav-section, .nav-section-trigger, .nav-dropdown { display: none; }
   .nav-inner { padding: 0 var(--space-1); }
   .nav-section-label { display: none; }
   .nav-tab { display: none; }
@@ -1513,12 +1533,12 @@ details[open] .details-summary::before {
 @media print { .nav, #toast, .skip-link { display: none; } body { background: #fff; color: #000; } .card { border: 1px solid #ccc; background: #fff; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
 @media (pointer: coarse) {
-  .nav-tab, .nav-cta, button, .btn, .home-card, .upload-label, .import-dropzone,
+  .nav-tab, .nav-section-trigger, .nav-dropdown-item, .nav-cta, button, .btn, .home-card, .upload-label, .import-dropzone,
   .workspace-step, .workspace-cta, .workspace-quick-link, .empty-state-action,
   .nav-clear, .spreadsheet-add-btn, .spreadsheet-remove-btn, .details-summary,
   .nav-mobile-item, .nav-mobile-clear, .nav-mobile-toggle,
   .spreadsheet-context-item, .metric-browser-item { min-height: 44px; min-width: 44px; }
-  .nav-tab { padding: 10px 12px; }
+  .nav-tab, .nav-section-trigger { padding: 10px 12px; }
   .num-input, .period-label-input, .spreadsheet-header-input, .spreadsheet-cell { min-height: 44px; font-size: 16px; }
 }
 
@@ -1560,7 +1580,7 @@ input:focus, textarea:focus, select:focus, [contenteditable]:focus,
 /* ── Remove hover effects on touch devices (desktop-only hover) ── */
 @media (hover: none) and (pointer: coarse) {
   button:hover, .btn:hover, .btn-primary:hover, .btn-secondary:hover,
-  .btn-ghost:hover, .nav-tab:hover, .nav-cta:hover, .nav-brand:hover,
+  .btn-ghost:hover, .nav-tab:hover, .nav-section-trigger:hover, .nav-dropdown-item:hover, .nav-cta:hover, .nav-brand:hover,
   .home-card:hover, .workspace-step:hover, .workspace-cta:hover,
   .workspace-quick-link:hover, .empty-state-action:hover, .nav-clear:hover,
   .upload-label:hover, .upload-zone:hover, .about-cta-btn:hover,
@@ -1577,7 +1597,10 @@ input:focus, textarea:focus, select:focus, [contenteditable]:focus,
   }
   /* Reset specific known hover color values */
   .nav-tab:hover { color: var(--text-tertiary); background: none; }
+  .nav-section-trigger:hover { color: var(--text-tertiary); background: none; }
+  .nav-dropdown-item:hover { color: var(--text-secondary); background: none; }
   .nav-tab.active:hover { color: var(--primary); }
+  .nav-section-trigger.active:hover { color: var(--primary); }
   button:hover, .btn:hover { color: var(--text-secondary); border-color: var(--border-strong); }
   .btn-primary:hover { color: var(--primary); border-color: var(--border-strong); }
   .btn-ghost:hover { color: var(--text-muted); }

@@ -31,3 +31,27 @@ test('buttons are focusable', async ({ page }) => {
   const firstButton = buttons.first();
   await expect(firstButton).toBeVisible();
 });
+
+test('desktop nav dropdowns expose deep routes and close with Escape', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /Research/i }).click();
+  await expect(page.getByRole('menuitem', { name: /Trend Charts/i })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menuitem', { name: /Trend Charts/i })).toBeHidden();
+
+  await page.getByRole('button', { name: /Valuation/i }).click();
+  await page.getByRole('menuitem', { name: /DCF Valuation/i }).click();
+  await expect(page).toHaveURL(/\/tools\/dcf$/);
+});
+
+test('mobile hamburger menu remains available', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /Open navigation menu/i }).click();
+  await expect(page.getByRole('dialog', { name: /Navigation menu/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Workspace/i })).toBeVisible();
+});

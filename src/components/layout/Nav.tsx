@@ -16,6 +16,7 @@ import {
   IconNavRatios,
   IconNavPeer,
   IconNavWorkspace,
+  IconNavAbout,
 } from '@/components/ui';
 
 function ThemeToggle() {
@@ -83,7 +84,9 @@ interface NavSection {
   items: NavItem[];
 }
 
-const sections: NavSection[] = [
+const workspaceItem: NavItem = { id: 'workspace', label: 'Workspace', href: '/workspace', icon: <IconNavWorkspace /> };
+
+const desktopSections: NavSection[] = [
   {
     label: 'Research',
     items: [
@@ -110,16 +113,32 @@ const sections: NavSection[] = [
   {
     label: 'Tools',
     items: [
-      { id: 'workspace', label: 'Workspace', href: '/workspace', icon: <IconNavWorkspace /> },
+      { id: 'about', label: 'About', href: '/about', icon: <IconNavAbout /> },
     ],
   },
+];
+
+const mobileSections: NavSection[] = [
+  desktopSections[0],
+  desktopSections[1],
+  {
+    label: 'Data',
+    items: [
+      { id: 'import', label: 'Import', href: '/import', icon: <IconNavImport /> },
+      workspaceItem,
+    ],
+  },
+  desktopSections[3],
 ];
 
 export default function Nav() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openSection, setOpenSection] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const desktopNavRef = useRef<HTMLDivElement>(null);
+  const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const activeDataset = useGlobalDataStore((s) => {
     if (!s.activeDatasetId && s.datasets.length === 0) return null;
@@ -132,14 +151,31 @@ export default function Nav() {
     return (pathname.replace(/\/$/, '') || '/') === (href.replace(/\/$/, '') || '/');
   }
 
+  function isSectionActive(section: NavSection): boolean {
+    return section.items.some((item) => isActive(item.href));
+  }
+
   // Close mobile menu on navigation
   const handleNavClick = useCallback(() => {
     setMobileOpen(false);
+    setOpenSection(null);
+  }, []);
+
+  const closeDesktopMenu = useCallback((focusLabel?: string) => {
+    setOpenSection(null);
+    if (focusLabel) {
+      requestAnimationFrame(() => triggerRefs.current[focusLabel]?.focus());
+    }
   }, []);
 
   // Close on Escape key
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && openSection) {
+        e.preventDefault();
+        closeDesktopMenu(openSection);
+        return;
+      }
       if (e.key === 'Escape' && mobileOpen) {
         setMobileOpen(false);
         toggleRef.current?.focus();
@@ -147,7 +183,7 @@ export default function Nav() {
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [mobileOpen]);
+  }, [closeDesktopMenu, mobileOpen, openSection]);
 
   // Close on click outside
   useEffect(() => {
@@ -162,6 +198,67 @@ export default function Nav() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [mobileOpen]);
 
+  useEffect(() => {
+    if (!openSection) return;
+    function handleClick(e: MouseEvent) {
+      if (desktopNavRef.current && !desktopNavRef.current.contains(e.target as Node)) {
+        setOpenSection(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [openSection]);
+
+  function handleSectionKeyDown(e: React.KeyboardEvent, section: NavSection) {
+    const isOpen = openSection === section.label;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setOpenSection(isOpen ? null : section.label);
+      if (!isOpen) {
+        requestAnimationFrame(() => {
+          desktopNavRef.current
+            ?.querySelector<HTMLAnchorElement>(`[data-nav-section="${section.label}"] a`)
+            ?.focus();
+        });
+      }
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setOpenSection(section.label);
+      requestAnimationFrame(() => {
+        desktopNavRef.current
+          ?.querySelector<HTMLAnchorElement>(`[data-nav-section="${section.label}"] a`)
+          ?.focus();
+      });
+    }
+  }
+
+  function handleDropdownKeyDown(e: React.KeyboardEvent, section: NavSection) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeDesktopMenu(section.label);
+      return;
+    }
+    if (e.key !== 'Tab') return;
+
+    const links = Array.from(
+      desktopNavRef.current?.querySelectorAll<HTMLAnchorElement>(`[data-nav-section="${section.label}"] a`) ?? [],
+    );
+    if (links.length === 0) return;
+
+    const first = links[0];
+    const last = links[links.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey && active === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+
   // Lock body scroll when menu is open
   useEffect(() => {
     if (mobileOpen) {
@@ -173,7 +270,7 @@ export default function Nav() {
   }, [mobileOpen]);
 
   return (
-    <nav className="nav" role="tablist" aria-label="Tool navigation">
+    <nav className="nav" aria-label="Tool navigation">
       <div className="nav-inner">
         <Link href="/" className="nav-brand" aria-label="Fundalyst home">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
@@ -184,26 +281,67 @@ export default function Nav() {
         </Link>
 
         {/* Desktop nav tabs (hidden on mobile) */}
-        <div className="nav-desktop-tabs">
-          {sections.map((section) => (
-            <React.Fragment key={section.label}>
-              <span className="nav-section-label">{section.label}</span>
-              {section.items.map((item) => (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  className={`nav-tab${isActive(item.href) ? ' active' : ''}`}
-                  id={`${item.id}-tab`}
-                  role="tab"
-                  aria-selected={isActive(item.href)}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                </Link>
-              ))}
-            </React.Fragment>
-          ))}
+        <div className="nav-desktop-tabs" ref={desktopNavRef}>
+          <Link
+            href={workspaceItem.href}
+            className={`nav-tab nav-tab-primary${isActive(workspaceItem.href) ? ' active' : ''}`}
+            aria-current={isActive(workspaceItem.href) ? 'page' : undefined}
+          >
+            {workspaceItem.icon}
+            <span>{workspaceItem.label}</span>
+          </Link>
 
+          {desktopSections.map((section) => {
+            const isOpen = openSection === section.label;
+            const sectionActive = isSectionActive(section);
+            return (
+              <div
+                key={section.label}
+                className="nav-section"
+                data-nav-section={section.label}
+                onMouseEnter={() => setOpenSection(section.label)}
+              >
+                <button
+                  type="button"
+                  ref={(el) => { triggerRefs.current[section.label] = el; }}
+                  className={`nav-section-trigger${sectionActive ? ' active' : ''}${isOpen ? ' open' : ''}`}
+                  aria-haspopup="menu"
+                  aria-expanded={isOpen}
+                  aria-controls={`nav-menu-${section.label.toLowerCase()}`}
+                  onClick={() => setOpenSection(isOpen ? null : section.label)}
+                  onKeyDown={(e) => handleSectionKeyDown(e, section)}
+                >
+                  <span>{section.label}</span>
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M2.5 3.75L5 6.25l2.5-2.5" />
+                  </svg>
+                </button>
+                {isOpen && (
+                  <div
+                    id={`nav-menu-${section.label.toLowerCase()}`}
+                    className="nav-dropdown"
+                    role="menu"
+                    onKeyDown={(e) => handleDropdownKeyDown(e, section)}
+                    onMouseLeave={() => setOpenSection(null)}
+                  >
+                    {section.items.map((item) => (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        className={`nav-dropdown-item${isActive(item.href) ? ' active' : ''}`}
+                        role="menuitem"
+                        aria-current={isActive(item.href) ? 'page' : undefined}
+                        onClick={handleNavClick}
+                      >
+                        {item.icon}
+                        <span>{item.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
           <span className="nav-sep" />
         </div>
 
@@ -296,7 +434,7 @@ export default function Nav() {
         </div>
 
         <div className="nav-mobile-items">
-          {sections.map((section) => (
+          {mobileSections.map((section) => (
             <React.Fragment key={section.label}>
               <span className="nav-mobile-section-label">{section.label}</span>
               {section.items.map((item) => (
@@ -305,8 +443,7 @@ export default function Nav() {
                   href={item.href}
                   className={`nav-mobile-item${isActive(item.href) ? ' active' : ''}`}
                   onClick={handleNavClick}
-                  role="tab"
-                  aria-selected={isActive(item.href)}
+                  aria-current={isActive(item.href) ? 'page' : undefined}
                 >
                   {item.icon}
                   <span>{item.label}</span>
