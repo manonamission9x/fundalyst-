@@ -92,12 +92,10 @@ interface CardProps {
   children: React.ReactNode;
   style?: React.CSSProperties;
   className?: string;
-  accent?: boolean;
 }
-export function Card({ label, children, style, className, accent }: CardProps) {
+export function Card({ label, children, style, className }: CardProps) {
   return (
     <div className={`card${className ? ' ' + className : ''}`} style={style}>
-      {accent && <div className="card-accent" />}
       {label && (
         <div className="card-header">
           <span className="card-label">{label}</span>

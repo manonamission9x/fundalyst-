@@ -250,6 +250,7 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
     const facts: CanonicalFact[] = [];
     const warnings: string[] = ocrResult.warnings || [];
     let companyName: string | undefined;
+    let repairedOcrValueCount = 0;
 
     for (const table of ocrResult.tables || []) {
       // Use cleanedRows (filtered by cleanOcrText) instead of raw rows
@@ -282,6 +283,8 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
           const normalized = normalizeValue(rawValue);
           if (normalized.value === null) continue;
           const value = convertToOnes(normalized.value, normalized.detectedUnit);
+          const wasRepairedOcrValue = isLikelyRepairedOcrValue(rawValue, sourceType);
+          if (wasRepairedOcrValue) repairedOcrValueCount++;
 
           const { findBestMetricMatch } = await import('./metric-aliases');
           const match = findBestMetricMatch(label);
@@ -303,7 +306,9 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
             periodLabel,
             currency: 'UNKNOWN',
             unit: 'ones',
-            confidence: (match?.confidence ?? 0.3),
+            confidence: wasRepairedOcrValue
+              ? Math.min(match?.confidence ?? 0.3, 0.55)
+              : (match?.confidence ?? 0.3),
             sourceRow: ri,
             sourceColumn: colIdx,
           });
@@ -318,6 +323,7 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
       'cash', 'operatingCashFlow', 'interestExpense',
     ];
     const missingFields = importantMetrics.filter((m) => !presentMetrics.has(m));
+    const periodLabels = [...new Set(facts.map((f) => f.periodLabel))];
 
     const dataset: FundalystDataset = {
       id: 'ds_' + Date.now(),
@@ -325,7 +331,7 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
       companyName,
       currency: 'UNKNOWN',
       unit: 'ones',
-      periods: ['Period 1'],
+      periods: periodLabels,
       facts,
       tables: ocrResult.tables || [],
       warnings,
@@ -349,6 +355,11 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
       }));
 
     warnings.push('[PDF BETA] Results are experimental. Please review all mappings before confirming.');
+    if (repairedOcrValueCount > 0) {
+      warnings.push(
+        `${repairedOcrValueCount} OCR values were repaired from compact scanned-table text. These are intentionally marked lower confidence; verify them against the PDF before confirming.`,
+      );
+    }
     if (ocrResult.method === 'fallback-ocr' || ocrResult.method === 'scanned-ocr') {
       warnings.push('This PDF appears to be scanned/image-based, so OCR was used. Please double-check extracted numbers against the source document.');
     }
@@ -360,12 +371,12 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
         company: companyName || null,
         currency: 'UNKNOWN',
         unit: 'ones',
-        periods: ['Period 1'],
+        periods: periodLabels,
         statementTypes: ['unknown'],
         headerRowIndex: 0,
         metricColIndex: 0,
-        valueColIndices: [1],
-        periodLabels: ['Period 1'],
+        valueColIndices: periodLabels.map((_, i) => i + 1),
+        periodLabels,
         confidence: dataset.confidence,
       },
       rawFacts: facts,

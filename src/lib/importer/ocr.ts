@@ -599,8 +599,18 @@ function splitCollapsedFinancialRow(line: string): string[] {
 
   if (label.length < 3 || !/[a-zA-Z]/.test(label)) return [trimmed];
 
-  const values = matches.map((match) => match[0].trim());
+  const values = matches.map((match) => normalizeCollapsedOcrNumber(match[0].trim()));
   return [label, ...values];
+}
+
+function normalizeCollapsedOcrNumber(raw: string): string {
+  const trimmed = raw.trim();
+  if (/[,.%()]/.test(trimmed)) return trimmed;
+  if (!/^-?\d{5,}$/.test(trimmed)) return trimmed;
+
+  const sign = trimmed.startsWith('-') ? '-' : '';
+  const digits = sign ? trimmed.slice(1) : trimmed;
+  return `${sign}${digits.slice(0, -2)}.${digits.slice(-2)}`;
 }
 
 // ── Clean OCR tables ────────────────────────────────────────────────────────

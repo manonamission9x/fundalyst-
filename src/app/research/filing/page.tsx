@@ -312,7 +312,7 @@ export default function FilingPage() {
 
           {/* 1. Executive Summary */}
           {execSummary && (
-            <Card className="mb-4" accent>
+            <Card className="mb-4">
               <div className="card-body">
                 <div className="flex items-center justify-between mb-2">
                   <span className="stat-label">Executive Summary</span>
