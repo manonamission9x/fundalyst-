@@ -1,15 +1,16 @@
 # Fundalyst Handoff
 
-Last updated: 2026-07-01 (post filing page shake fix)
+Last updated: 2026-07-01 (workspace workflow redesign + nav labels + CTA fix)
 
 Repo: `C:\Users\kingo\Desktop\fundalyst-next`  
 GitHub: `https://github.com/manonamission9x/fundalyst-`  
 Branch: `main`  
-Latest code commit: `47d80ef` — Fix filing page shaking: remove duplicate pre-fill effect. Still shaking resolved Aug 2026: use `useState<number | undefined>(undefined)` for `clearVersion` on all SpreadsheetInput pages so the reset effect skips initial mount.
+Latest code commit: `93adc0c` — Workspace workflow redesign + nav labels + CTA fix
 
 ## Git Log (Recent)
 
 ```text
+93adc0c  Workspace workflow redesign + nav labels + CTA fix
 76d8167  Update handoff with filing page shake fix — part 2: clearVersion init
 47d80ef  Fix filing page shaking: remove duplicate pre-fill effect
 b84a9b3  Fix filing page shaking: force scrollbar to prevent layout shift
@@ -61,7 +62,7 @@ Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 | `src/lib/calculation-trace.ts` | Source-fact trace helpers and provenance helpers |
 | `src/lib/memo-export.ts` | Investment memo generation |
 | `src/lib/chart-theme.ts` | Dynamic CSS-token chart config for Recharts |
-| `src/components/layout/Nav.tsx` | Workspace hub nav, desktop section dropdowns, mobile hamburger, binary theme toggle |
+| `src/components/layout/Nav.tsx` | Workspace hub nav, desktop section dropdowns, mobile hamburger, binary theme toggle; nav labels: Data → Upload Reports, Tools → Documentation |
 | `src/components/layout/CommandPalette.tsx` | Cmd-K route/action palette; do not touch `.cmdk-*` styles unless explicitly scoped |
 | `src/components/shared/CalculationTrace.tsx` | Reusable Show sources panel |
 | `src/components/shared/MissingMetricsNotice.tsx` | Missing-metric alert per tool |
@@ -73,6 +74,7 @@ Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 | `src/lib/importer/parser.ts` | CSV/XLSX/PDF/OCR parse-to-review flow; preserves partial-parse warnings and source type |
 | `src/lib/importer/ocr.ts` | Browser OCR/PDF rendering path, OCR row splitting, compact scanned-table value repair |
 | `src/lib/importer/pdf-importer.ts` | PDF text extraction and scanned/tableless OCR fallback orchestration |
+| `src/app/workspace/page.tsx` | Research workspace — workflow-guided overview, empty-state onboarding, collapsed Settings for admin panels |
 
 ## Recently Completed
 
@@ -118,6 +120,31 @@ The homepage was rewritten from a feature-grid app screen into a conversion-focu
 - All copy is short, specific, and avoids buzzwords. Design uses existing institutional slate tokens — no new colors or radii.
 - Commit: `afcde26`.
 
+### Workspace Workflow Redesign
+
+The Research Workspace was redesigned from a flat dashboard of competing panels into a workflow-guided research environment:
+
+- **Single onboarding empty state:** One hero card ("No company selected") with a single primary action (Upload Annual Report) — no conflicting signals.
+- **Data-loaded overview has clear hierarchy:** Research Status → Next Step → Workflow Progress → Analysis Tools → Investment Memo → Data Backup (in workflow order, not visual competition).
+- **Research Status** now shows Company, Report, Periods, and Metrics extracted (answers "what company am I analyzing?").
+- **Next Step** card is contextual — recommends Import, Filing Comparison, or DCF based on actual progress.
+- **Workflow Progress** is a visual dot-track showing Import → Review → Analyze → Conclude with completed/current/remaining states.
+- **Tools categorized by purpose:** "Quick Analysis" (Filing Comparison, Trend Charts, Growth Rates) vs "Deep Dive" (DCF, Ratios, Peer Comparison, Cash Efficiency), each with a "why" description.
+- **Enterprise administrative features removed from overview:** Enterprise Command Center and "Enterprise" card removed. Governance, Audit Trail, and Integrations moved to a collapsible "Workspace Settings" at the bottom of the sidebar. All functionality preserved.
+- **Sidebar labels renamed:** Import → Import Report, Filing → Filing Comparison, Ratios → Financial Ratios, Thesis → Investment Thesis.
+- Commits: `93adc0c`.
+
+### Hero CTA Button Fix
+
+Removed inline styles on the primary hero CTA (`padding: 9px 22px`, `fontSize: 'var(--text-sm)'`) that made it different from the secondary CTA. Both buttons now share identical CSS dimensions (`padding: 7px 16px`, `font-size: var(--text-xs)`). Only color/border differentiates primary from secondary.
+
+### Nav Label Fix
+
+Renamed ambiguous navigation labels for clarity:
+- Tools → About → renamed to **Tools → Documentation** (descriptive noun for an informational page).
+- Data → Import → renamed to **Data → Upload Reports** (action verb for a task page).
+- Updated in both desktop and mobile nav.
+
 ### Filing Page Shake Fix
 
 The filing comparison page was shaking violently on navigation. Two causes:
@@ -138,7 +165,7 @@ The filing comparison page was shaking violently on navigation. Two causes:
 
 ## Verification
 
-Last verified after filing page shake fix:
+Last verified after workspace workflow redesign:
 
 ```bash
 npm.cmd test          # 58 passed
@@ -147,9 +174,8 @@ npm.cmd run build     # passed
 ```
 
 Known lint warnings:
-- 2 `next/no-img-element` (pre-existing)
+- 2 `next/no-img-element` (import page + PdfViewer — pre-existing)
 - 1 React hook exhaustive-deps warning in Growth prefill (pre-existing)
-- 1 unused variable warning (pre-existing in parser.ts)
 
 ## Audit
 

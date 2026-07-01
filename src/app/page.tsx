@@ -28,7 +28,7 @@ export default function HomePage() {
           </p>
 
           <div className="home-cta-row">
-            <Link href="/import" className="home-cta-primary" style={{ padding: '9px 22px', fontSize: 'var(--text-sm)', gap: 8 }}>
+            <Link href="/import" className="home-cta-primary">
               <UploadSimple size={15} weight="regular" />
               Upload Annual Report
             </Link>
