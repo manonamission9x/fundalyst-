@@ -3,7 +3,16 @@
 import Link from 'next/link';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useGlobalDataStore } from '@/store/global-data-store';
-import { FileText, Calculator, ChartLineUp, ChartPie, ArrowRight } from '@phosphor-icons/react';
+import {
+  FileText,
+  Calculator,
+  ChartLineUp,
+  ChartPie,
+  ArrowRight,
+  ShieldCheck,
+  Detective,
+  Lightning,
+} from '@phosphor-icons/react';
 
 export default function HomePage() {
   usePageTitle('Home');
@@ -23,15 +32,27 @@ export default function HomePage() {
     <div>
       {/* ── Hero ── */}
       <section className="home-hero">
+        <div className="home-hero-bg" aria-hidden="true" />
         <div className="home-hero-inner">
+          <span className="home-eyebrow">
+            <span className="home-eyebrow-dot" />
+            Runs 100% in your browser · No account
+          </span>
+
           <h1>
-            Upload an annual report.
+            Less noise. Clearer numbers.
             <br />
-            Get the analysis instantly.
+            Faster decisions.
           </h1>
+
+          <p className="home-descriptor">
+            Fundalyst reads any financial filing and turns it into valuation, trends,
+            ratios, and peer analysis — right in your browser.
+          </p>
+
           <p className="home-subtitle">
-            Automatically extract financial statements, compare periods, build DCF valuations,
-            and generate investment insights — all in your browser. No server uploads.
+            One clean screen instead of forty pages of PDF. Built to cut the cognitive
+            load so you can make the call, not chase the data.
           </p>
 
           <div className="home-cta-row">
@@ -47,81 +68,142 @@ export default function HomePage() {
             ) : (
               <Link href="/tools/dcf" className="home-cta-ghost">
                 View interactive demo
+                <ArrowRight size={14} weight="bold" />
               </Link>
             )}
           </div>
 
           <p className="home-trust-line">
-            No account, no upload — runs in your browser, first analysis in under a minute.
+            First analysis in under a minute · No sign-up · Your data never leaves your device.
           </p>
 
-          {/* Product preview — live DCF output */}
-          <div className="home-preview">
-            <div className="home-preview-body">
-              <div className="home-preview-caption">DCF valuation output</div>
-              <div className="home-preview-metrics">
-                <div className="home-preview-metric">
-                  <div className="home-preview-metric-label">Enterprise value</div>
-                  <div className="home-preview-metric-value">₹12,847Cr</div>
-                </div>
-                <div className="home-preview-metric">
-                  <div className="home-preview-metric-label">Intrinsic value / share</div>
-                  <div className="home-preview-metric-value">₹1,284</div>
-                </div>
-                <div className="home-preview-metric">
-                  <div className="home-preview-metric-label">Margin of safety</div>
-                  <div className="home-preview-metric-value" style={{ color: 'var(--green)' }}>+32.4%</div>
-                </div>
+          {/* Product preview — institutional valuation panel with sensitivity matrix */}
+          <div className="home-panel">
+            <div className="home-panel-head">
+              <div className="home-panel-id">
+                <span className="home-panel-name">Reliance Industries</span>
+                <span className="home-panel-ticker">NSE: RELIANCE · FY24</span>
               </div>
-              <div className="home-preview-chart">
-                <div className="home-preview-bar">
-                  <span className="home-preview-bar-label">PV of FCF</span>
-                  <div className="home-preview-bar-track">
-                    <div className="home-preview-bar-fill ink-100" style={{ width: '62%' }} />
-                  </div>
+              <span className="home-panel-badge">Imported</span>
+            </div>
+
+            <div className="home-panel-body">
+              <div className="home-panel-decision">
+                <div className="home-panel-label">Intrinsic value / share</div>
+                <div className="home-panel-value">₹1,284</div>
+                <div className="home-panel-delta">
+                  <span className="home-panel-delta-pos">+32.4%</span>
+                  <span className="home-panel-delta-note">vs. ₹970 market</span>
                 </div>
-                <div className="home-preview-bar">
-                  <span className="home-preview-bar-label">PV of terminal value</span>
-                  <div className="home-preview-bar-track">
-                    <div className="home-preview-bar-fill ink-60" style={{ width: '90%' }} />
+                <div className="home-panel-divider" />
+                <dl className="home-panel-stats">
+                  <div>
+                    <dt>Enterprise value</dt>
+                    <dd>₹12,847Cr</dd>
                   </div>
-                </div>
+                  <div>
+                    <dt>WACC</dt>
+                    <dd>10.2%</dd>
+                  </div>
+                  <div>
+                    <dt>Terminal growth</dt>
+                    <dd>3.5%</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="home-panel-sens">
+                <div className="home-panel-label">Sensitivity · value / share (₹)</div>
+                <table className="home-sens-table">
+                  <thead>
+                    <tr>
+                      <th scope="col" />
+                      <th scope="col">9.2%</th>
+                      <th scope="col">10.2%</th>
+                      <th scope="col">11.2%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">3.0%</th>
+                      <td className="s1">1,352</td>
+                      <td>1,201</td>
+                      <td>1,078</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">3.5%</th>
+                      <td className="s2">1,447</td>
+                      <td className="s-focus">1,284</td>
+                      <td>1,149</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">4.0%</th>
+                      <td className="s2">1,561</td>
+                      <td className="s1">1,381</td>
+                      <td>1,232</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="home-sens-key">Rows: terminal growth · Cols: WACC</div>
               </div>
             </div>
-            <div className="home-preview-footer">
-              <span>WACC: 10.2%</span>
-              <span>Terminal growth: 3.5%</span>
-              <span>Projected FCF (yr 1): ₹1,420Cr</span>
-              <span className="home-preview-tag">Sample data</span>
+
+            <div className="home-panel-footer">
+              <span>5-yr FCF projection</span>
+              <span>Every input traced to source</span>
+              <span className="home-panel-tag">Sample data</span>
             </div>
           </div>
         </div>
       </section>
 
+      {/* ── Trust strip ── */}
+      <section className="home-strip">
+        <div className="home-strip-item">
+          <span className="home-strip-num">0</span>
+          <span className="home-strip-cap">files uploaded to any server</span>
+        </div>
+        <div className="home-strip-item">
+          <span className="home-strip-num">100%</span>
+          <span className="home-strip-cap">runs on your device</span>
+        </div>
+        <div className="home-strip-item">
+          <span className="home-strip-num">&lt;60s</span>
+          <span className="home-strip-cap">filing to full analysis</span>
+        </div>
+        <div className="home-strip-item">
+          <span className="home-strip-num">Every</span>
+          <span className="home-strip-cap">number traced to its source</span>
+        </div>
+      </section>
+
       {/* ── How It Works ── */}
-      <section className="home-section" style={{ marginTop: 'var(--space-10)' }}>
+      <section className="home-section">
         <div className="home-section-heading">How it works</div>
-        <div className="home-section-sub">Three steps from filing to analysis.</div>
+        <div className="home-section-sub">Three steps from filing to decision.</div>
         <div className="home-steps">
           <div className="home-step">
             <span className="home-step-num">1</span>
             <div className="home-step-title">Upload</div>
             <div className="home-step-desc">
-              Drop a PDF, CSV, or XLSX. Or paste data directly. Fundalyst detects the format and extracts every number automatically.
+              Drop a PDF, CSV, XLSX, or screenshot. Or paste data directly. Fundalyst
+              detects the format and extracts every number automatically.
             </div>
           </div>
           <div className="home-step">
             <span className="home-step-num">2</span>
             <div className="home-step-title">Extract</div>
             <div className="home-step-desc">
-              Periods, metrics, and values are normalized. Crores, lakhs, millions — all converted. Every value shows its confidence score.
+              Periods, metrics, and values are normalized. Crores, lakhs, millions — all
+              converted. Every value carries a confidence score and its source.
             </div>
           </div>
           <div className="home-step">
             <span className="home-step-num">3</span>
-            <div className="home-step-title">Analyze</div>
+            <div className="home-step-title">Decide</div>
             <div className="home-step-desc">
-              DCF valuation. Filing comparison. Trends. Ratios. Peer benchmarking. Each tool opens with your data pre-filled.
+              DCF, filing comparison, trends, ratios, peers — each tool opens with your
+              data pre-filled, so you read the signal instead of building the model.
             </div>
           </div>
         </div>
@@ -191,21 +273,27 @@ export default function HomePage() {
         <div className="home-section-sub">Trust comes from competence — not marketing.</div>
         <div className="home-trust">
           <div className="home-trust-col">
-            <div className="home-trust-title">Privacy</div>
+            <span className="home-trust-icon"><ShieldCheck size={16} weight="regular" /></span>
+            <div className="home-trust-title">Private by design</div>
             <div className="home-trust-text">
-              Your data never leaves your device. No accounts. No server uploads. No database. All file parsing, normalization, and calculations happen in your browser.
+              Your data never leaves your device. No accounts. No server uploads. No
+              database. Every parse, normalization, and calculation runs in your browser.
             </div>
           </div>
           <div className="home-trust-col">
-            <div className="home-trust-title">Accuracy</div>
+            <span className="home-trust-icon"><Detective size={16} weight="regular" /></span>
+            <div className="home-trust-title">Never a black box</div>
             <div className="home-trust-text">
-              Every formula is documented. Every output shows its assumptions and source facts. Provenance badges on every visible metric. You never have to trust a black box.
+              Every formula is documented. Every output shows its assumptions and source
+              facts, with a provenance badge on each visible metric. Verify, don&apos;t trust.
             </div>
           </div>
           <div className="home-trust-col">
-            <div className="home-trust-title">Coverage</div>
+            <span className="home-trust-icon"><Lightning size={16} weight="regular" /></span>
+            <div className="home-trust-title">Built for real filings</div>
             <div className="home-trust-text">
-              Built for Indian markets (₹, Cr/L, NSE/BSE terminology). Handles multi-company, multi-period analysis. Export investment memos. Back up your workspace.
+              Indian markets first (₹, Cr/L, NSE/BSE), with multi-company, multi-period
+              analysis. Export investment memos and back up your workspace anytime.
             </div>
           </div>
         </div>
@@ -213,11 +301,19 @@ export default function HomePage() {
 
       {/* ── Final CTA ── */}
       <section className="home-final-cta">
-        <h2>Ready to analyze your first report?</h2>
+        <div className="home-final-cta-glow" aria-hidden="true" />
+        <h2>Read your next report in a minute.</h2>
+        <p className="home-final-cta-sub">
+          No sign-up, no upload. Bring a filing and see the whole company on one screen.
+        </p>
         <div className="home-cta-row">
           <Link href="/import" className="btn-primary home-cta-btn">
-            Upload annual report
+            Analyze a report
             <ArrowRight size={15} weight="bold" />
+          </Link>
+          <Link href="/tools/dcf" className="home-cta-ghost">
+            View interactive demo
+            <ArrowRight size={14} weight="bold" />
           </Link>
         </div>
       </section>

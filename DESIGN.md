@@ -128,7 +128,36 @@ text bottoms out at `--text-3xs` (11px). Weights: 400 default, 500 labels, 600 e
 
 ---
 
-## 7. Cleanup backlog
+## 8. Gradients & ambient depth (marketing surfaces)
+
+Gradients are permitted **only as ambient depth**, never as a fill behind text or as a
+brand colour. The goal is a landing page that feels alive and premium without betraying
+the "quiet instrument" philosophy — restraint still wins.
+
+**Allowed**
+- A faint radial **glow** behind the hero and the final CTA (`--glow-hero`, `--glow-accent`).
+  Opacity stays low; it reads as light, not colour.
+- A **ledger-grid** motif (`.home-hero-bg`) — thin `--border-light` lines, radially masked
+  so it dissolves at the edges. A finance-native texture, not decoration.
+- A near-invisible surface sheen (`--gradient-surface`) on large panels if needed.
+
+**Forbidden**
+- Gradient or colour fills **behind text** (headlines, buttons, labels). The primary button
+  stays inverted (`--text` on `--bg`) — never a gradient fill.
+- Saturated multi-stop gradients, mesh backgrounds, glossy or coloured shadows, neon.
+- Gradient **text** (`background-clip: text`). One flat text colour, always.
+- Any gradient inside a *tool* surface. Ambient depth is for marketing pages (home) only.
+
+**Tokens:** `--glow-hero`, `--glow-accent`, `--gradient-surface` live in every theme block
+(dark + both light blocks). Reference the token — never inline a raw gradient in a component.
+
+**Rule of thumb:** if you removed the gradient and the layout still read as intentional and
+calm, the gradient is doing its job. If removing it makes the page fall apart, it was
+doing too much.
+
+---
+
+## 9. Cleanup backlog
 
 Known drift not yet resolved (safe to tackle incrementally):
 
