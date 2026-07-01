@@ -50,14 +50,14 @@ const toolCards: ToolCard[] = [
     icon: Calculator,
     title: 'DCF valuation',
     value: 'INR 12,847 Cr',
-    sub: 'Enterprise value with source-linked assumptions',
+    sub: 'Enterprise value from accepted assumptions',
   },
   {
     href: '/research/filing',
     icon: FileText,
     title: 'Filing comparison',
     value: '+14.2%',
-    sub: 'Material changes across reporting periods',
+    sub: 'Material changes by period',
     tone: 'positive',
   },
   {
@@ -65,28 +65,28 @@ const toolCards: ToolCard[] = [
     icon: ChartLineUp,
     title: 'Trend analysis',
     value: '3 yr CAGR',
-    sub: 'Revenue, profit, margin, and cash-flow direction',
+    sub: 'Revenue, margin, profit, and cash direction',
   },
   {
     href: '/tools/ratios',
     icon: ChartPie,
     title: 'Financial ratios',
     value: '9 ratios',
-    sub: 'Liquidity, leverage, profitability, and returns',
+    sub: 'Liquidity, leverage, returns',
   },
   {
     href: '/tools/peer',
     icon: UsersThree,
     title: 'Peer comparison',
     value: '10 peers',
-    sub: 'Relative valuation and operating performance',
+    sub: 'Relative valuation and operating context',
   },
   {
     href: '/tools/wc',
     icon: Gauge,
     title: 'Cash efficiency',
     value: 'CCC',
-    sub: 'DSO, DIO, DPO, and cash conversion cycle',
+    sub: 'DSO, DIO, DPO, cash conversion',
   },
 ];
 
@@ -107,16 +107,15 @@ export default function HomePage() {
       <section className="home-hero">
         <div className="home-hero-grid">
           <div className="home-hero-copy">
-            <p className="home-kicker">Financial analysis in the browser</p>
-            <h1>Annual reports, converted into decision-ready analysis.</h1>
+            <p className="home-kicker">Annual report in. Analyst view out.</p>
+            <h1>Turn filings into numbers you can defend.</h1>
             <p className="home-lede">
-              Fundalyst extracts statements, normalizes the numbers, and opens the
-              valuation, ratio, trend, peer, and filing-comparison workflows with the
-              data already in place.
+              Fundalyst reads the filing, normalizes the statements, and carries the
+              accepted data into valuation, ratios, trends, peers, and filing comparison.
             </p>
             <div className="home-actions">
               <Link href="/import" className="btn-primary home-cta-btn">
-                Analyze an annual report
+                Import annual report
                 <ArrowRight size={15} weight="bold" />
               </Link>
               {resumeName ? (
@@ -132,8 +131,7 @@ export default function HomePage() {
               )}
             </div>
             <p className="home-trust-line">
-              No sign-up. No server upload. Every output can be traced back to the
-              imported filing.
+              No sign-up. No server upload. Every number keeps its source.
             </p>
           </div>
 
@@ -186,56 +184,56 @@ export default function HomePage() {
       <section className="home-strip">
         <div className="home-strip-item">
           <span className="home-strip-num">0</span>
-          <span className="home-strip-cap">files uploaded to any server</span>
+          <span className="home-strip-cap">server uploads</span>
         </div>
         <div className="home-strip-item">
           <span className="home-strip-num">100%</span>
-          <span className="home-strip-cap">runs on your device</span>
+          <span className="home-strip-cap">local processing</span>
         </div>
         <div className="home-strip-item">
           <span className="home-strip-num">&lt;60s</span>
-          <span className="home-strip-cap">filing to first analysis</span>
+          <span className="home-strip-cap">to first analysis</span>
         </div>
         <div className="home-strip-item">
-          <span className="home-strip-num">Every</span>
-          <span className="home-strip-cap">number tied to provenance</span>
+          <span className="home-strip-num">All</span>
+          <span className="home-strip-cap">output source-linked</span>
         </div>
       </section>
 
       <section className="home-section">
-        <div className="home-section-heading">Workflow</div>
-        <div className="home-section-sub">A short path from source document to investment view.</div>
+        <div className="home-section-heading">How does the filing become analysis?</div>
+        <div className="home-section-sub">One review gate. Then every tool uses the same accepted dataset.</div>
         <div className="home-steps">
           <div className="home-step">
             <span className="home-step-num">1</span>
-            <div className="home-step-title">Import the filing</div>
+            <div className="home-step-title">Read the filing</div>
             <div className="home-step-desc">
               Drop a PDF, CSV, XLSX, screenshot, or pasted table. Fundalyst detects
-              periods, metrics, units, and likely statement structure.
+              periods, metrics, units, and statement structure.
             </div>
           </div>
           <div className="home-step">
             <span className="home-step-num">2</span>
-            <div className="home-step-title">Review the extraction</div>
+            <div className="home-step-title">Accept the numbers</div>
             <div className="home-step-desc">
-              Values are normalized with confidence and provenance labels, so uncertain
-              rows are visible before they enter the model.
+              Confidence and provenance labels show which rows need attention before
+              they enter the model.
             </div>
           </div>
           <div className="home-step">
             <span className="home-step-num">3</span>
-            <div className="home-step-title">Open the analysis</div>
+            <div className="home-step-title">Move into judgment</div>
             <div className="home-step-desc">
-              Filing comparison, DCF, ratios, peers, trends, and cash-cycle tools open
-              pre-filled from the accepted dataset.
+              DCF, ratios, peers, trends, cash cycle, and filing comparison open
+              pre-filled.
             </div>
           </div>
         </div>
       </section>
 
       <section className="home-section">
-        <div className="home-section-heading">Analyst outputs</div>
-        <div className="home-section-sub">The homepage shows the work the product actually does.</div>
+        <div className="home-section-heading">What decisions can I make from it?</div>
+        <div className="home-section-sub">The outputs are financial views, not disconnected widgets.</div>
         <div className="home-tools">
           {toolCards.map((tool) => {
             const Icon = tool.icon;
@@ -256,8 +254,8 @@ export default function HomePage() {
       </section>
 
       <section className="home-section">
-        <div className="home-section-heading">Why professionals can trust it</div>
-        <div className="home-section-sub">Trust comes from inspectable work, not claims.</div>
+        <div className="home-section-heading">Can I trust the path from source to answer?</div>
+        <div className="home-section-sub">Trust comes from inspectable work.</div>
         <div className="home-trust">
           <div className="home-trust-col">
             <span className="home-trust-icon">
@@ -265,8 +263,8 @@ export default function HomePage() {
             </span>
             <div className="home-trust-title">Private by design</div>
             <div className="home-trust-text">
-              Parsing, normalization, review, modeling, and memo export all run locally
-              in the browser. There is no account gate or cloud upload step.
+              Parsing, review, modeling, and memo export run locally in the browser.
+              There is no account gate.
             </div>
           </div>
           <div className="home-trust-col">
@@ -275,8 +273,8 @@ export default function HomePage() {
             </span>
             <div className="home-trust-title">Source-linked calculations</div>
             <div className="home-trust-text">
-              Every visible output carries assumptions and source facts. Users can
-              inspect the path from filing value to final analysis.
+              Outputs carry assumptions and source facts, so the path from filing value
+              to analysis stays visible.
             </div>
           </div>
           <div className="home-trust-col">
@@ -285,22 +283,21 @@ export default function HomePage() {
             </span>
             <div className="home-trust-title">Built for real filings</div>
             <div className="home-trust-text">
-              Indian-market units, multi-period statements, OCR review warnings, and
-              local backups are treated as core workflow requirements.
+              Indian-market units, multi-period statements, OCR warnings, and local
+              backups are treated as core workflow.
             </div>
           </div>
         </div>
       </section>
 
       <section className="home-final-cta">
-        <h2>Start with the annual report.</h2>
+        <h2>The source document is enough.</h2>
         <p className="home-final-cta-sub">
-          Import the source document, review the extracted numbers, and move directly
-          into the analysis.
+          Import it, review the extraction, and start from numbers you can trace.
         </p>
         <div className="home-cta-row">
           <Link href="/import" className="btn-primary home-cta-btn">
-            Analyze an annual report
+            Import annual report
             <ArrowRight size={15} weight="bold" />
           </Link>
           <Link href="/tools/dcf" className="home-cta-ghost">
