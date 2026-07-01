@@ -9,6 +9,7 @@ import {
   Card,
   UploadBar,
   Toolbar,
+  HeroDecision,
   NextLinks,
   Disclaimer,
   CalcTimestamp,
@@ -188,6 +189,20 @@ export default function YoyPage() {
       }).filter((m) => m.avg < 0).sort((a, b) => a.avg - b.avg)[0]
     : null;
 
+  // Hero decision (§2): CAGR of the primary metric (first row) over the full period.
+  const heroCagr = (() => {
+    if (rows.length === 0) return null;
+    const r = rows[0];
+    const nums = (r.vals as (number | string | null)[]).map((v) => Number(v)).filter((v) => !isNaN(v));
+    if (nums.length < 2) return null;
+    const first = nums[0];
+    const last = nums[nums.length - 1];
+    const periods = nums.length - 1;
+    if (first <= 0 || last <= 0) return null;
+    const cagr = (Math.pow(last / first, 1 / periods) - 1) * 100;
+    return { label: r.label, cagr, periods };
+  })();
+
   const provenanceKind = isSampleLoaded ? 'default' as const
     : dataInfo.dataSource === 'sample' ? 'manual' as const
     : dataInfo.dataSource === 'manual' ? 'manual' as const
@@ -261,6 +276,14 @@ export default function YoyPage() {
 
       {rows.length > 0 && (
         <div id="growth-results">
+          {heroCagr && (
+            <HeroDecision
+              label={`${heroCagr.label} — ${heroCagr.periods}yr CAGR`}
+              value={`${heroCagr.cagr > 0 ? '+' : ''}${heroCagr.cagr.toFixed(1)}%`}
+              sign={heroCagr.cagr > 0 ? 'positive' : heroCagr.cagr < 0 ? 'negative' : 'neutral'}
+              sub="Compound annual growth rate across the full period."
+            />
+          )}
           <Card label="Growth rates (YoY %)" className="mt-4">
             <table className="diff-table">
               <thead><tr><th>Metric</th>{colLabels.map((cl, i) => <th key={i}>{cl}</th>)}</tr></thead>

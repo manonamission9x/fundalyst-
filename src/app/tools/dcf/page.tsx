@@ -12,6 +12,7 @@ import {
   SectionTitle,
   ResultPanel,
   MetricGrid,
+  HeroDecision,
   InsightCard,
   EmptyState,
   Disclaimer,
@@ -442,6 +443,12 @@ function DCFResults({
   return (
     <ResultPanel label="Intrinsic Value Summary">
       <Card>
+        <HeroDecision
+          label="Margin of safety"
+          value={formatted.mos}
+          sign={summary.mos > 0 ? 'positive' : summary.mos < 0 ? 'negative' : 'neutral'}
+          sub={`${mosContext} · ${verdictText}`}
+        />
         <MetricGrid
           metrics={[
             { label: 'Enterprise Value', value: formatted.ev },
@@ -449,7 +456,7 @@ function DCFResults({
             { label: 'Intrinsic Value / Share', value: formatted.iv, cls: isUndervalued ? 'good' : 'warn', context: isUndervalued ? 'Above current price' : 'Below current price', contextTrend: isUndervalued ? 'up' : 'down' },
             { label: 'Current Price', value: formatted.price },
             { label: 'Margin of Safety', value: formatted.mos, cls: summary.mos > 20 ? 'good' : summary.mos > 0 ? 'neutral' : 'warn', context: mosContext, contextTrend: summary.mos > 0 ? 'up' : 'down' },
-            { label: 'Verdict', value: isUndervalued ? 'Undervalued ✓' : 'Overvalued ✗', cls: isUndervalued ? 'good' : 'warn' },
+            { label: 'Verdict', value: isUndervalued ? 'Undervalued' : 'Overvalued', cls: isUndervalued ? 'good' : 'warn' },
           ]}
         />
         <InsightCard

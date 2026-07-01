@@ -25,6 +25,8 @@ import {
   SmileyMeh,
   SmileySad,
   House,
+  CaretUp,
+  CaretDown,
 } from '@phosphor-icons/react';
 
 // ── Icon Components ──
@@ -447,9 +449,11 @@ export function MetricGrid({ metrics }: { metrics: Metric[] }) {
       {metrics.map((m, i) => (
         <div className={'metric-cell' + (m.cls ? ' ' + m.cls : '')} key={i}>
           <div className="metric-label">
-            {m.trend && (
+            {m.trend && m.trend !== 'flat' && (
               <span className={`trend-arrow trend-${m.trend}`}>
-                {m.trend === 'up' ? '↑' : m.trend === 'down' ? '↓' : '→'}
+                {m.trend === 'up'
+                  ? <CaretUp size={9} weight="bold" />
+                  : <CaretDown size={9} weight="bold" />}
               </span>
             )}
             {m.label}
@@ -460,7 +464,9 @@ export function MetricGrid({ metrics }: { metrics: Metric[] }) {
           {m.sub && <div className="metric-sub">{m.sub}</div>}
           {m.context && (
             <div className={`stat-context ${m.contextTrend === 'up' ? 'trend-up-context' : m.contextTrend === 'down' ? 'trend-down-context' : ''}`}>
-              {m.contextTrend === 'up' && '▲ '}{m.contextTrend === 'down' && '▼ '}{m.context}
+              {m.contextTrend === 'up' && <CaretUp size={8} weight="bold" style={{ marginRight: 3 }} />}
+              {m.contextTrend === 'down' && <CaretDown size={8} weight="bold" style={{ marginRight: 3 }} />}
+              {m.context}
             </div>
           )}
           {m.bar !== undefined && (
@@ -597,6 +603,27 @@ export function ResultPanel({ children, label, id }: ResultPanelProps) {
     <div id={id} className="mt-4">
       {label && <SectionTitle>{label}</SectionTitle>}
       {children}
+    </div>
+  );
+}
+
+/**
+ * The single hero decision number for a tool page (v5 §2): mono, weight 600,
+ * >=36px (>=28px floor at 420px), colored by its actual sign. Exactly one per page.
+ */
+export interface HeroDecisionProps {
+  label: string;
+  value: string;
+  sign?: 'positive' | 'negative' | 'neutral';
+  sub?: string;
+}
+
+export function HeroDecision({ label, value, sign = 'neutral', sub }: HeroDecisionProps) {
+  return (
+    <div className="hero-decision">
+      <div className="hero-decision-label">{label}</div>
+      <div className={`hero-decision-value ${sign}`}>{value}</div>
+      {sub && <div className="hero-decision-sub">{sub}</div>}
     </div>
   );
 }

@@ -161,6 +161,16 @@ export interface MemoSection {
   }[];
 }
 
+/** Lead-with-the-decision summary shown at the top of an exported memo (v5 §2/§7). */
+export interface MemoSummary {
+  /** e.g. "Margin of safety" */
+  heroLabel: string;
+  /** formatted figure, e.g. "+32.4%" */
+  heroValue: string;
+  /** drives the sign color of the hero number */
+  heroSign: 'positive' | 'negative' | 'neutral';
+}
+
 export interface MemoExport {
   id: string;
   title: string;
@@ -168,6 +178,8 @@ export interface MemoExport {
   generatedAt: string;
   analyst: string;
   projectName: string;
+  /** Optional lead decision number (margin of safety or equivalent). */
+  summary?: MemoSummary;
   sections: MemoSection[];
   metadata: {
     datasetId: string | null;

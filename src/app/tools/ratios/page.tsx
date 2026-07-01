@@ -12,6 +12,7 @@ import {
   Card,
   Toolbar,
   MetricGrid,
+  HeroDecision,
   InsightCard,
   FormulaDisclosure,
   SectionTitle,
@@ -268,6 +269,26 @@ export default function RatiosPage() {
         </div>
         <Toolbar onClear={handleClear} onAction={analyze} actionLabel="Calculate" hint="Add Revenue and Net Profit to see net margin — add more for full ratio analysis" />
       </Card>
+
+      {res && showResults && (() => {
+        // Hero decision (§2): the one ratio most out of range.
+        const flagged = res.find((r) => r.cls === 'warn');
+        return flagged ? (
+          <HeroDecision
+            label={`${flagged.label} — needs attention`}
+            value={flagged.value}
+            sign="negative"
+            sub="Most out-of-range ratio for this company."
+          />
+        ) : (
+          <HeroDecision
+            label="Ratios within healthy range"
+            value={`${res.length} / ${res.length}`}
+            sign="positive"
+            sub="No ratio flagged out of range."
+          />
+        );
+      })()}
 
       {grouped.map(({ section, ratios }) => (
         <div key={section} className="mt-6">

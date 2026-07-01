@@ -764,7 +764,7 @@ function GovernancePanel() {
           </div>
         </div>
         <div className="workspace-card">
-          <div className="workspace-card-header">Project Controls ⚡ local simulation</div>
+          <div className="workspace-card-header">Project Controls — local simulation</div>
           <div className="p-4 grid grid-cols-3 gap-4">
             <div>
               <div className="ws-metric-label">Approval Gate</div>
@@ -787,7 +787,7 @@ function GovernancePanel() {
         </div>
 
         <div className="workspace-card">
-          <div className="workspace-card-header">Role Simulation ⚡ local simulation</div>
+          <div className="workspace-card-header">Role Simulation — local simulation</div>
           <div className="p-4">
             <table className="diff-table">
               <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Role</th></tr></thead>

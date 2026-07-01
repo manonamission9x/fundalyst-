@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useGlobalDataStore } from '@/store/global-data-store';
-import { UploadSimple, FileText, Calculator, ChartLineUp, ChartPie } from '@phosphor-icons/react';
+import { FileText, Calculator, ChartLineUp, ChartPie, ArrowRight } from '@phosphor-icons/react';
 
 export default function HomePage() {
   usePageTitle('Home');
@@ -27,86 +27,76 @@ export default function HomePage() {
             and generate investment insights — all in your browser. No server uploads.
           </p>
 
-          <div className="home-cta-row">
-            <Link href="/import" className="home-cta-primary">
-              <UploadSimple size={15} weight="regular" />
-              Upload Annual Report
-            </Link>
-            <Link href="/tools/dcf" className="home-cta-secondary">
-              View Interactive Demo
-            </Link>
-          </div>
-
-          {activeDataset && (
-            <div className="home-active-dataset">
-              <span className="home-active-dataset-dot" />
-              {activeDataset.companyName || `${activeDataset.facts.length} metrics loaded`}
-              <span className="home-active-dataset-sep">·</span>
-              <Link href="/research/filing" className="home-active-dataset-link">
-                Continue analysis →
+          {activeDataset ? (
+            <div className="home-cta-row">
+              <Link href="/research/filing" className="btn-primary home-cta-btn">
+                Continue analysis
+                <ArrowRight size={15} weight="bold" />
+              </Link>
+              <span className="home-cta-dataset-note">
+                {activeDataset.companyName || `${activeDataset.facts.length} metrics loaded`}
+              </span>
+            </div>
+          ) : (
+            <div className="home-cta-row">
+              <Link href="/import" className="btn-primary home-cta-btn">
+                Upload annual report
+                <ArrowRight size={15} weight="bold" />
+              </Link>
+              <Link href="/tools/dcf" className="home-cta-ghost">
+                View interactive demo
               </Link>
             </div>
           )}
+
+          <p className="home-trust-line">
+            No account, no upload — runs in your browser, first analysis in under a minute.
+          </p>
 
           {/* Product preview — live DCF output */}
           <div className="home-preview">
             <div className="home-preview-body">
               <div className="home-preview-metrics">
                 <div className="home-preview-metric">
-                  <div className="home-preview-metric-label">Enterprise Value</div>
-                  <div className="home-preview-metric-value" style={{ color: 'var(--primary)' }}>₹12,847Cr</div>
+                  <div className="home-preview-metric-label">Enterprise value</div>
+                  <div className="home-preview-metric-value">₹12,847Cr</div>
                 </div>
                 <div className="home-preview-metric">
-                  <div className="home-preview-metric-label">Intrinsic Value / Share</div>
+                  <div className="home-preview-metric-label">Intrinsic value / share</div>
                   <div className="home-preview-metric-value">₹1,284</div>
                 </div>
                 <div className="home-preview-metric">
-                  <div className="home-preview-metric-label">Margin of Safety</div>
+                  <div className="home-preview-metric-label">Margin of safety</div>
                   <div className="home-preview-metric-value" style={{ color: 'var(--green)' }}>+32.4%</div>
                 </div>
               </div>
               <div className="home-preview-chart">
                 <div className="home-preview-bar">
-                  <span className="home-preview-bar-label">Projected FCF</span>
-                  <div className="home-preview-bar-track">
-                    <div className="home-preview-bar-fill primary" style={{ width: '85%' }} />
-                  </div>
-                </div>
-                <div className="home-preview-bar">
                   <span className="home-preview-bar-label">PV of FCF</span>
                   <div className="home-preview-bar-track">
-                    <div className="home-preview-bar-fill green" style={{ width: '62%' }} />
+                    <div className="home-preview-bar-fill ink-100" style={{ width: '62%' }} />
                   </div>
                 </div>
                 <div className="home-preview-bar">
-                  <span className="home-preview-bar-label">Terminal Value</span>
+                  <span className="home-preview-bar-label">PV of terminal value</span>
                   <div className="home-preview-bar-track">
-                    <div className="home-preview-bar-fill caution" style={{ width: '90%' }} />
+                    <div className="home-preview-bar-fill ink-60" style={{ width: '90%' }} />
                   </div>
                 </div>
               </div>
             </div>
             <div className="home-preview-footer">
               <span>WACC: 10.2%</span>
-              <span>Terminal Growth: 3.5%</span>
-              <span>Projection: 5 years</span>
+              <span>Terminal growth: 3.5%</span>
+              <span>Projected FCF (yr 1): ₹1,420Cr</span>
               <span>Sample data</span>
             </div>
-          </div>
-
-          <div className="mt-3" style={{ display: 'flex', justifyContent: 'center' }}>
-            <span className="trust-badge source">
-              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="5" width="8" height="6" rx="1" /><path d="M4 5V3a2 2 0 014 0v2" />
-              </svg>
-              Runs entirely in your browser. Your data never leaves this device.
-            </span>
           </div>
         </div>
       </section>
 
       {/* ── How It Works ── */}
-      <section className="home-section" style={{ marginTop: 'var(--space-6)' }}>
+      <section className="home-section" style={{ marginTop: 'var(--space-10)' }}>
         <div className="home-section-heading">How it works</div>
         <div className="home-section-sub">Three steps from filing to analysis.</div>
         <div className="home-steps">
@@ -160,7 +150,7 @@ export default function HomePage() {
               <span className="home-tool-card-icon"><ChartLineUp size={14} weight="regular" /></span>
               <span className="home-tool-card-title">Trend Charts</span>
             </div>
-            <div className="home-tool-card-value" style={{ color: 'var(--primary)' }}>3yr CAGR</div>
+            <div className="home-tool-card-value">3yr CAGR</div>
             <div className="home-tool-card-sub">Revenue · Profit · Margin trends</div>
           </Link>
         </div>
@@ -210,7 +200,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="home-trust-col">
-            <div className="home-trust-title">Enterprise</div>
+            <div className="home-trust-title">Coverage</div>
             <div className="home-trust-text">
               Built for Indian markets (₹, Cr/L, NSE/BSE terminology). Handles multi-company, multi-period analysis. Export investment memos. Back up your workspace.
             </div>
@@ -222,9 +212,9 @@ export default function HomePage() {
       <section className="home-final-cta">
         <h2>Ready to analyze your first report?</h2>
         <div className="home-cta-row">
-          <Link href="/import" className="home-cta-primary" style={{ padding: '10px 24px', fontSize: 'var(--text-sm)', gap: 8 }}>
-            <UploadSimple size={15} weight="regular" />
-            Upload Annual Report
+          <Link href="/import" className="btn-primary home-cta-btn">
+            Upload annual report
+            <ArrowRight size={15} weight="bold" />
           </Link>
         </div>
       </section>

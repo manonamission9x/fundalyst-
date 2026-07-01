@@ -10,6 +10,7 @@
 import type {
   MemoExport,
   MemoSection,
+  MemoSummary,
   MemoProvenance,
   MemoProvenanceKind,
   DCFResult,
@@ -140,8 +141,10 @@ function buildFilingSection(
       heading: 'Risk Flags',
       body: flags
         .map((f) => {
-          const icon = f.level === 'danger' ? '🔴' : '🟡';
-          return `- ${icon} **${f.label}:** ${f.text}`;
+          // Reuse the in-app RiskFlag vocabulary (level: 'danger' | 'warn'),
+          // surfaced as reader-facing severity tags. No emoji (§7/§3).
+          const severity = f.level === 'danger' ? 'CRITICAL' : 'WATCH';
+          return `- **${severity}** · **${f.label}:** ${f.text}`;
         })
         .join('\n'),
       provenance: flags.map((f) => provItem(f.label, f.text, 'computed')),
@@ -181,13 +184,13 @@ function buildRatiosSection(ratios: RatioResult[]): MemoSection | null {
     if (!items || items.length === 0) continue;
 
     const rows = items.map((r) => {
-      const icon = r.cls === 'good' ? '✅' : r.cls === 'warn' ? '⚠️' : '➖';
-      return `| ${icon} ${r.label} | ${r.value} |`;
+      const status = r.cls === 'good' ? 'GOOD' : r.cls === 'warn' ? 'WARN' : 'NEUTRAL';
+      return `| ${r.label} | ${r.value} | ${status} |`;
     });
 
     subsections.push({
       heading: section,
-      body: ['| Metric | Value |', '|--------|-------|', ...rows].join('\n'),
+      body: ['| Metric | Value | Status |', '|--------|-------|--------|', ...rows].join('\n'),
       provenance: items.map((r) =>
         provItem(r.label, r.value, r.cls === 'good' ? 'computed' : 'computed'),
       ),
@@ -311,12 +314,12 @@ function buildInstitutionalSection(
   // Valuation Multiples
   if (institutional.valuation.length > 0) {
     const rows = institutional.valuation.map((m: InstitutionalMetric) => {
-      const icon = m.cls === 'good' ? '✅' : m.cls === 'warn' ? '⚠️' : '➖';
-      return `| ${icon} ${m.label} | ${m.formatted} | ${m.description} |`;
+      const status = m.cls === 'good' ? 'GOOD' : m.cls === 'warn' ? 'WARN' : 'NEUTRAL';
+      return `| ${m.label} | ${m.formatted} | ${status} | ${m.description} |`;
     });
     subsections.push({
       heading: 'Valuation Multiples',
-      body: ['| Metric | Value | Description |', '|--------|-------|-------------|', ...rows].join('\n'),
+      body: ['| Metric | Value | Status | Description |', '|--------|-------|--------|-------------|', ...rows].join('\n'),
       provenance: institutional.valuation.map((m: InstitutionalMetric) =>
         provItem(m.label, m.formatted, 'computed'),
       ),
@@ -326,12 +329,12 @@ function buildInstitutionalSection(
   // Profitability Metrics
   if (institutional.profitability.length > 0) {
     const rows = institutional.profitability.map((m: InstitutionalMetric) => {
-      const icon = m.cls === 'good' ? '✅' : m.cls === 'warn' ? '⚠️' : '➖';
-      return `| ${icon} ${m.label} | ${m.formatted} | ${m.description} |`;
+      const status = m.cls === 'good' ? 'GOOD' : m.cls === 'warn' ? 'WARN' : 'NEUTRAL';
+      return `| ${m.label} | ${m.formatted} | ${status} | ${m.description} |`;
     });
     subsections.push({
       heading: 'Profitability Metrics',
-      body: ['| Metric | Value | Description |', '|--------|-------|-------------|', ...rows].join('\n'),
+      body: ['| Metric | Value | Status | Description |', '|--------|-------|--------|-------------|', ...rows].join('\n'),
       provenance: institutional.profitability.map((m: InstitutionalMetric) =>
         provItem(m.label, m.formatted, 'computed'),
       ),
@@ -353,11 +356,11 @@ function buildProvenanceSection(provenanceMap?: Record<string, ProvenanceSource>
 
   const rows = items.map((p) => {
     const kindLabel: Record<ProvenanceKind, string> = {
-      imported: '📄 Imported',
-      manual: '✏️ Manual',
-      default: '⚙️ Default',
-      inferred: '🔍 Inferred',
-      unavailable: '🚫 Unavailable',
+      imported: 'Imported',
+      manual: 'Manual',
+      default: 'Default',
+      inferred: 'Inferred',
+      unavailable: 'Unavailable',
     };
     const label = kindLabel[p.kind] || p.kind;
     return `| ${p.label || '—'} | ${String(p.value ?? '—')} | ${label} | ${p.period || '—'} | ${p.confidence !== undefined ? (p.confidence * 100).toFixed(0) + '%' : '—'} |${p.overridden ? ' (overridden)' : ''}`;
@@ -478,6 +481,17 @@ export function generateMemo(inputs: {
 
   const dataset = inputs.dataset ?? null;
 
+  // Lead-with-the-decision summary (§2/§7): margin of safety is the hero figure.
+  let summary: MemoSummary | undefined;
+  if (inputs.dcfResult && typeof inputs.dcfResult.mos === 'number') {
+    const mos = inputs.dcfResult.mos;
+    summary = {
+      heroLabel: 'Margin of safety',
+      heroValue: fmtPct(mos),
+      heroSign: mos > 0 ? 'positive' : mos < 0 ? 'negative' : 'neutral',
+    };
+  }
+
   return {
     id: makeMemoId(),
     title: `Investment Memo — ${inputs.companyName}`,
@@ -485,6 +499,7 @@ export function generateMemo(inputs: {
     generatedAt: nowISO(),
     analyst: inputs.analyst || 'Local Analyst',
     projectName: inputs.projectName || 'Local Research Project',
+    summary,
     sections,
     metadata: {
       datasetId: dataset?.id ?? null,
@@ -510,6 +525,16 @@ export function exportMemoMarkdown(memo: MemoExport): string {
     lines.push(`**Data Points:** ${memo.metadata.factCount} facts across ${memo.metadata.datasetPeriods.length} periods`);
   }
   lines.push('');
+
+  // Lead with the decision (§7) — the number that matters, before the data dump.
+  if (memo.summary) {
+    lines.push('---');
+    lines.push('');
+    lines.push(`## ${memo.companyName} — ${memo.summary.heroLabel}`);
+    lines.push('');
+    lines.push(`# ${memo.summary.heroValue}`);
+    lines.push('');
+  }
 
   // Separator
   lines.push('---');
@@ -580,10 +605,24 @@ export function exportMemoHTML(memo: MemoExport): string {
     return html;
   }
 
+  const sectionAnchor = (title: string): string =>
+    'sec-' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+  // Anchored table of contents (HTML only) — this is a multi-page document (§7).
+  const tocHtml = `
+    <nav class="toc" aria-label="Contents">
+      <div class="toc-title">Contents</div>
+      <ol>
+        ${memo.sections
+          .map((sctn) => `<li><a href="#${sectionAnchor(sctn.title)}">${escapeHtml(sctn.title)}</a></li>`)
+          .join('\n        ')}
+      </ol>
+    </nav>`;
+
   const sectionsHtml = memo.sections
     .map(
       (section) => `
-    <div class="section">
+    <section class="section" id="${sectionAnchor(section.title)}">
       <h2>${escapeHtml(section.title)}</h2>
       ${section.subsections
         .map(
@@ -592,14 +631,32 @@ export function exportMemoHTML(memo: MemoExport): string {
           <h3>${escapeHtml(sub.heading)}</h3>
           <div class="body">${renderBody(sub.body)}</div>
           ${sub.provenance && sub.provenance.length > 0
-            ? `<details class="provenance"><summary>Sources (${sub.provenance.length})</summary><ul>${sub.provenance.map((p) => `<li><strong>${escapeHtml(p.label)}:</strong> ${escapeHtml(String(p.value))} <em>(${p.kind})</em></li>`).join('')}</ul></details>`
+            ? `<details class="provenance"><summary>Sources (${sub.provenance.length})</summary><ul>${sub.provenance.map((p) => `<li><strong>${escapeHtml(p.label)}:</strong> <span class="num">${escapeHtml(String(p.value))}</span> <span class="prov-tag prov-${p.kind}">${escapeHtml(p.kind)}</span></li>`).join('')}</ul></details>`
             : ''}
         </div>`,
         )
         .join('\n')}
-    </div>`,
+    </section>`,
     )
     .join('\n');
+
+  const heroSignClass = memo.summary
+    ? memo.summary.heroSign === 'positive'
+      ? 'hero-pos'
+      : memo.summary.heroSign === 'negative'
+        ? 'hero-neg'
+        : 'hero-neutral'
+    : '';
+
+  const summaryHtml = memo.summary
+    ? `
+  <section class="summary">
+    <div class="summary-company">${escapeHtml(memo.companyName)}</div>
+    <div class="summary-hero-label">${escapeHtml(memo.summary.heroLabel)}</div>
+    <div class="summary-hero-value num ${heroSignClass}">${escapeHtml(memo.summary.heroValue)}</div>
+    <div class="summary-meta">${escapeHtml(dateStr)} · ${escapeHtml(memo.analyst)}</div>
+  </section>`
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -608,35 +665,82 @@ export function exportMemoHTML(memo: MemoExport): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${encodedTitle}</title>
 <style>
-  body { font-family: 'Segoe UI', -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 24px; color: #1a1a2e; line-height: 1.6; }
-  h1 { color: #1a1a2e; border-bottom: 2px solid #4338ca; padding-bottom: 8px; }
-  h2 { color: #4338ca; margin-top: 32px; }
-  h3 { color: #334155; margin-top: 20px; }
-  .meta { color: #64748b; font-size: 0.9em; margin-bottom: 24px; }
+  /* Paper-toned document theme — ink on paper, NOT the app's dark surface (§7).
+     Palette defined as CSS variables in hsl() so the sheet contains zero hardcoded hex
+     and every color derives from a single set of relationships. */
+  :root {
+    --paper: hsl(40 24% 97%);
+    --paper-raised: hsl(40 30% 99%);
+    --ink: hsl(240 12% 12%);
+    --ink-secondary: hsl(240 6% 34%);
+    --ink-muted: hsl(240 5% 52%);
+    --rule: hsl(40 12% 84%);
+    --rule-strong: hsl(40 10% 72%);
+    --gain: hsl(150 55% 30%);
+    --loss: hsl(2 62% 44%);
+    --warn: hsl(28 68% 40%);
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --font-sans: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Liberation Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: var(--font-sans); max-width: 900px; margin: 40px auto; padding: 0 24px; background: var(--paper); color: var(--ink); line-height: 1.6; }
+  .num, td, th, code { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  h1, h2, h3 { font-family: var(--font-sans); letter-spacing: -0.015em; }
+  h1 { font-weight: 600; color: var(--ink); border-bottom: 1px solid var(--rule-strong); padding-bottom: 10px; margin-bottom: 8px; }
+  h2 { font-weight: 600; color: var(--ink); margin-top: 36px; padding-top: 8px; border-top: 1px solid var(--rule); }
+  h3 { font-weight: 600; color: var(--ink-secondary); margin-top: 20px; font-size: 1em; }
+  .meta { color: var(--ink-muted); font-size: 0.9em; margin-bottom: 24px; }
+  .meta .num { color: var(--ink-secondary); }
+  .summary { margin: 24px 0 8px; padding: 20px 24px; background: var(--paper-raised); border: 1px solid var(--rule); border-radius: var(--radius-md); }
+  .summary-company { font-size: 0.95em; font-weight: 600; color: var(--ink); }
+  .summary-hero-label { font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); margin-top: 10px; }
+  .summary-hero-value { font-size: 40px; font-weight: 600; line-height: 1.1; margin-top: 2px; color: var(--ink); }
+  .summary-hero-value.hero-pos { color: var(--gain); }
+  .summary-hero-value.hero-neg { color: var(--loss); }
+  .summary-meta { font-size: 0.82em; color: var(--ink-muted); margin-top: 10px; font-family: var(--font-mono); }
+  .toc { margin: 20px 0 8px; padding: 14px 20px; border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--paper-raised); }
+  .toc-title { font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); margin-bottom: 6px; }
+  .toc ol { margin: 0; padding-left: 20px; columns: 2; }
+  .toc a { color: var(--ink-secondary); text-decoration: none; }
+  .toc a:hover { color: var(--ink); text-decoration: underline; }
   table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 0.9em; }
-  td { border: 1px solid #e2e8f0; padding: 8px 12px; text-align: left; }
+  td { border: 1px solid var(--rule); padding: 7px 12px; text-align: left; }
   tr.sep td { border: none; height: 4px; padding: 0; }
   ul { padding-left: 20px; }
   li { margin: 4px 0; }
-  .section { margin-bottom: 32px; }
-  .subsection { margin: 16px 0; padding: 12px 16px; background: #f8fafc; border-radius: 8px; }
-  .provenance { margin-top: 8px; font-size: 0.85em; color: #64748b; }
-  .provenance summary { cursor: pointer; color: #4338ca; }
+  .section { margin-bottom: 28px; }
+  .subsection { margin: 14px 0; padding: 12px 16px; background: var(--paper-raised); border: 1px solid var(--rule); border-radius: var(--radius-md); page-break-inside: avoid; break-inside: avoid; }
+  .provenance { margin-top: 8px; font-size: 0.85em; color: var(--ink-muted); }
+  .provenance summary { cursor: pointer; color: var(--ink-secondary); }
   .provenance ul { margin: 4px 0; padding-left: 16px; }
+  .prov-tag { display: inline-block; padding: 0 6px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 0.82em; text-transform: capitalize; border: 1px solid var(--rule-strong); color: var(--ink-secondary); }
+  .prov-imported { color: var(--gain); border-color: var(--gain); }
+  .prov-manual { color: var(--ink-secondary); }
+  .prov-assumed { color: var(--warn); border-color: var(--warn); }
+  .prov-computed { color: var(--ink); }
   .body { overflow-x: auto; }
-  .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 0.8em; text-align: center; }
+  .footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--ink-muted); font-size: 0.8em; text-align: center; }
   strong { font-weight: 600; }
-  @media print { body { margin: 0; padding: 16px; } .subsection { break-inside: avoid; } }
+  @media print {
+    body { margin: 0; padding: 16px; background: hsl(0 0% 100%); }
+    .subsection, table, tr { page-break-inside: avoid; break-inside: avoid; }
+    .toc { page-break-after: avoid; }
+    h2, h3 { page-break-after: avoid; }
+  }
 </style>
 </head>
 <body>
   <h1>${encodedTitle}</h1>
   <div class="meta">
-    <div><strong>Generated:</strong> ${escapeHtml(dateStr)}</div>
+    <div><strong>Generated:</strong> <span class="num">${escapeHtml(dateStr)}</span></div>
     <div><strong>Analyst:</strong> ${escapeHtml(memo.analyst)}</div>
     <div><strong>Project:</strong> ${escapeHtml(memo.projectName)}</div>
-    ${memo.metadata.factCount > 0 ? `<div><strong>Data Points:</strong> ${memo.metadata.factCount} facts across ${memo.metadata.datasetPeriods.length} periods</div>` : ''}
+    ${memo.metadata.factCount > 0 ? `<div><strong>Data Points:</strong> <span class="num">${memo.metadata.factCount}</span> facts across <span class="num">${memo.metadata.datasetPeriods.length}</span> periods</div>` : ''}
   </div>
+  ${summaryHtml}
+  ${tocHtml}
   ${sectionsHtml}
   <div class="footer">
     <p><em>Generated by Fundalyst — all calculations are client-side and for informational purposes only. This does not constitute investment advice.</em></p>

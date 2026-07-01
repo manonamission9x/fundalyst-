@@ -11,6 +11,7 @@ import {
   Card,
   UploadBar,
   Toolbar,
+  HeroDecision,
   InsightCard,
   EmptyState,
   Disclaimer,
@@ -307,6 +308,19 @@ Infosys, 156000, 28700, 172000, 24000`;
         }, peerResults[0])
     : null;
 
+  // Hero decision (§2): the primary company's relative rank among peers.
+  const primaryRank = (() => {
+    const scored = peerResults
+      .filter((r) => !isNaN(r.vals[0]) && !isNaN(r.vals[1]) && !isNaN(r.vals[3]))
+      .map((r) => ({ name: r.name, score: r.vals[0] + r.vals[1] - r.vals[3] }))
+      .sort((a, b) => b.score - a.score);
+    if (scored.length === 0 || peerResults.length === 0) return null;
+    const primaryName = peerResults[0].name;
+    const idx = scored.findIndex((s) => s.name === primaryName);
+    if (idx === -1) return null;
+    return { rank: idx + 1, total: scored.length, name: primaryName };
+  })();
+
   return (
     <div>
       <PageHeader
@@ -365,6 +379,14 @@ Infosys, 156000, 28700, 172000, 24000`;
 
       {showResults && peerResults.length > 0 && (
         <>
+          {primaryRank && (
+            <HeroDecision
+              label={`${primaryRank.name} — relative rank`}
+              value={`#${primaryRank.rank} of ${primaryRank.total}`}
+              sign={primaryRank.rank === 1 ? 'positive' : primaryRank.rank === primaryRank.total ? 'negative' : 'neutral'}
+              sub="Ranked on combined score: revenue + profit − debt."
+            />
+          )}
           <Card label="Results" className="mt-4">
             <table className="diff-table">
               <thead>

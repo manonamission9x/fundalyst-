@@ -10,6 +10,7 @@ import {
   Card,
   Toolbar,
   MetricGrid,
+  HeroDecision,
   InsightCard,
   WarningCard,
   EmptyState,
@@ -201,6 +202,12 @@ export default function WCPage() {
 
       {res && showResults && (
         <div id="wc-results">
+          <HeroDecision
+            label="Cash conversion cycle"
+            value={`${Math.round(res.ccc)} days`}
+            sign={res.ccc <= 30 ? 'positive' : res.ccc > 90 ? 'negative' : 'neutral'}
+            sub="DSO + DIO − DPO. Lower means cash is freed up faster."
+          />
           <Card label="Cash Conversion Metrics">
             <MetricGrid
               metrics={[

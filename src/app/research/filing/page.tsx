@@ -9,7 +9,7 @@ import {
   PageHeader, Card, Toolbar, NextLinks, Disclaimer,
   EmptyState, InsightCard, WarningCard, SectionTitle,
   DataQualityBar, CalcTimestamp, TrustBadge,
-  DataSourceBadge,
+  DataSourceBadge, HeroDecision,
 } from '@/components/ui';
 import { SpreadsheetInput } from '@/components/input';
 import type { SpreadsheetRow } from '@/components/input';
@@ -293,6 +293,16 @@ export default function FilingPage() {
       {showResults && diffs.length > 0 && (
         <div ref={resultsRef}>
           <SectionTitle>Results — what changed</SectionTitle>
+
+          {/* Hero decision (§2): the single largest material change this filing. */}
+          {sortedChanges.length > 0 && sortedChanges[0].pct !== null && (
+            <HeroDecision
+              label={`Largest change — ${sortedChanges[0].label}`}
+              value={`${sortedChanges[0].pct > 0 ? '+' : ''}${sortedChanges[0].pct.toFixed(1)}%`}
+              sign={sortedChanges[0].dir === 'up' ? 'positive' : sortedChanges[0].dir === 'down' ? 'negative' : 'neutral'}
+              sub="Biggest period-over-period move in this filing."
+            />
+          )}
 
           {/* 1. Executive Summary */}
           {execSummary && (

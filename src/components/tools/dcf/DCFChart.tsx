@@ -2,10 +2,10 @@
 
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine, Cell,
+  ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import type { ProjectedYear } from '@/types/financial';
-import { getChartColors, getChartGrid, getAxisTick, getTooltipStyle, fmtINR } from '@/lib/chart-theme';
+import { getChartColors, getChartGrid, getAxisTick, getTooltipStyle, inkWeight, fmtINR } from '@/lib/chart-theme';
 
 interface DCFChartProps {
   projected: ProjectedYear[];
@@ -79,14 +79,14 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
           {currentPrice && (
             <ReferenceLine
               y={currentPrice}
-              stroke={COLORS.red}
+              stroke={COLORS.textSecondary}
               strokeDasharray="6 3"
               strokeWidth={1.5}
               label={{
                 value: 'Mkt: ' + fmtINR(currentPrice),
-                fill: COLORS.red,
+                fill: COLORS.textSecondary,
                 fontSize: 10,
-                fontFamily: 'var(--font-ibm-plex-mono)',
+                fontFamily: 'var(--font-mono)',
                 position: 'insideTopRight',
               }}
             />
@@ -101,36 +101,27 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
             labelFormatter={(_label: unknown) => `Period: ${_label}` as string}
           />
 
+          {/* Same unit (INR Cr), part-to-whole -> ink-weight, not categorical color (§4).
+              FCF = weight 100, PV of FCF = weight 60. Terminal is just another
+              period here, not a special caution-colored bar. */}
           <Bar
             dataKey="fcf"
             name="fcf"
-            radius={[2, 2, 0, 0]}
+            radius={[4, 4, 0, 0]}
             maxBarSize={36}
             isAnimationActive={false}
-          >
-            {data.map((entry, index) => (
-              <Cell
-                key={index}
-                fill={entry.isTerminal ? COLORS.amber : COLORS.primary}
-                fillOpacity={entry.isTerminal ? 0.65 : 0.85}
-              />
-            ))}
-          </Bar>
+            fill={inkWeight(100).fill}
+            fillOpacity={inkWeight(100).fillOpacity}
+          />
           <Bar
             dataKey="pv"
             name="pv"
-            radius={[2, 2, 0, 0]}
+            radius={[4, 4, 0, 0]}
             maxBarSize={36}
             isAnimationActive={false}
-          >
-            {data.map((entry, index) => (
-              <Cell
-                key={index}
-                fill={entry.isTerminal ? COLORS.amberLight : COLORS.green}
-                fillOpacity={entry.isTerminal ? 0.45 : 0.75}
-              />
-            ))}
-          </Bar>
+            fill={inkWeight(60).fill}
+            fillOpacity={inkWeight(60).fillOpacity}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>

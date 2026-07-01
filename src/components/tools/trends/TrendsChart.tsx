@@ -88,7 +88,7 @@ export default function TrendsChart({ rows, headers }: TrendsChartProps) {
                 stroke={color}
                 strokeWidth={isPrimary ? 1.5 : 1}
                 dot={isPrimary ? { r: 3, fill: color, strokeWidth: 0, stroke: color } : false}
-                activeDot={{ r: 4, fill: color, strokeWidth: 2, stroke: '#141416' }}
+                activeDot={{ r: 4, fill: color, strokeWidth: 2, stroke: COLORS.tooltipBg }}
                 strokeOpacity={isPrimary ? 1 : 0.6}
                 isAnimationActive={false}
                 connectNulls
