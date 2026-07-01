@@ -1,15 +1,19 @@
 # Fundalyst Handoff
 
-Last updated: 2026-07-01 (workspace workflow redesign + nav labels + CTA fix)
+Last updated: 2026-07-01 (Design System v5 "Ledger" — full implementation)
 
 Repo: `C:\Users\kingo\Desktop\fundalyst-next`  
 GitHub: `https://github.com/manonamission9x/fundalyst-`  
 Branch: `main`  
-Latest code commit: `53c3ecc` — Update handoff with commit hash
+Latest code commit: `c87b926` — Design System v5 "Ledger": ink-weight data viz, hero decision numbers, paper-themed memo export  
+Push status: committed locally on `main`, **1 ahead of `origin/main` — not yet pushed**. Run `git push origin main` (sandbox had no GitHub credentials).
 
 ## Git Log (Recent)
 
 ```text
+c87b926  Design System v5 "Ledger": ink-weight data viz, hero decision numbers, paper-themed memo export
+470d7ef  Add design philosophy to handoff
+90821bd  Update handoff with commit hash
 53c3ecc  Update handoff with commit hash
 1c9ad44  Workspace workflow redesign + nav labels + CTA fix
 76d8167  Update handoff with filing page shake fix — part 2: clearVersion init
@@ -54,6 +58,28 @@ Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 - **Chart colors** derive from CSS tokens at runtime.
 - **Shadows** are restrained — every elevation token was reduced in opacity.
 - **`change-up/down/flat`** include `::before` arrows for color-blind users.
+
+## Design System v5 — Ledger
+
+Supersedes v4 "Institutional Slate" **token values where noted below**, but reuses its variable names and architecture (tokens were not renamed app-wide). Implemented in commit `c87b926`.
+
+**Core rule:** no brand/accent hue for interactivity. `--primary` is retired as a CTA fill — interactive weight now comes from **inversion** (ink-on-paper / paper-on-ink), borders, and type weight. Color is reserved 100% for data meaning: green = gain, red = loss, `--caution` amber = warning/risk only. Never decorative.
+
+- **Tokens (`globals.css`):** warm-ivory text (`--text: #F1F0EA` dark / `#16161A` light, plus shifted secondary/tertiary); `--radius-sm/md` bumped to 4px/8px. New **ink-weight system** (`--ink-weight-100` = `var(--text)`, `--ink-weight-60-opacity: .5`, `--ink-weight-30-opacity: .3`) for magnitude/part-to-whole data.
+- **Primary button:** `.btn-primary { background: var(--text); color: var(--bg); }` — auto-inverts in light mode with zero extra tokens. Secondary actions are ghost/underlined text links, never a second bordered button.
+- **Charts (`chart-theme.ts`):** returns `var(--token)` references (zero hardcoded hex, auto-themes). `inkWeight(100|60|30)` for magnitude (fixes the DCF Terminal Value bug — was categorical amber, now ink-weight); green/red + arrow for judgment; `--caution` for warnings only; `getSeriesColors()` (green/primary/caution/muted, capped at 4) for the one legitimate categorical case (peer/multi-series).
+- **Typography:** two families only (`--font-inter`, `--font-mono`). Headlines: weight 600, `letter-spacing: -0.015em`. Every number/unit/table cell is mono + `tabular-nums`.
+- **Hero decision number (§2):** each tool page shows exactly one large mono sign-colored figure (`.hero-decision`, `HeroDecision` component in `components/ui`). DCF → Margin of Safety, Ratios → most out-of-range ratio, Peer → relative rank, Growth → CAGR, WC → Cash Conversion Cycle, Filing → largest material change. (Trends is a pure chart page — intentionally has none.)
+- **Icons:** Phosphor `CaretUp`/`CaretDown` replace unicode `▲/▼`; no emoji anywhere in the product, including generated documents.
+- **Memo export (`memo-export.ts`):** all emoji removed — risk flags → `CRITICAL`/`WATCH` (maps the in-app `RiskFlag` `danger`/`warn` vocab), ratios/metrics → `GOOD`/`WARN`/`NEUTRAL`, provenance kinds → plain words. HTML export rebuilt on a **light/paper `hsl()` theme** (not the app's dark surface, zero hardcoded hex) with a summary-first hero number, anchored table of contents, provenance badges, and print fidelity (`page-break-inside: avoid`).
+- **Homepage:** inversion CTA + trailing `ArrowRight` + one ghost link, one combined trust line, two-segment ink-weight DCF preview, "Enterprise" trust pillar renamed **"Coverage"**, generous spacing (hero pad ≥ `--space-12`, section gaps ≥ `--space-10`).
+- **Mobile (§8):** single-column hero + 28px H1 below 768px; hero number never below 28px; data tables become horizontal-scroll with a sticky, opaque label column at ≤768px; CTAs stack full-width. 44px touch targets and 16px input font preserved.
+
+### v5 open flags (surfaced, not silently changed)
+- `RiskFlag` type uses `level: 'danger' | 'warn'` (not `critical`/`watch`) — mapped to `CRITICAL`/`WATCH` display labels.
+- The old "F-02/F-03 broken mono" note was a non-issue: `--font-mono`/`--font-inter` resolve to system stacks fine.
+- `ProvenanceBadge.tsx` is a React component and cannot render into a static HTML export — its badge *shape* was mirrored in the paper theme rather than importing the component.
+- **Not built (flagged, needs its own design pass):** Excel-native memo export with live formulas.
 
 ## Design Philosophy
 
@@ -114,6 +140,15 @@ Every design decision should pass this test: **Does this help an analyst reach a
 | `src/app/workspace/page.tsx` | Research workspace — workflow-guided overview, empty-state onboarding, collapsed Settings for admin panels |
 
 ## Recently Completed
+
+### Design System v5 — Ledger (Full Implementation)
+
+Implemented the complete v5 "Ledger" spec (P0/P1/P2) across `globals.css`, `chart-theme.ts`, `memo-export.ts`, `components/ui/index.tsx`, `DCFChart.tsx`, `TrendsChart.tsx`, `types/financial.ts`, the homepage, and the DCF/Ratios/Peer/WC/Growth/Filing tool pages. See the "Design System v5 — Ledger" section above for the full spec summary.
+
+Acceptance checks (§10) all pass: zero emoji in `memo-export.ts`; zero hardcoded hex in `chart-theme.ts` and the exported-memo style block; `.caution` only in genuine warning contexts; one hero decision number per tool page (≥28px at 420px); Phosphor arrows replace unicode triangles. `npx tsc --noEmit` reports **0 errors**.
+
+Note: several large file-tool writes were silently truncated on disk mid-session; all affected files were rebuilt from `HEAD` and re-applied through a verified-reliable path, then re-checked clean. Commit: `c87b926`.
+
 
 ### C2 - Explicit Sample Loading
 
@@ -202,13 +237,15 @@ The filing comparison page was shaking violently on navigation. Two causes:
 
 ## Verification
 
-Last verified after workspace workflow redesign:
+Last verified after Design System v5 "Ledger":
 
 ```bash
-npm.cmd test          # 58 passed
-npm.cmd run lint      # 0 errors, 3 warnings
-npm.cmd run build     # passed
+npx tsc --noEmit      # 0 errors (full project)
 ```
+
+Acceptance greps (all pass): 0 emoji in `memo-export.ts`; 0 hardcoded hex in `chart-theme.ts` / exported-memo `<style>`; `.caution` only in `.warning-card` contexts; `HeroDecision` present on all six tool pages; no `▲`/`▼` in `.tsx`.
+
+Not re-run this session (recommend before release): `npm.cmd test`, `npm.cmd run lint`, `npm.cmd run build`. Prior baseline: 58 tests passed, 0 lint errors / 3 pre-existing warnings, build passed.
 
 Known lint warnings:
 - 2 `next/no-img-element` (import page + PdfViewer — pre-existing)
