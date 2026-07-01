@@ -12,6 +12,13 @@ export default function HomePage() {
     return s.datasets.find((d) => d.id === s.activeDatasetId) || s.datasets[0] || null;
   });
 
+  // Only offer to resume when there's a real, named workspace — never surface
+  // the "Unnamed Company" placeholder on the marketing page.
+  const resumeName =
+    activeDataset?.companyName && activeDataset.companyName !== 'Unnamed Company'
+      ? activeDataset.companyName
+      : null;
+
   return (
     <div>
       {/* ── Hero ── */}
@@ -27,27 +34,22 @@ export default function HomePage() {
             and generate investment insights — all in your browser. No server uploads.
           </p>
 
-          {activeDataset ? (
-            <div className="home-cta-row">
-              <Link href="/research/filing" className="btn-primary home-cta-btn">
-                Continue analysis
-                <ArrowRight size={15} weight="bold" />
+          <div className="home-cta-row">
+            <Link href="/import" className="btn-primary home-cta-btn">
+              Analyze a report
+              <ArrowRight size={15} weight="bold" />
+            </Link>
+            {resumeName ? (
+              <Link href="/research/filing" className="home-cta-ghost">
+                Resume {resumeName}
+                <ArrowRight size={14} weight="bold" />
               </Link>
-              <span className="home-cta-dataset-note">
-                {activeDataset.companyName || `${activeDataset.facts.length} metrics loaded`}
-              </span>
-            </div>
-          ) : (
-            <div className="home-cta-row">
-              <Link href="/import" className="btn-primary home-cta-btn">
-                Upload annual report
-                <ArrowRight size={15} weight="bold" />
-              </Link>
+            ) : (
               <Link href="/tools/dcf" className="home-cta-ghost">
                 View interactive demo
               </Link>
-            </div>
-          )}
+            )}
+          </div>
 
           <p className="home-trust-line">
             No account, no upload — runs in your browser, first analysis in under a minute.
@@ -56,6 +58,7 @@ export default function HomePage() {
           {/* Product preview — live DCF output */}
           <div className="home-preview">
             <div className="home-preview-body">
+              <div className="home-preview-caption">DCF valuation output</div>
               <div className="home-preview-metrics">
                 <div className="home-preview-metric">
                   <div className="home-preview-metric-label">Enterprise value</div>
@@ -89,7 +92,7 @@ export default function HomePage() {
               <span>WACC: 10.2%</span>
               <span>Terminal growth: 3.5%</span>
               <span>Projected FCF (yr 1): ₹1,420Cr</span>
-              <span>Sample data</span>
+              <span className="home-preview-tag">Sample data</span>
             </div>
           </div>
         </div>

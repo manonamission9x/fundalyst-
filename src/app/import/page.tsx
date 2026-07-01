@@ -651,41 +651,16 @@ function ImportResult({
             <TrustBadge label="Data Ready for Analysis" variant="good" />
           </div>
           {/* Global data status — success banner */}
-          <div style={{
-            marginTop: 16,
-            background: 'linear-gradient(135deg, #065f46, #047857)',
-            borderRadius: 'var(--radius-md)',
-            padding: '20px 24px',
-            textAlign: 'center',
-            boxShadow: '0 4px 14px rgba(5, 150, 105, 0.3)',
-          }}>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 6 }}>
-              ✓ Ready for analysis
-            </div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 14 }}>
+          <div className="import-success">
+            <div className="import-success-title">✓ Ready for analysis</div>
+            <div className="import-success-sub">
               {dataset.facts.length} values imported — available in all tools
             </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link
-                href="/research/filing"
-                style={{
-                  display: 'inline-block', fontSize: 12, fontWeight: 600,
-                  color: '#065f46', background: '#fff',
-                  padding: '8px 20px', borderRadius: 'var(--radius-sm)',
-                  textDecoration: 'none',
-                }}
-              >
+            <div className="import-success-actions">
+              <Link href="/research/filing" className="btn-primary btn-sm">
                 Start analysis →
               </Link>
-              <Link
-                href="/tools/dcf"
-                style={{
-                  display: 'inline-block', fontSize: 12, fontWeight: 600,
-                  color: '#fff', background: 'rgba(255,255,255,0.15)',
-                  padding: '8px 20px', borderRadius: 'var(--radius-sm)',
-                  textDecoration: 'none', border: '1px solid rgba(255,255,255,0.3)',
-                }}
-              >
+              <Link href="/tools/dcf" className="btn btn-sm">
                 DCF valuation
               </Link>
             </div>

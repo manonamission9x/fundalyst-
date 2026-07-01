@@ -253,7 +253,7 @@ export default function Nav() {
       <div className="nav-inner">
         <Link href="/" className="nav-brand" aria-label="Fundalyst home">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-            <rect width="20" height="20" rx="3" fill="#6F7D8C" />
+            <rect width="20" height="20" rx="3" fill="var(--primary)" />
             <path d="M5 14V6L10 10L15 6V14" stroke="rgba(12,12,14,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <span>Fundalyst</span>
@@ -392,7 +392,7 @@ export default function Nav() {
         <div className="nav-mobile-header">
           <Link href="/" className="nav-mobile-brand" onClick={handleNavClick} aria-label="Fundalyst home">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <rect width="20" height="20" rx="3" fill="#6F7D8C" />
+              <rect width="20" height="20" rx="3" fill="var(--primary)" />
               <path d="M5 14V6L10 10L15 6V14" stroke="rgba(12,12,14,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Fundalyst

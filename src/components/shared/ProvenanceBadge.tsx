@@ -7,7 +7,7 @@ const BADGE_STYLES: Record<ProvenanceKind, { bg: string; color: string }> = {
   imported: { bg: 'var(--green-subtle)', color: 'var(--green)' },
   manual: { bg: 'var(--primary-subtle)', color: 'var(--primary)' },
   default: { bg: 'var(--caution-subtle)', color: 'var(--caution)' },
-  inferred: { bg: 'rgba(123, 126, 200, 0.08)', color: '#8B7EC8' },
+  inferred: { bg: 'var(--violet-subtle)', color: 'var(--violet)' },
   unavailable: { bg: 'var(--bg-surface)', color: 'var(--text-muted)' },
 };
 
