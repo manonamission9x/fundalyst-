@@ -5,12 +5,12 @@ Last updated: 2026-07-01 (workspace workflow redesign + nav labels + CTA fix)
 Repo: `C:\Users\kingo\Desktop\fundalyst-next`  
 GitHub: `https://github.com/manonamission9x/fundalyst-`  
 Branch: `main`  
-Latest code commit: `93adc0c` — Workspace workflow redesign + nav labels + CTA fix
+Latest code commit: `1c9ad44` — Workspace workflow redesign + nav labels + CTA fix
 
 ## Git Log (Recent)
 
 ```text
-93adc0c  Workspace workflow redesign + nav labels + CTA fix
+1c9ad44  Workspace workflow redesign + nav labels + CTA fix
 76d8167  Update handoff with filing page shake fix — part 2: clearVersion init
 47d80ef  Fix filing page shaking: remove duplicate pre-fill effect
 b84a9b3  Fix filing page shaking: force scrollbar to prevent layout shift
@@ -132,7 +132,7 @@ The Research Workspace was redesigned from a flat dashboard of competing panels 
 - **Tools categorized by purpose:** "Quick Analysis" (Filing Comparison, Trend Charts, Growth Rates) vs "Deep Dive" (DCF, Ratios, Peer Comparison, Cash Efficiency), each with a "why" description.
 - **Enterprise administrative features removed from overview:** Enterprise Command Center and "Enterprise" card removed. Governance, Audit Trail, and Integrations moved to a collapsible "Workspace Settings" at the bottom of the sidebar. All functionality preserved.
 - **Sidebar labels renamed:** Import → Import Report, Filing → Filing Comparison, Ratios → Financial Ratios, Thesis → Investment Thesis.
-- Commits: `93adc0c`.
+- Commits: `1c9ad44`.
 
 ### Hero CTA Button Fix
 
