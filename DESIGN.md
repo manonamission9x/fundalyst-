@@ -49,7 +49,7 @@ It is never a fill behind text. `--primary-subtle` is the faint wash for active 
 | `--green` / `--green-strong` / `--green-subtle` | Positive, growth, "imported / ready" |
 | `--red` / `--red-strong` / `--red-subtle` | Negative, risk, danger |
 | `--caution` / `--caution-subtle` | Warning, "default assumption used" |
-| `--violet` / `--violet-subtle` | **Provenance only** — the "inferred" badge. Not a general accent. |
+| `--violet` / `--violet-subtle` | Legacy token names mapped to slate provenance. Do not introduce purple. |
 
 **Rule:** semantic colours mark *state or meaning*, never brand identity. A success
 banner is a subtle green wash with an accent rule (`.import-success`), not a green fill.
@@ -108,7 +108,7 @@ text bottoms out at `--text-3xs` (11px). Weights: 400 default, 500 labels, 600 e
 - **Metric cell** — `.metric-cell` in `.metric-grid`; `.good` / `.warn` / `.neutral` map to
   green / red / caution.
 - **Provenance badge** — `ProvenanceBadge`: imported=green, manual=slate, default=caution,
-  inferred=violet, unavailable=muted.
+  inferred=slate, unavailable=muted.
 - **Insight / warning cards** — left accent rule (`3px`/`2px`) in the semantic colour, subtle
   border otherwise. This is the canonical "coloured but restrained" pattern — copy it instead
   of filling a block with colour.

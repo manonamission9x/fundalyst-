@@ -14,23 +14,38 @@ import {
 import { generateMemo, downloadMemoMarkdown } from '@/lib/memo-export';
 import { useActiveDataset } from '@/store/financial-model-selectors';
 import { useDCFStore, useRatiosStore } from '@/store';
+import {
+  ArrowRight,
+  Calculator,
+  ChartLineUp,
+  ChartPie,
+  Clock,
+  Database,
+  FileText,
+  Gauge,
+  GearSix,
+  Notebook,
+  ShieldCheck,
+  UploadSimple,
+  UsersThree,
+} from '@phosphor-icons/react';
 
 // ── Research workflow steps ──
 const steps = [
   { id: 'overview', label: 'Overview',
-    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="7" cy="7" r="6" /><path d="M7 4v3l2 2" /></svg> },
+    icon: <Clock size={14} weight="regular" /> },
   { id: 'import', label: 'Import Report',
-    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M7 2v8M3 6l4-4 4 4" /><path d="M2 11v1h10v-1" /></svg> },
+    icon: <UploadSimple size={14} weight="regular" /> },
   { id: 'data', label: 'Financial Data',
-    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="10" height="8" rx="1" /><path d="M5 7h4M5 9h2" /></svg> },
+    icon: <Database size={14} weight="regular" /> },
   { id: 'filing', label: 'Filing Comparison',
-    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2h5l3 3v7a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" /><path d="M8 2v3h3" /><path d="M5 7l2 2 3-3" /></svg> },
+    icon: <FileText size={14} weight="regular" /> },
   { id: 'dcf', label: 'DCF Valuation',
-    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12l4-5 3 2 5-6" /><circle cx="11.5" cy="3.5" r="1.5" fill="currentColor" stroke="none" /></svg> },
+    icon: <Calculator size={14} weight="regular" /> },
   { id: 'ratios', label: 'Financial Ratios',
-    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12V5l3 2 3-5 3 7 2-3" /><circle cx="13" cy="3" r="1" fill="currentColor" stroke="none" /></svg> },
+    icon: <ChartPie size={14} weight="regular" /> },
   { id: 'thesis', label: 'Investment Thesis',
-    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v10M10 2v10M2 4h10M2 10h10" /><path d="M7 2v10" /><path d="M2 7h10" /></svg> },
+    icon: <Notebook size={14} weight="regular" /> },
 ] as const;
 
 type StepId = (typeof steps)[number]['id'];
@@ -38,11 +53,11 @@ type StepId = (typeof steps)[number]['id'];
 // ── Settings steps (collapsed below main workflow) ──
 const settingsSteps = [
   { id: 'governance', label: 'Governance',
-    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M7 1l5 2v4c0 3-2 5-5 6-3-1-5-3-5-6V3l5-2z" /><path d="M5 7l1.5 1.5L10 5" /></svg> },
+    icon: <ShieldCheck size={14} weight="regular" /> },
   { id: 'audit', label: 'Audit Trail',
-    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2h8v10H3z" /><path d="M5 5h4M5 7h4M5 9h2" /></svg> },
+    icon: <FileText size={14} weight="regular" /> },
   { id: 'integrations', label: 'Integrations',
-    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4H3a3 3 0 000 6h2M9 4h2a3 3 0 010 6H9M5 7h4" /></svg> },
+    icon: <GearSix size={14} weight="regular" /> },
 ] as const;
 
 type SettingsStepId = (typeof settingsSteps)[number]['id'];
@@ -55,19 +70,20 @@ interface ToolDef {
   desc: string;
   why: string;
   needsData: boolean;
+  icon: typeof FileText;
 }
 
 const quickAnalysisTools: ToolDef[] = [
-  { id: 'filing', label: 'Filing Comparison', href: '/research/filing', desc: 'Compare financial periods side by side', why: 'See revenue growth, margin changes, and risk flags', needsData: true },
-  { id: 'trends', label: 'Trend Charts', href: '/research/trends', desc: 'Visualize revenue, profit & margin trends', why: 'Spot patterns across multiple periods', needsData: true },
-  { id: 'growth', label: 'Growth Rates', href: '/research/growth', desc: 'CAGR & YoY growth calculation', why: 'Measure growth trajectory', needsData: true },
+  { id: 'filing', label: 'Filing Comparison', href: '/research/filing', desc: 'Compare financial periods side by side', why: 'Revenue growth, margin movement, risk flags', needsData: true, icon: FileText },
+  { id: 'trends', label: 'Trend Charts', href: '/research/trends', desc: 'Visualize revenue, profit and margin trends', why: 'Direction across multiple periods', needsData: true, icon: ChartLineUp },
+  { id: 'growth', label: 'Growth Rates', href: '/research/growth', desc: 'CAGR and YoY growth calculation', why: 'Trajectory before valuation work', needsData: true, icon: ChartLineUp },
 ];
 
 const deepDiveTools: ToolDef[] = [
-  { id: 'dcf', label: 'DCF Valuation', href: '/tools/dcf', desc: 'Estimate intrinsic value per share', why: 'Projected FCF + terminal value + discount rate', needsData: true },
-  { id: 'ratios', label: 'Financial Ratios', href: '/tools/ratios', desc: 'Profitability, leverage & efficiency', why: 'Health check from just 6 numbers', needsData: true },
-  { id: 'peer', label: 'Peer Comparison', href: '/tools/peer', desc: 'Benchmark against industry peers', why: 'Compare up to 10 companies side-by-side', needsData: false },
-  { id: 'wc', label: 'Cash Efficiency', href: '/tools/wc', desc: 'Working capital & cash conversion cycle', why: 'Understand DSO, DIO, DPO', needsData: true },
+  { id: 'dcf', label: 'DCF Valuation', href: '/tools/dcf', desc: 'Estimate intrinsic value per share', why: 'FCF, terminal value, discount rate', needsData: true, icon: Calculator },
+  { id: 'ratios', label: 'Financial Ratios', href: '/tools/ratios', desc: 'Profitability, leverage and efficiency', why: 'Health check from core statements', needsData: true, icon: ChartPie },
+  { id: 'peer', label: 'Peer Comparison', href: '/tools/peer', desc: 'Benchmark against industry peers', why: 'Relative valuation and operating context', needsData: false, icon: UsersThree },
+  { id: 'wc', label: 'Cash Efficiency', href: '/tools/wc', desc: 'Working capital and cash conversion cycle', why: 'DSO, DIO, DPO, cash cycle', needsData: true, icon: Gauge },
 ];
 
 const RESTORABLE_WORKSPACE_KEYS = new Set([
@@ -321,17 +337,16 @@ export function OverviewPanel({
   if (!hasData) {
     return (
       <div>
-        <div className="ws-empty-hero">
-          <div className="ws-empty-hero-heading">No company selected</div>
+        <div className="ws-empty-hero ws-empty-primary">
+          <div className="ws-kicker">Workspace starts with source data</div>
+          <div className="ws-empty-hero-heading">No company selected.</div>
           <div className="ws-empty-hero-desc">
             Upload your first annual report to begin your research workspace.
             Fundalyst will extract financial statements, detect periods and metrics, and prepare every analysis tool with your data.
           </div>
-          <Link href="/import" className="ws-empty-hero-cta">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M7 2v8M3 6l4-4 4 4" /><path d="M2 10v2h10v-2" />
-            </svg>
-            Upload Annual Report
+          <Link href="/import" className="btn-primary ws-primary-action">
+            Analyze an annual report
+            <ArrowRight size={14} weight="bold" />
           </Link>
           <div className="ws-empty-hero-formats">CSV · XLSX · PDF · Screenshot</div>
         </div>
@@ -470,7 +485,10 @@ export function OverviewPanel({
               <div className="ws-tools-grid">
                 {quickAnalysisTools.map((tool) => (
                   <Link key={tool.id} href={tool.href} className="ws-tool-card">
-                    <div className="ws-tool-card-title">{tool.label}</div>
+                    <div className="ws-tool-card-top">
+                      <tool.icon size={15} weight="regular" />
+                      <span>{tool.label}</span>
+                    </div>
                     <div className="ws-tool-card-desc">{tool.desc}</div>
                     <div className="ws-tool-card-status">
                       <span className={`ws-tool-card-status-dot ${tool.needsData && hasData ? 'ready' : 'needs-data'}`} />
@@ -486,7 +504,10 @@ export function OverviewPanel({
               <div className="ws-tools-grid">
                 {deepDiveTools.map((tool) => (
                   <Link key={tool.id} href={tool.href} className="ws-tool-card">
-                    <div className="ws-tool-card-title">{tool.label}</div>
+                    <div className="ws-tool-card-top">
+                      <tool.icon size={15} weight="regular" />
+                      <span>{tool.label}</span>
+                    </div>
                     <div className="ws-tool-card-desc">{tool.desc}</div>
                     <div className="ws-tool-card-status">
                       <span className={`ws-tool-card-status-dot ${tool.needsData && hasData ? 'ready' : tool.needsData ? 'needs-data' : 'ready'}`} />
