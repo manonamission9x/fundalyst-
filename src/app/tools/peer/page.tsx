@@ -87,7 +87,7 @@ export default function PeerPage() {
 
   const modelData = useModelData((ds) => extractPeersFromModel(ds));
 
-  const [clearVersion, setClearVersion] = useState(0);
+  const [clearVersion, setClearVersion] = useState<number | undefined>(undefined);
   const clearedRef = useRef(false);
   const [cleared, setCleared] = useState(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
@@ -107,7 +107,7 @@ export default function PeerPage() {
     if (revenue !== null && netProfit !== null && totalAssets !== null && totalDebt !== null) {
       const timer = setTimeout(() => {
         const companies = [companyName];
-        setClearVersion(v => v + 1);
+        setClearVersion(v => (v ?? 0) + 1);
         setSheetPeriods(companies);
         setSheetRows(LABELS.map((label, li) => {
           const vals: Record<number, number | null> = {
@@ -246,7 +246,7 @@ Infosys, 156000, 28700, 172000, 24000`;
     showToast(`Loaded ${parsed.length} saved companies`);
   }
 
-  function handleClear() { clearedRef.current = true; setCleared(true); setClearVersion(v => v + 1); clearStore(); setSheetRows([]); setSheetPeriods([]); setPeerResults([]); setShowResults(false); setIsSampleLoaded(false); prefilledRef.current = false; }
+  function handleClear() { clearedRef.current = true; setCleared(true); setClearVersion(v => (v ?? 0) + 1); clearStore(); setSheetRows([]); setSheetPeriods([]); setPeerResults([]); setShowResults(false); setIsSampleLoaded(false); prefilledRef.current = false; }
 
   // ── Data source label ──
   const dataSourceLabel = isSampleLoaded

@@ -40,7 +40,7 @@ export default function FilingPage() {
     setDiffs, setFlags, setShowResults, clear,
   } = useFilingStore();
   const { setFiling } = useAnalysisStore();
-  const [clearVersion, setClearVersion] = useState(0);
+  const [clearVersion, setClearVersion] = useState<number | undefined>(undefined);
   const clearedRef = useRef(false);
   const [cleared, setCleared] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -141,7 +141,7 @@ export default function FilingPage() {
   function handleClear() {
     clearedRef.current = true;
     setCleared(true);
-    setClearVersion(v => v + 1);
+    setClearVersion(v => (v ?? 0) + 1);
     clear();
     setSheetRows([]);
     setSheetPeriods([]);
@@ -151,7 +151,7 @@ export default function FilingPage() {
   function loadSample() {
     clearedRef.current = false;
     setCleared(false);
-    setClearVersion(v => v + 1);
+    setClearVersion(v => (v ?? 0) + 1);
     setSheetPeriods(SAMPLE_FILING_PERIODS);
     setSheetRows(SAMPLE_FILING_ROWS);
     setDiffs([]);

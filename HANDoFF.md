@@ -5,11 +5,12 @@ Last updated: 2026-07-01 (post filing page shake fix)
 Repo: `C:\Users\kingo\Desktop\fundalyst-next`  
 GitHub: `https://github.com/manonamission9x/fundalyst-`  
 Branch: `main`  
-Latest code commit: `47d80ef` — Fix filing page shaking: remove duplicate pre-fill effect.
+Latest code commit: `47d80ef` — Fix filing page shaking: remove duplicate pre-fill effect. Still shaking resolved Aug 2026: use `useState<number | undefined>(undefined)` for `clearVersion` on all SpreadsheetInput pages so the reset effect skips initial mount.
 
 ## Git Log (Recent)
 
 ```text
+76d8167  Update handoff with filing page shake fix — part 2: clearVersion init
 47d80ef  Fix filing page shaking: remove duplicate pre-fill effect
 b84a9b3  Fix filing page shaking: force scrollbar to prevent layout shift
 afcde26  Homepage redesign: product-first institutional landing

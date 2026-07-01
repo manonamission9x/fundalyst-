@@ -97,7 +97,7 @@ export default function DCFPage() {
   const addAuditEvent = useEnterpriseStore((s) => s.addAuditEvent);
   usePageTitle('DCF Valuation');
   const { show, summary, sens, setShow, setSummary, setSens } = useDCFStore();
-  const [clearVersion, setClearVersion] = useState(0);
+  const [clearVersion, setClearVersion] = useState<number | undefined>(undefined);
   const clearedRef = useRef(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
@@ -116,7 +116,7 @@ export default function DCFPage() {
     const { fcf, shares, netDebt } = modelData.data;
     if (fcf !== null || shares !== null || netDebt !== null) {
       const timer = setTimeout(() => {
-        setClearVersion(v => v + 1);
+        setClearVersion(v => (v ?? 0) + 1);
         setSheetRows([
           { metric: 'Free Cash Flow', values: [fcf !== null ? String(fcf) : ''] },
           { metric: 'Growth Rate (%)', values: ['8'] },
@@ -216,7 +216,7 @@ export default function DCFPage() {
 
   const handleClear = useCallback(() => {
     clearedRef.current = true;
-    setClearVersion(v => v + 1);
+    setClearVersion(v => (v ?? 0) + 1);
     setSheetRows([]);
     setShow(false);
     setSummary(null);
@@ -227,7 +227,7 @@ export default function DCFPage() {
 
   function loadSample() {
     clearedRef.current = false;
-    setClearVersion(v => v + 1);
+    setClearVersion(v => (v ?? 0) + 1);
     setSheetRows(SAMPLE_DCF_ROWS);
     setShow(false);
     setSummary(null);

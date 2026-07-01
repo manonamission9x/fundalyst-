@@ -151,7 +151,7 @@ export default function RatiosPage() {
   const showToast = useToast();
   const addAuditEvent = useEnterpriseStore((s) => s.addAuditEvent);
   const { res, setRes, clear: clearStore } = useRatiosStore();
-  const [clearVersion, setClearVersion] = useState(0);
+  const [clearVersion, setClearVersion] = useState<number | undefined>(undefined);
   const clearedRef = useRef(false);
   const [cleared, setCleared] = useState(false);
   const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
@@ -211,7 +211,7 @@ export default function RatiosPage() {
   const handleClear = useCallback(() => {
     clearedRef.current = true;
     setCleared(true);
-    setClearVersion(v => v + 1);
+    setClearVersion(v => (v ?? 0) + 1);
     clearStore();
     setSheetRows([]);
     setShowResults(false);
