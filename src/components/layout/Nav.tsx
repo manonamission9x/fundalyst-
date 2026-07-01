@@ -17,7 +17,14 @@ import {
   IconNavPeer,
   IconNavWorkspace,
 } from '@/components/ui';
-import { MagnifyingGlass, DownloadSimple, Sun, Moon, ArrowFatDown } from '@phosphor-icons/react';
+import {
+  BookOpenText,
+  DownloadSimple,
+  MagnifyingGlass,
+  Moon,
+  Sun,
+  UploadSimple,
+} from '@phosphor-icons/react';
 
 function ThemeToggle() {
   const [isDark, setIsDark] = useState(() => {
@@ -117,6 +124,12 @@ export default function Nav() {
     return active || s.datasets[0] || null;
   });
   const clearAllData = useGlobalDataStore((s) => s.clearAllData);
+  const datasetLabel =
+    activeDataset && activeDataset.facts.length > 0
+      ? activeDataset.companyName && activeDataset.companyName !== 'Unnamed Company'
+        ? activeDataset.companyName
+        : `${activeDataset.facts.length} facts`
+      : null;
 
   function isActive(href: string): boolean {
     return (pathname.replace(/\/$/, '') || '/') === (href.replace(/\/$/, '') || '/');
@@ -317,6 +330,15 @@ export default function Nav() {
         </div>
 
         <div className="nav-right">
+          {datasetLabel && (
+            <span
+              className="nav-badge"
+              title={`${activeDataset?.companyName || 'Imported data'} - ${activeDataset?.facts.length || 0} facts, ${activeDataset?.periods.length || 0} periods`}
+            >
+              <span className="nav-badge-dot" />
+              <span>{datasetLabel}</span>
+            </span>
+          )}
           <button
             type="button"
             className="nav-cmdk-trigger"
@@ -327,46 +349,36 @@ export default function Nav() {
             <MagnifyingGlass size={13} weight="regular" />
             <span>Search</span>
           </button>
-          {activeDataset && activeDataset.facts.length > 0 && (
-            <span
-              className="nav-badge"
-              title={`${activeDataset.companyName || 'Imported data'} — ${activeDataset.facts.length} facts, ${activeDataset.periods.length} periods`}
-            >
-              <span className="nav-badge-dot" />
-              <span>{activeDataset.companyName || `${activeDataset.facts.length} metrics`}</span>
-            </span>
-          )}
-          {activeDataset && activeDataset.facts.length > 0 && (
-            <button
-              type="button"
-              className="nav-icon-btn"
-              onClick={() => {
-                const ds = useGlobalDataStore.getState().getActiveDataset();
-                if (!ds) return;
-                downloadMemoMarkdown(generateMemo({ companyName: ds.companyName || 'Company', dataset: ds }));
-              }}
-              aria-label="Export investment memo"
-              title="Export memo (Markdown)"
-            >
-              <DownloadSimple size={13} weight="regular" />
-            </button>
-          )}
-          <Link
-            href="/about"
-            className="nav-cmdk-trigger"
-            aria-label="Documentation"
-            title="Documentation"
-          >
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 1.5h8v11H3z" /><path d="M5 5h4M5 7h4M5 9h2" />
-            </svg>
-            <span>Docs</span>
-          </Link>
           <Link href="/import" className="nav-cta nav-cta-primary">
-            <ArrowFatDown size={13} weight="regular" />
+            <UploadSimple size={13} weight="regular" />
             <span>Import</span>
           </Link>
-          <ThemeToggle />
+          <div className="nav-utility-group" aria-label="Utilities">
+            {activeDataset && activeDataset.facts.length > 0 && (
+              <button
+                type="button"
+                className="nav-icon-btn"
+                onClick={() => {
+                  const ds = useGlobalDataStore.getState().getActiveDataset();
+                  if (!ds) return;
+                  downloadMemoMarkdown(generateMemo({ companyName: ds.companyName || 'Company', dataset: ds }));
+                }}
+                aria-label="Export investment memo"
+                title="Export memo"
+              >
+                <DownloadSimple size={13} weight="regular" />
+              </button>
+            )}
+            <Link
+              href="/about"
+              className="nav-icon-btn"
+              aria-label="Documentation"
+              title="Documentation"
+            >
+              <BookOpenText size={13} weight="regular" />
+            </Link>
+            <ThemeToggle />
+          </div>
           <button
             type="button"
             className="nav-mobile-toggle"
@@ -436,9 +448,7 @@ export default function Nav() {
             onClick={() => setMobileOpen(false)}
             style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
           >
-            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 1.5h8v11H3z" /><path d="M5 5h4M5 7h4M5 9h2" />
-            </svg>
+            <BookOpenText size={11} weight="regular" />
             Docs
           </Link>
           {activeDataset && (
