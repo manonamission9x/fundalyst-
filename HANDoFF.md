@@ -55,6 +55,42 @@ Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
 - **Shadows** are restrained — every elevation token was reduced in opacity.
 - **`change-up/down/flat`** include `::before` arrows for color-blind users.
 
+## Design Philosophy
+
+Fundalyst is a professional tool built for analysts, investors, researchers, and finance teams who spend hours making decisions with incomplete information. The interface exists to help people think — not to impress them.
+
+### Core Principles
+
+**Software for thinking.** The interface should feel less like a website and more like a professional instrument — calm, precise, and dependable. Users should forget the interface exists because it gets out of their way.
+
+**Clarity over decoration.** Every element must justify its existence. No gradients, no animations, no icons that don't improve comprehension. If removing an element improves focus, remove it.
+
+**Information is the product.** Users aren't here to admire the interface. They're here to answer questions — is this company undervalued, what changed this quarter, why did margins decline? The UI should always make the data the focal point.
+
+**The shortest path to insight.** Every click, page, and workflow should reduce the time between opening Fundalyst and reaching a conclusion. Optimize for fewer clicks, fewer decisions, less scrolling, faster scanning, lower cognitive load.
+
+**Quiet confidence.** Premium software doesn't announce itself. It demonstrates quality through consistency, precision, restraint, and reliability. Confidence comes from execution.
+
+**Institutional minimalism.** The visual language should feel appropriate inside an investment bank, hedge fund, or Fortune 500 finance team. Design should communicate trust, authority, intelligence, and permanence — not excitement.
+
+**Build for experts first.** Professionals spend thousands of hours inside their tools. The interface should become faster — not more complicated — the longer someone uses it. Beginners should be guided. Experts should never feel slowed down.
+
+**One obvious next step.** Every screen should answer "What should I do next?" Users should never wonder where to click, what a tool does, or which workflow comes first. The product should guide without forcing.
+
+**Consistency is trust.** Consistency is not aesthetics — it's usability. Buttons should behave identically. Spacing should follow a defined system. Typography should have a clear hierarchy. Every inconsistency reduces confidence.
+
+**Density without clutter.** Professional users prefer seeing more useful information — not more empty space. Aim for high information density with excellent readability and logical grouping. Not whitespace for its own sake.
+
+**Content over chrome.** The interface should fade into the background. Financial statements, charts, ratios, models, insights — these are the stars of the product. The UI simply organizes them.
+
+**Honest interfaces.** Never mislead users. Always communicate loading state, parsing progress, errors, uncertainty, confidence levels, and missing information. Trust is built through transparency.
+
+**Everything has a reason.** Every page should answer "Why does this exist?" Every component should answer "What decision does this help users make?" If it answers neither question, reconsider it.
+
+### The Ultimate Test
+
+Every design decision should pass this test: **Does this help an analyst reach a better decision, faster?** If yes, keep it. If no, remove it.
+
 ## Key Files
 
 | Path | Purpose |
