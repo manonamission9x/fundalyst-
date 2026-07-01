@@ -1,16 +1,17 @@
 # Fundalyst Handoff
 
-Last updated: 2026-07-01 (Design System v5 "Ledger" — full implementation)
+Last updated: 2026-07-01 (Design-language consistency pass + home hero refinement)
 
 Repo: `C:\Users\kingo\Desktop\fundalyst-next`  
 GitHub: `https://github.com/manonamission9x/fundalyst-`  
 Branch: `main`  
-Latest code commit: `c87b926` — Design System v5 "Ledger": ink-weight data viz, hero decision numbers, paper-themed memo export  
-Push status: committed locally on `main`, **1 ahead of `origin/main` — not yet pushed**. Run `git push origin main` (sandbox had no GitHub credentials).
+Latest code commit: `4f7b22d` — Refine home hero and establish design-language consistency  
+Push status: committed locally on `main`, **not yet pushed** unless your environment has done so. Run `git push origin main` (sandbox had no GitHub credentials).
 
 ## Git Log (Recent)
 
 ```text
+4f7b22d  Refine home hero and establish design-language consistency
 c87b926  Design System v5 "Ledger": ink-weight data viz, hero decision numbers, paper-themed memo export
 470d7ef  Add design philosophy to handoff
 90821bd  Update handoff with commit hash
@@ -74,6 +75,16 @@ Supersedes v4 "Institutional Slate" **token values where noted below**, but reus
 - **Memo export (`memo-export.ts`):** all emoji removed — risk flags → `CRITICAL`/`WATCH` (maps the in-app `RiskFlag` `danger`/`warn` vocab), ratios/metrics → `GOOD`/`WARN`/`NEUTRAL`, provenance kinds → plain words. HTML export rebuilt on a **light/paper `hsl()` theme** (not the app's dark surface, zero hardcoded hex) with a summary-first hero number, anchored table of contents, provenance badges, and print fidelity (`page-break-inside: avoid`).
 - **Homepage:** inversion CTA + trailing `ArrowRight` + one ghost link, one combined trust line, two-segment ink-weight DCF preview, "Enterprise" trust pillar renamed **"Coverage"**, generous spacing (hero pad ≥ `--space-12`, section gaps ≥ `--space-10`).
 - **Mobile (§8):** single-column hero + 28px H1 below 768px; hero number never below 28px; data tables become horizontal-scroll with a sticky, opaque label column at ≤768px; CTAs stack full-width. 44px touch targets and 16px input font preserved.
+
+## Design-language consistency pass (`4f7b22d`)
+
+A cleanup/enforcement pass on top of v5. **`DESIGN.md` (repo root) is now the canonical design-language reference** — the single source of truth for tokens, type scale, spacing, component patterns, and do/don't rules. Update it before making a change that contradicts it.
+
+- **Home hero:** primary CTA now leads for everyone ("Analyze a report" → `/import`), no longer echoing the headline. The "Unnamed Company" placeholder leak is gone — a resume link (`Resume {name}`) shows *only* when a real, named workspace exists. The preview card recedes (lighter border, more separation, smaller mono metrics, slate-dotted "DCF valuation output" caption) so the CTA stays the focal point.
+- **Off-palette colors → governed tokens:** the import success banner's saturated emerald gradient + white text became `.import-success` (subtle green wash + accent rule, real `.btn-primary`/`.btn`, light-mode safe). `ProvenanceBadge` "inferred" purple and the Nav logo hex are now tokens. Added `--violet`/`--violet-subtle` (provenance-only) and small-end type tokens.
+- **Type scale enforced:** added `--text-nano` (9px, data-viz only) and `--text-micro` (10px, labels); consolidated stray 7/8px up to the 9px floor; migrated ~150 raw `px` font-sizes in `globals.css` to scale tokens. Zero magic-number font sizes remain in the CSS.
+- **Dead CSS removed:** unused `.home-cta-primary/secondary/dataset-note` and `.home-active-dataset*` rules and their responsive/hover refs.
+- **Cleanup backlog** (in `DESIGN.md`): remaining inline-style sprawl in `import/page.tsx`, the `PdfViewer` canvas hex, and the still-unused `.home-card*`/`.home-grid` rules.
 
 ### v5 open flags (surfaced, not silently changed)
 - `RiskFlag` type uses `level: 'danger' | 'warn'` (not `critical`/`watch`) — mapped to `CRITICAL`/`WATCH` display labels.

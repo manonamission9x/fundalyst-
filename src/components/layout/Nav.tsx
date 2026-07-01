@@ -16,7 +16,6 @@ import {
   IconNavRatios,
   IconNavPeer,
   IconNavWorkspace,
-  IconNavAbout,
 } from '@/components/ui';
 import { MagnifyingGlass, DownloadSimple, Sun, Moon, ArrowFatDown } from '@phosphor-icons/react';
 
@@ -89,12 +88,6 @@ const desktopSections: NavSection[] = [
       { id: 'import', label: 'Upload Reports', href: '/import', icon: <IconNavImport /> },
     ],
   },
-  {
-    label: 'Tools',
-    items: [
-      { id: 'about', label: 'Documentation', href: '/about', icon: <IconNavAbout /> },
-    ],
-  },
 ];
 
 const mobileSections: NavSection[] = [
@@ -107,7 +100,6 @@ const mobileSections: NavSection[] = [
       workspaceItem,
     ],
   },
-  desktopSections[3],
 ];
 
 export default function Nav() {
@@ -359,6 +351,17 @@ export default function Nav() {
               <DownloadSimple size={13} weight="regular" />
             </button>
           )}
+          <Link
+            href="/about"
+            className="nav-cmdk-trigger"
+            aria-label="Documentation"
+            title="Documentation"
+          >
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 1.5h8v11H3z" /><path d="M5 5h4M5 7h4M5 9h2" />
+            </svg>
+            <span>Docs</span>
+          </Link>
           <Link href="/import" className="nav-cta nav-cta-primary">
             <ArrowFatDown size={13} weight="regular" />
             <span>Import</span>
@@ -427,6 +430,17 @@ export default function Nav() {
         </div>
 
         <div className="nav-mobile-footer">
+          <Link
+            href="/about"
+            className="nav-mobile-clear"
+            onClick={() => setMobileOpen(false)}
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+          >
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 1.5h8v11H3z" /><path d="M5 5h4M5 7h4M5 9h2" />
+            </svg>
+            Docs
+          </Link>
           {activeDataset && (
             <button
               type="button"
