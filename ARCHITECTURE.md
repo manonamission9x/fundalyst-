@@ -118,7 +118,7 @@ layout.tsx
 
 1. **Read through `useModelData(...)` / selectors.** Never keep a private copy of financial data in a component.
 2. **Write through the store write API.** Never mutate a dataset object in place. Every write sets `userOverridden` and notifies subscribers.
-3. **No empty state when a dataset exists.** Empty state only when `datasets.length === 0`. The single import path is `/import`.
+3. **No empty state when a dataset exists.** Empty state only when `datasets.length === 0`. The single import path is `/import`. (Exceptions by design: **Peer** — multi-company, doesn't fit a single dataset; **Filing** — a two-filing comparison. Both keep their own local input + sample flow.)
 4. **One grid, one model.** `ModelBoundSpreadsheet` (the adapter) and `WorkspaceGrid` (the virtualized grid) both read/write the same canonical model.
 5. **Calculations are pure.** `src/lib/calculations.ts` never reaches into stores. Live updates come from the notify→re-extract loop.
 

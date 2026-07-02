@@ -19,6 +19,8 @@ This file covers code conventions for the frontend. For visual/design rules, see
 
 **Windows note:** Use `npm.cmd` instead of `npm` (PowerShell may block `npm.ps1`).
 
+**Tailwind trap:** `tailwindcss` v4 + `@tailwindcss/postcss` are dependencies, but there is **no `tailwind.config`** and Tailwind's utility classes are **not generally available** in components. The utility-looking classes you see (`flex`, `flex-col`, `gap-2`, `items-center`, `mt-3`, `text-2xs`, `w-full`) are **hand-rolled in `globals.css`**, and only the ones defined there exist. If you write a Tailwind class that isn't defined (e.g. `w-20`, `grid-cols-3`) it silently does nothing — add the rule to `globals.css` instead, or use an existing token/utility.
+
 ## Routing
 
 All routes live under `src/app/` using the App Router convention:

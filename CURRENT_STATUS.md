@@ -31,6 +31,7 @@ Last updated: 2026-07-02
 
 | Date | Change | Tickets |
 |---|---|---|
+| 2026-07-02 | **Data-flow follow-up** — Trends & Growth write back to the canonical model (guarded to imported datasets); grid selection → `workspace-context-store` wired (T14 seam live); Trends/Growth "Load sample" hidden when a dataset is active | — |
 | 2026-07-02 | **Spreadsheet & Data-Flow Redesign** — write API on global-data-store, ModelBoundSpreadsheet adapter, WorkspaceGrid (virtualized, overlay-input), workspace-context-store, DCF/WC/Ratios refactored to model-bound | Absorbs T8, T10, T11; lays T14/T17 substrate |
 | 2026-07-02 | DCF scenario manager (persisted bear/base/bull config with editable spread controls) | T13 |
 | 2026-07-02 | Returning-user launchpad (Mission Control card), v6 landing redesign | T3, T4, v6 |
@@ -58,7 +59,7 @@ See `CODEX_TICKETS.md` for full descriptions:
 |---|---|
 | `xlsx` has a high-severity advisory (no fix) | Runs only on user-uploaded files. See `docs/xlsx-risk-plan.md`. Do not `npm audit fix --force`. |
 | Scanned-PDF OCR is review-required | Future work: add row/column consistency checks, flag mismatches. |
-| Not all tool pages use ModelBoundSpreadsheet yet | Filing/Trends/Growth research pages still use legacy ToolSpreadsheet — read-heavy, lower priority. |
+| Peer & Filing not model-bound | Peer is multi-company (doesn't fit the single-dataset canonical model — needs T12); Filing is a two-filing comparison tool. Both intentionally keep the local `ToolSpreadsheet`. Trends & Growth now write back to the model via `applyEdits` (guarded to imported datasets). |
 | Excel-native memo export with live formulas | Not built (T15). |
 | Canvas colour in PdfViewer uses raw hex | Should read via `getComputedStyle` — flagged in DESIGN.md §9. |
 
@@ -75,11 +76,17 @@ See `CODEX_TICKETS.md` for full descriptions:
 
 ## Verification commands
 
+> ⚠️ **Not verified in the sandbox.** The agent sandbox has an unreliable file mount that
+> corrupts what `tsc`/`git` read, so no compile result from it is trustworthy. Recent edits
+> (spreadsheet/data-flow, launchpad, Trends/Growth write-back, DCF T13 spread) were authored
+> and reviewed but **must be compiled on a real Windows checkout before shipping.** Do not
+> assume green until you've run these locally.
+
 ```bash
-npm.cmd exec tsc -- --noEmit   # passes — 0 errors
-npm.cmd run lint               # passes — 0 errors, ~4 pre-existing warnings
-npm.cmd run build              # passes
-npx playwright test            # run on a real Windows checkout (sandbox has no network)
+npm.cmd exec tsc -- --noEmit   # run locally — must be 0 errors
+npm.cmd run lint               # run locally — ~4 known pre-existing warnings expected
+npm.cmd run build              # run locally
+npx playwright test            # run locally (affected routes)
 ```
 
 See `DEEPSEEK_TASKS.md` for the visual/theme product-fix queue.

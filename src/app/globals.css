@@ -1916,13 +1916,13 @@ details[open] .details-summary::before {
   content: ''; position: absolute; inset: 0;
   background: var(--glow-hero);
 }
-.lp-hero-canvas::after {    /* ledger grid, radially faded */
+.lp-hero-canvas::after {    /* soft ambient aura — replaces former ledger grid */
   content: ''; position: absolute; inset: 0;
-  background-image: var(--ledger-grid);
-  background-size: 56px 56px;
-  -webkit-mask-image: radial-gradient(80% 60% at 50% 22%, #000 0%, transparent 72%);
-  mask-image: radial-gradient(80% 60% at 50% 22%, #000 0%, transparent 72%);
-  opacity: 0.6;
+  background:
+    /* Concentric soft glow — reads as ambient light, not a pattern */
+    radial-gradient(50% 50% at 50% 20%, rgba(255,255,255,0.03) 0%, transparent 50%),
+    radial-gradient(70% 70% at 70% 80%, rgba(111,125,140,0.03) 0%, transparent 50%);
+  opacity: 1;
 }
 .lp-hero-inner {
   position: relative; z-index: 1;
@@ -1976,6 +1976,14 @@ details[open] .details-summary::before {
 
 /* Hero product stage — frames the live statement with a "raw -> structured" caption. */
 .lp-stage { position: relative; }
+.lp-stage::before {   /* subtle back-light glow around the stage card */
+  content: ''; position: absolute; inset: -20px;
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 0 40px rgba(255,255,255,0.02),
+    0 0 80px rgba(111,125,140,0.04);
+  pointer-events: none;
+}
 .lp-stage-caption {
   display: flex; align-items: center; gap: 8px; margin-bottom: var(--space-2);
   font-family: var(--font-ibm-plex-mono); font-size: var(--text-micro);

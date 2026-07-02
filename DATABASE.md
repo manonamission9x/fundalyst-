@@ -58,7 +58,7 @@ See `src/app/workspace/page.tsx` `handleExport()` / `handleImportFile()`.
 
 ## Migration
 
-Zustand's `persist` middleware handles schema migration via the `merge` option in `partialize`. The global-data store's merge maps local schema changes:
+Zustand's `persist` middleware handles this via two separate options: `partialize` (choose which fields persist) and `merge` (reconcile persisted state with the current shape on load). The global-data store's `merge` validates persisted datasets and picks a valid `activeDatasetId`:
 
 ```typescript
 merge: (persisted, current) => {
