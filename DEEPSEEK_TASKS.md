@@ -24,7 +24,7 @@ Implement, don't redesign. One token = one place. Preserve: tabular-nums+mono nu
 - [x] **F-11** Off-scale radii. Add `--radius-pill:100px`; tokenize all.
 - [x] **F-05** Mono text drops to 7-9px on mobile. Floor: 11px data / 10px labels.
 - [x] **F-12** Inline one-off spinner (`ui/index.tsx` Toolbar). Promote to shared `.spinner`.
-- [ ] **F-16** Charts have no empty/loading/error state. Add shared wrapper (skeleton/empty/error/chart) reusing `state-card`/`empty-state`.
+- [x] - codex 2026-07-02 **F-16** Charts have no empty/loading/error state. Add shared wrapper (skeleton/empty/error/chart) reusing `state-card`/`empty-state`.
 - [x] **F-14** Change cells encode gain/loss by color alone. Make sign/arrow mandatory (~8% color-blind).
 
 ## P3 — brand/cleanup

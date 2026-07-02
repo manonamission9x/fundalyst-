@@ -11,6 +11,7 @@ import { SectionTitle, Disclaimer, Card, TrustBadge, DataSourceBadge } from '@/c
 import type { FundalystDataset, CanonicalFact } from '@/lib/importer/types';
 import { useEnterpriseStore } from '@/store/enterprise-store';
 import ToolReadinessCards from '@/components/shared/ToolReadinessCards';
+import { TOOL_BY_ID, type ToolId, type ToolMetadata } from '@/lib/tool-metadata';
 import {
   collectFundalystLocalState,
 } from '@/lib/enterprise-backup';
@@ -20,12 +21,10 @@ import { useDCFStore, useRatiosStore } from '@/store';
 import {
   ArrowRight,
   Calculator,
-  ChartLineUp,
   ChartPie,
   Clock,
   Database,
   FileText,
-  Gauge,
   GearSix,
   Notebook,
   ShieldCheck,
@@ -66,28 +65,9 @@ const settingsSteps = [
 type SettingsStepId = (typeof settingsSteps)[number]['id'];
 
 // ── Tool definitions with purpose context ──
-interface ToolDef {
-  id: string;
-  label: string;
-  href: string;
-  desc: string;
-  why: string;
-  needsData: boolean;
-  icon: typeof FileText;
-}
-
-const quickAnalysisTools: ToolDef[] = [
-  { id: 'filing', label: 'Filing Comparison', href: '/research/filing', desc: 'Compare financial periods side by side', why: 'Revenue growth, margin movement, risk flags', needsData: true, icon: FileText },
-  { id: 'trends', label: 'Trend Charts', href: '/research/trends', desc: 'Visualize revenue, profit and margin trends', why: 'Direction across multiple periods', needsData: true, icon: ChartLineUp },
-  { id: 'growth', label: 'Growth Rates', href: '/research/growth', desc: 'CAGR and YoY growth calculation', why: 'Trajectory before valuation work', needsData: true, icon: ChartLineUp },
-];
-
-const deepDiveTools: ToolDef[] = [
-  { id: 'dcf', label: 'DCF Valuation', href: '/tools/dcf', desc: 'Estimate intrinsic value per share', why: 'FCF, terminal value, discount rate', needsData: true, icon: Calculator },
-  { id: 'ratios', label: 'Financial Ratios', href: '/tools/ratios', desc: 'Profitability, leverage and efficiency', why: 'Health check from core statements', needsData: true, icon: ChartPie },
-  { id: 'peer', label: 'Peer Comparison', href: '/tools/peer', desc: 'Benchmark against industry peers', why: 'Relative valuation and operating context', needsData: false, icon: UsersThree },
-  { id: 'wc', label: 'Cash Efficiency', href: '/tools/wc', desc: 'Working capital and cash conversion cycle', why: 'DSO, DIO, DPO, cash cycle', needsData: true, icon: Gauge },
-];
+const toolList = (ids: ToolId[]): ToolMetadata[] => ids.map((id) => TOOL_BY_ID[id]);
+const quickAnalysisTools = toolList(['filing', 'trends', 'growth']);
+const deepDiveTools = toolList(['dcf', 'ratios', 'peer', 'wc']);
 
 const RESTORABLE_WORKSPACE_KEYS = new Set([
   'fundalyst-global-data',
@@ -514,10 +494,10 @@ export function OverviewPanel({
                       <tool.icon size={15} weight="regular" />
                       <span>{tool.label}</span>
                     </div>
-                    <div className="ws-tool-card-desc">{tool.desc}</div>
+                    <div className="ws-tool-card-desc">{tool.description}</div>
                     <div className="ws-tool-card-status">
                       <span className={`ws-tool-card-status-dot ${tool.needsData && hasData ? 'ready' : 'needs-data'}`} />
-                      {tool.why}
+                      {tool.value}
                     </div>
                   </Link>
                 ))}
@@ -533,10 +513,10 @@ export function OverviewPanel({
                       <tool.icon size={15} weight="regular" />
                       <span>{tool.label}</span>
                     </div>
-                    <div className="ws-tool-card-desc">{tool.desc}</div>
+                    <div className="ws-tool-card-desc">{tool.description}</div>
                     <div className="ws-tool-card-status">
                       <span className={`ws-tool-card-status-dot ${tool.needsData && hasData ? 'ready' : tool.needsData ? 'needs-data' : 'ready'}`} />
-                      {tool.why}
+                      {tool.value}
                     </div>
                   </Link>
                 ))}
@@ -765,17 +745,21 @@ function DCFPanel() {
 
 // ── Ratios Panel ──
 function RatiosPanel() {
+  const tool = TOOL_BY_ID.ratios;
+  const count = tool.count ?? tool.value;
+  const inputs = tool.inputs ?? '6 inputs';
+
   return (
     <div>
-      <SectionTitle>Financial Ratios</SectionTitle>
+      <SectionTitle>{tool.label}</SectionTitle>
       <div className="workspace-card mt-4">
-        <div className="workspace-card-header">Financial Health Check</div>
+        <div className="workspace-card-header">{count}</div>
         <div className="p-4 flex flex-col gap-3">
           <p className="text-sm text-tertiary leading-normal" style={{ margin: 0 }}>
-            Calculate 5 key ratios from just 6 numbers: Net Profit Margin, ROE, Debt/Equity, Debt/Assets, and Asset Turnover.
+            {inputs} unlock Net Profit Margin, ROE, Debt/Equity, Debt/Assets, and Asset Turnover.
           </p>
-          <Link href="/tools/ratios" className="workspace-quick-link">
-            Open Financial Ratios →
+          <Link href={tool.href} className="workspace-quick-link">
+            Open {tool.label} →
           </Link>
           <div className="flex gap-2 flex-wrap">
             <TrustBadge label="Ratio Analysis" variant="source" />

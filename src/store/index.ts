@@ -73,37 +73,69 @@ export const useFilingStore = create<FilingState>()(
 
 // ── DCF Store ──
 
+/**
+ * Scenario spread that defines the three persisted assumption sets. Base uses
+ * the user's inputs as-is; bear/bull are derived by flexing growth, WACC, and
+ * terminal growth by these deltas. Persisted so the assumption sets survive
+ * reload (T13).
+ */
+export interface DCFScenarioConfig {
+  growthDelta: number;
+  waccDelta: number;
+  terminalDelta: number;
+}
+
+export const DEFAULT_DCF_SCENARIO_CONFIG: DCFScenarioConfig = {
+  growthDelta: 3,
+  waccDelta: 2,
+  terminalDelta: 1,
+};
+
 interface DCFState {
   inputs: DCFInputs;
   show: boolean;
   summary: DCFResult | null;
   sens: { g: number; cols: { d: number; iv: number }[] }[];
+  scenarioConfig: DCFScenarioConfig;
   setInput: (key: keyof DCFInputs, value: number | '') => void;
   setShow: (v: boolean) => void;
   setSummary: (v: DCFResult | null) => void;
   setSens: (v: { g: number; cols: { d: number; iv: number }[] }[]) => void;
+  setScenarioConfig: (patch: Partial<DCFScenarioConfig>) => void;
+  resetScenarioConfig: () => void;
   clear: () => void;
 }
 
 export const useDCFStore = create<DCFState>()(
-  (set) => ({
-    inputs: { fcf: '', growth: '', years: '', discount: '', terminal: '', netDebt: '', shares: '', price: '' },
-    show: false,
-    summary: null,
-    sens: [],
-    setInput: (key, value) => set((s) => ({ inputs: { ...s.inputs, [key]: value } })),
-    setShow: (v) => set({ show: v }),
-    setSummary: (v) => set({ summary: v }),
-    setSens: (v) => set({ sens: v }),
-    clear: () => {
-      set({
-        inputs: { fcf: '', growth: '', years: '', discount: '', terminal: '', netDebt: '', shares: '', price: '' },
-        show: false,
-        summary: null,
-        sens: [],
-      });
-    },
-  })
+  persist(
+    (set) => ({
+      inputs: { fcf: '', growth: '', years: '', discount: '', terminal: '', netDebt: '', shares: '', price: '' },
+      show: false,
+      summary: null,
+      sens: [],
+      scenarioConfig: { ...DEFAULT_DCF_SCENARIO_CONFIG },
+      setInput: (key, value) => set((s) => ({ inputs: { ...s.inputs, [key]: value } })),
+      setShow: (v) => set({ show: v }),
+      setSummary: (v) => set({ summary: v }),
+      setSens: (v) => set({ sens: v }),
+      setScenarioConfig: (patch) => set((s) => ({ scenarioConfig: { ...s.scenarioConfig, ...patch } })),
+      resetScenarioConfig: () => set({ scenarioConfig: { ...DEFAULT_DCF_SCENARIO_CONFIG } }),
+      clear: () => {
+        set({
+          inputs: { fcf: '', growth: '', years: '', discount: '', terminal: '', netDebt: '', shares: '', price: '' },
+          show: false,
+          summary: null,
+          sens: [],
+        });
+      },
+    }),
+    {
+      name: 'fundalyst-dcf',
+      version: 1,
+      // Only the scenario assumption sets persist; live results are recomputed.
+      partialize: (s) => ({ scenarioConfig: s.scenarioConfig }),
+    }
+  )
 );
 
 // ── WC Store ──

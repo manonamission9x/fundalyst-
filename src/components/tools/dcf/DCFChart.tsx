@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import type { ProjectedYear } from '@/types/financial';
+import { ChartState } from '@/components/ui';
 import { getChartColors, getChartGrid, getAxisTick, getTooltipStyle, inkWeight, fmtINR } from '@/lib/chart-theme';
 
 interface DCFChartProps {
@@ -20,6 +21,16 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
   const tick = getAxisTick();
   const tooltip = getTooltipStyle();
 
+  if (!projected.length) {
+    return (
+      <ChartState
+        state="empty"
+        title="DCF chart"
+        desc="Run a valuation with projected cash flows to plot the chart."
+      />
+    );
+  }
+
   const data = [
     ...projected.map((p) => ({
       name: 'Yr ' + p.year,
@@ -33,17 +44,20 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
   const maxVal = Math.max(...data.map((d) => d.fcf));
   const yMax = Math.ceil(maxVal * 1.15 / 10000) * 10000;
 
+  if (!Number.isFinite(maxVal) || maxVal <= 0 || !Number.isFinite(yMax)) {
+    return (
+      <ChartState
+        state="error"
+        title="DCF chart unavailable"
+        desc="Check the cash-flow inputs and run the valuation again."
+      />
+    );
+  }
+
   return (
-    <div style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 600,
-          color: COLORS.text,
-          letterSpacing: '0.02em',
-          paddingBottom: 4,
-        }}
-      >
+    <ChartState>
+      <div className="chart-wrap">
+      <div className="chart-title">
         DCF Projection · FCF vs PV of FCF
       </div>
       <ResponsiveContainer width="100%" height={300}>
@@ -124,6 +138,7 @@ export default function DCFChart({ projected, tv, pvTv, currentPrice }: DCFChart
           />
         </BarChart>
       </ResponsiveContainer>
-    </div>
+      </div>
+    </ChartState>
   );
 }

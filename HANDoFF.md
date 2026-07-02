@@ -2,6 +2,28 @@
 
 Last updated: 2026-07-02 (v6 "Living Ledger" marketing-surface redesign)
 
+## Latest change (2026-07-02) — T13 DCF scenario manager finished
+
+Completed T13. The pure engine `computeDCFScenarios` and the "Scenario Range" card
+(bear/base/bull IV vs current price) were already present from commit `c1c9137`; what
+was missing per the ticket's Done criteria was persistence + genuine stored assumption
+sets. Added:
+- `src/store/index.ts` — `useDCFStore` now wraps `persist` (key `fundalyst-dcf`, v1,
+  `partialize` → only `scenarioConfig`). New `scenarioConfig` {growthDelta, waccDelta,
+  terminalDelta}, `setScenarioConfig`, `resetScenarioConfig`, and exported
+  `DEFAULT_DCF_SCENARIO_CONFIG` (3/2/1). Live `summary`/`sens` stay session-only.
+- `src/app/tools/dcf/page.tsx` — reads `scenarioConfig`, passes deltas into
+  `computeDCFScenarios(opts)`, and renders editable spread controls (growth ±, WACC ∓,
+  terminal ±) + "Reset spread" in the Scenario Range card. Engine untouched (pure).
+- `src/app/globals.css` — `.dcf-scenario-ctrls .num-input { width: 5rem }` (no new utility
+  needed; project uses hand-rolled utilities, not Tailwind — there is no `w-20`).
+
+Verified `tsc --noEmit` + `eslint` clean on changed files. `next build`, vitest and
+Playwright can't run in the Linux sandbox (Windows-only SWC/rolldown native binaries, no
+network) — run them on a real Windows checkout.
+
+---
+
 ## Latest change (2026-07-02) — v6 landing/marketing redesign
 
 Landing page reinvented and a v6 design layer added on top of v5 (Institutional Slate),
@@ -136,7 +158,7 @@ Known lint warnings:
 - `xlsx` has a high-severity advisory with no fix. Mitigations and plan live in `docs/xlsx-risk-plan.md`. Do not blindly run `npm audit fix --force`.
 - Scanned-PDF OCR is review-required, not trusted automation. Accuracy work should add row/column consistency checks, flag row-level value-count mismatches, and expose suspicious rows more prominently.
 - Excel-native memo export with live formulas is not built.
-- DCF scenario manager remains future work.
+- DCF scenario manager (T13) is done: bear/base/bull via pure `computeDCFScenarios`; the spread (growth/WACC/terminal deltas) is now a persisted, user-editable `scenarioConfig` in `useDCFStore` (localStorage key `fundalyst-dcf`, `partialize`d to config only).
 - Real backend remains future work: auth, tenancy, RBAC, persistence, immutable audit, collaboration.
 
 ## Rules

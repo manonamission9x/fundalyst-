@@ -1,12 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import type { CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { TOOL_BY_ID } from '@/lib/tool-metadata';
+import { readLastTool, type LastToolRecord } from '@/components/layout/RouteTracker';
 import {
   ArrowRight,
+  TrendUp,
+  ArrowsLeftRight,
+  SquaresFour,
+  Percent,
   Detective,
   Lightning,
   LockSimple,
@@ -85,6 +90,7 @@ const trustCols = [
 
 export default function HomePage() {
   usePageTitle('Home');
+  const [lastTool, setLastTool] = useState<LastToolRecord | null>(null);
   const activeDataset = useGlobalDataStore((s) => {
     if (!s.activeDatasetId && s.datasets.length === 0) return null;
     return s.datasets.find((d) => d.id === s.activeDatasetId) || s.datasets[0] || null;
@@ -94,33 +100,75 @@ export default function HomePage() {
     activeDataset?.companyName && activeDataset.companyName !== 'Unnamed Company'
       ? activeDataset.companyName
       : null;
+  const resumeTool = lastTool ?? {
+    id: 'workspace',
+    href: TOOL_BY_ID.workspace.href,
+    label: TOOL_BY_ID.workspace.shortLabel,
+  };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLastTool(readLastTool()), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   return (
     <div className="lp">
       {resumeName && (
-        <section className="lp-resume fnd-reveal">
-          <div>
-            <span className="lp-resume-kicker">Continue research</span>
-            <h2>{resumeName}</h2>
-            <p>
-              {activeDataset?.facts.length || 0} accepted facts across{' '}
-              {activeDataset?.periods.length || 0} period
-              {activeDataset?.periods.length === 1 ? '' : 's'}.
-            </p>
-          </div>
-          <div className="lp-resume-actions">
-            <Link href="/workspace" className="btn-primary lp-cta">
-              Open workspace
-              <ArrowRight size={15} weight="bold" />
-            </Link>
+        <section className="lp-launch fnd-reveal">
+          <div className="lp-launch-inner">
+            <div className="lp-launch-top">
+              <div>
+                <span className="lp-launch-kicker">
+                  <span className="lp-launch-live" aria-hidden="true" />
+                  Continue research
+                </span>
+                <h2 className="lp-launch-title">{resumeName}</h2>
+                <div className="lp-launch-meta">
+                  <span>{activeDataset?.facts.length || 0} accepted facts</span>
+                  <span className="sep">·</span>
+                  <span>
+                    {activeDataset?.periods.length || 0} period
+                    {activeDataset?.periods.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+                {(activeDataset?.periods.length ?? 0) > 0 && (
+                  <div className="lp-launch-tags">
+                    <span className="lp-launch-tag">
+                      {activeDataset!.periods[0]}
+                      {activeDataset!.periods.length > 1
+                        ? `–${activeDataset!.periods[activeDataset!.periods.length - 1]}`
+                        : ''}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <Link href={resumeTool.href} className="lp-launch-open">
+                Open workspace
+                <ArrowRight size={14} weight="bold" />
+              </Link>
+            </div>
+
             <button
               type="button"
-              className="lp-cmd"
+              className="lp-cmdbar"
+              aria-label="Open command bar"
               onClick={() => window.dispatchEvent(new Event('fundalyst:open-palette'))}
             >
-              <span className="cmdk-kbd">`</span>
-              Type a command
+              <span className="lp-cmdbar-kbd">`</span>
+              <span className="lp-cmdbar-placeholder">
+                Type a command — try &ldquo;dcf&rdquo;, &ldquo;compare&rdquo;, &ldquo;ratios {resumeName.split(' ')[0].toLowerCase()}&rdquo;
+              </span>
+              <span className="lp-cmdbar-go" aria-hidden="true">
+                <ArrowRight size={15} weight="bold" />
+              </span>
             </button>
+
+            <div className="lp-quick">
+              <Link href="/tools/dcf" className="lp-quick-btn"><TrendUp size={13} weight="regular" /> Build valuation</Link>
+              <Link href="/research/filing" className="lp-quick-btn"><ArrowsLeftRight size={13} weight="regular" /> Compare periods</Link>
+              <Link href="/tools/peer" className="lp-quick-btn"><SquaresFour size={13} weight="regular" /> Peer set</Link>
+              <Link href="/tools/ratios" className="lp-quick-btn"><Percent size={13} weight="regular" /> Ratios</Link>
+            </div>
           </div>
         </section>
       )}
@@ -159,15 +207,6 @@ export default function HomePage() {
                 </Link>
               )}
             </div>
-            <button
-              type="button"
-              className="lp-cmd fnd-reveal"
-              style={d(220)}
-              onClick={() => window.dispatchEvent(new Event('fundalyst:open-palette'))}
-            >
-              <span className="cmdk-kbd">`</span>
-              or press to run any command
-            </button>
             <p className="lp-trust fnd-reveal" style={d(260)}>
               <LockSimple size={12} weight="regular" />
               Runs entirely in your browser. Your data never leaves this device.

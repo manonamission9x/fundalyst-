@@ -32,6 +32,8 @@ export type ToolMetadata = {
   aliases: string[];
   keywords: string;
   value: string;
+  count?: string;
+  inputs?: string;
   description: string;
   answer: string;
   needsData: boolean;
@@ -151,7 +153,9 @@ export const TOOL_METADATA: ToolMetadata[] = [
     aliases: ['ratios', 'ratio', 'health'],
     keywords: 'liquidity leverage profitability roe debt equity margin asset turnover',
     value: '5 core ratios',
-    description: 'Compute the five core health ratios unlocked by six inputs.',
+    count: '5 core ratios',
+    inputs: '6 inputs',
+    description: 'Calculate 5 core ratios from 6 financial inputs.',
     answer: 'Is the company financially healthy? Can it cover debts?',
     needsData: true,
   },

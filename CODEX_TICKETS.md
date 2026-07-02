@@ -20,11 +20,11 @@ Rules: read `AGENTS.md` first · obey `DESIGN.md` (tokens, no raw hex/px/font in
   Summon command bar with backtick `` ` `` (keep Cmd/Ctrl+K). `g`-then-key go-to: `g d`(dcf) `g r`(ratios) `g f`(filing) `g t`(trends) `g p`(peers) `g w`(workspace) `g i`(import). `e`=export memo, `/`=focus bar, `?`=shortcut cheat-sheet overlay, `Esc`=close/clear. **Must not fire inside inputs/textareas/`ToolSpreadsheet`.**
   **Done:** all shortcuts work off-input; guarded inside inputs; `?` lists them.
 
-- [ ] **T3 — Returning-user launchpad on home** `src/app/page.tsx`
+- [x] — codex 2026-07-02 **T3 — Returning-user launchpad on home** `src/app/page.tsx`
   When a dataset exists (`activeDataset`/`resumeName` already computed), render a compact launchpad above the hero: command bar affordance + "Continue: <company> → last tool". Keep first-visit narrative for empty state.
   **Done:** returning user lands on work, not marketing; empty-state home unchanged.
 
-- [ ] **T4 — Single-source tool metadata + fix ratios count** `src/app/page.tsx`, `src/app/tools/ratios/page.tsx`, `src/app/workspace/page.tsx`
+- [x] — codex 2026-07-02 **T4 — Single-source tool metadata + fix ratios count** `src/app/page.tsx`, `src/app/tools/ratios/page.tsx`, `src/app/workspace/page.tsx`
   Create one metadata source (title, count, `answer` line) per tool; consume it in home cards, Workspace, and `PageHeader`. Fix drift: home says `9 ratios`, ratios page + Workspace say `5 ratios from 6 numbers`. Pick the true number, use everywhere.
   **Done:** no conflicting counts anywhere; one metadata object drives all three surfaces.
 
@@ -64,9 +64,9 @@ Rules: read `AGENTS.md` first · obey `DESIGN.md` (tokens, no raw hex/px/font in
   Turn the dataset badge into a switcher over `datasets[]` (fuzzy switch, add another). Surface a managed multi-company "Coverage" set; enable side-by-side compare across your own imports (not a market screener).
   **Done:** switch active company anywhere; coverage list persists; compare works across imports.
 
-- [~] — claude 2026-07-02 **T13 — DCF scenario manager (bull/base/bear)** `src/app/tools/dcf/page.tsx`, `src/lib/calculations.ts`
+- [x] — claude 2026-07-02 **T13 — DCF scenario manager (bull/base/bear)** `src/app/tools/dcf/page.tsx`, `src/lib/calculations.ts`, `src/store/index.ts`, `src/app/globals.css`
   Store 3 assumption sets; show 3 intrinsic values vs current price on one view. Reuse `computeDCF`/sensitivity.
-  **Done:** three scenarios persist and render together; engine unchanged/pure.
+  **Done:** three scenarios persist and render together; engine unchanged/pure. `computeDCFScenarios` (pure, `opts` deltas) + Scenario Range card were already in place; added persisted `scenarioConfig` (growth/WACC/terminal deltas) to `useDCFStore` (zustand `persist` + `partialize`, key `fundalyst-dcf`) and user-editable spread controls that feed the engine. tsc + eslint clean; `next build`/vitest/Playwright not runnable in the Linux sandbox (Windows-only SWC/rolldown binaries, no network) — run on a real checkout.
 
 - [ ] **T14 — Grounded AI: explain + draft thesis** [opt-in] result components, `ThesisPanel`, new model endpoint
   "Explain this" on `HeroDecision`/`InsightCard`/trace using *these* source facts with inline citations. "Draft thesis from evidence" pre-fills the thesis, every claim cited. Opt-in, labeled, never mutates accepted data silently, degrades gracefully offline. Preserve privacy promise.

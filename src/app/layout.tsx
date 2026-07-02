@@ -3,6 +3,7 @@ import Link from 'next/link';
 import './globals.css';
 import Nav from '@/components/layout/Nav';
 import CommandPalette from '@/components/layout/CommandPalette';
+import RouteTracker from '@/components/layout/RouteTracker';
 import ToastProvider from '@/components/shared/ToastProvider';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ToastProvider>
           <Nav />
           <CommandPalette />
+          <RouteTracker />
           <ErrorBoundary>
             <main id="main-content" className="page" tabIndex={-1}>
               {children}

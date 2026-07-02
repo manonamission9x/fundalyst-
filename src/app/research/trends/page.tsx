@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { fmtNum } from '@/lib/calculations';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
-import { PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer, EmptyState, DataQualityBar, CalcTimestamp, TrustBadge, DataSourceBadge } from '@/components/ui';
+import { PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer, EmptyState, DataQualityBar, CalcTimestamp, TrustBadge, DataSourceBadge, ChartState } from '@/components/ui';
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import dynamic from 'next/dynamic';
@@ -18,7 +18,7 @@ import { findRow, type CalculationTrace } from '@/lib/calculation-trace';
 
 const TrendsChart = dynamic(() => import('@/components/tools/trends/TrendsChart'), {
   ssr: false,
-  loading: () => <div className="skeleton" style={{ width: '100%', height: 250 }} />,
+  loading: () => <ChartState state="loading" title="Loading trend chart" />,
 });
 
 const SAMPLE_TREND_PERIODS = ['FY22', 'FY23', 'FY24', 'FY25', 'FY26'];

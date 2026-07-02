@@ -433,6 +433,48 @@ export function EmptyState({ title, desc, action }: EmptyStateProps) {
   );
 }
 
+// ── ChartState ──
+interface ChartStateProps {
+  state?: 'loading' | 'empty' | 'error' | 'ready';
+  title?: string;
+  desc?: string;
+  children?: React.ReactNode;
+}
+export function ChartState({
+  state = 'ready',
+  title,
+  desc,
+  children,
+}: ChartStateProps) {
+  if (state === 'ready') return <>{children}</>;
+
+  if (state === 'loading') {
+    return (
+      <div className="chart-state skeleton" role="status" aria-label={title ?? 'Loading chart'} />
+    );
+  }
+
+  if (state === 'error') {
+    return (
+      <div className="chart-state error" role="alert">
+        <div className="state-card error">
+          <div className="state-card-title">{title ?? 'Chart unavailable'}</div>
+          {desc && <div className="state-card-desc">{desc}</div>}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="chart-state empty">
+      <div className="empty-state">
+        <div className="empty-state-title">{title ?? 'Chart has no data'}</div>
+        {desc && <div className="empty-state-desc">{desc}</div>}
+      </div>
+    </div>
+  );
+}
+
 // ── MetricGrid ──
 interface Metric {
   label: string;

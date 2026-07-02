@@ -5,6 +5,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { TrendRow } from '@/types/financial';
+import { ChartState } from '@/components/ui';
 import { getChartColors, getSeriesColors, getChartGrid, getAxisTick, getTooltipStyle, fmtINR } from '@/lib/chart-theme';
 
 interface TrendsChartProps {
@@ -21,6 +22,16 @@ export default function TrendsChart({ rows, headers }: TrendsChartProps) {
 
   const labels = headers.slice(1);
 
+  if (!rows.length || !labels.length) {
+    return (
+      <ChartState
+        state="empty"
+        title="Trend chart"
+        desc="Add period labels and at least one metric to plot trends."
+      />
+    );
+  }
+
   const data = labels.map((label, i) => {
     const point: Record<string, string | number> = { name: label };
     rows.forEach((r) => {
@@ -29,17 +40,24 @@ export default function TrendsChart({ rows, headers }: TrendsChartProps) {
     return point;
   });
 
+  const hasFiniteValue = data.some((point) =>
+    rows.some((row) => Number.isFinite(Number(point[row.label])))
+  );
+
+  if (!hasFiniteValue) {
+    return (
+      <ChartState
+        state="error"
+        title="Trend chart unavailable"
+        desc="Check the metric values and run the chart again."
+      />
+    );
+  }
+
   return (
-    <div style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 600,
-          color: COLORS.text,
-          letterSpacing: '0.02em',
-          paddingBottom: 4,
-        }}
-      >
+    <ChartState>
+      <div className="chart-wrap">
+      <div className="chart-title">
         {headers[0] ?? 'Financial Trends'}
       </div>
       <ResponsiveContainer width="100%" height={300}>
@@ -97,6 +115,7 @@ export default function TrendsChart({ rows, headers }: TrendsChartProps) {
           })}
         </LineChart>
       </ResponsiveContainer>
-    </div>
+      </div>
+    </ChartState>
   );
 }

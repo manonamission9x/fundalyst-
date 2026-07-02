@@ -35,6 +35,10 @@ import { useActiveDataset } from '@/store/financial-model-selectors';
 import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
 import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
 
+const RATIOS_TOOL = TOOL_BY_ID.ratios;
+const RATIOS_COUNT = RATIOS_TOOL.count ?? RATIOS_TOOL.value;
+const RATIOS_INPUTS = RATIOS_TOOL.inputs ?? '6 inputs';
+
 const unlockedFormulas: Record<string, string> = {
   'Net Profit Margin': 'Net Profit ÷ Revenue',
   'ROE': 'Net Profit ÷ Total Equity',
@@ -242,9 +246,9 @@ export default function RatiosPage() {
     <div>
       <PageHeader
         kicker="Valuation"
-        title={TOOL_BY_ID.ratios.label}
-        subtitle="Enter just 6 numbers — get 5 key ratios instantly."
-        answer={TOOL_BY_ID.ratios.answer}
+        title={RATIOS_TOOL.label}
+        subtitle={`${RATIOS_INPUTS} unlock ${RATIOS_COUNT}.`}
+        answer={RATIOS_TOOL.answer}
       />
 
       <DataQualityBar source={modelData.companyName || undefined} />
@@ -258,7 +262,7 @@ export default function RatiosPage() {
         </p>
       )}
 
-      <Card label="Required (6 fields)">
+      <Card label={`Required (${RATIOS_INPUTS})`}>
         <div className="card-body">
           <ToolSpreadsheet
             tool="ratios"
@@ -266,10 +270,10 @@ export default function RatiosPage() {
             initialData={cleared ? undefined : (sheetRows.length > 0 ? sheetRows : undefined)}
             resetKey={clearVersion}
             onDataChange={(rows) => setSheetRows(rows)}
-            hint="Enter values in ₹ Cr. These 6 fields unlock: Net Profit Margin, ROE, Debt/Equity, Debt/Assets, Asset Turnover."
+            hint={`${RATIOS_INPUTS} unlock: Net Profit Margin, ROE, Debt/Equity, Debt/Assets, Asset Turnover.`}
           />
         </div>
-        <Toolbar onClear={handleClear} onAction={analyze} actionLabel="Calculate" hint="Add Revenue and Net Profit to see net margin — add more for full ratio analysis" />
+        <Toolbar onClear={handleClear} onAction={analyze} actionLabel="Calculate" hint={`Add the ${RATIOS_INPUTS} to calculate ${RATIOS_COUNT}.`} />
       </Card>
 
       {res && showResults && (() => {
@@ -337,7 +341,7 @@ export default function RatiosPage() {
       )}
 
       {!showResults && (
-        <EmptyState title="Financial Ratios" desc="Enter the six core financial inputs to calculate profitability, leverage, and efficiency ratios." action={{ label: 'Import data', href: '/import' }} />
+        <EmptyState title={RATIOS_TOOL.label} desc={RATIOS_TOOL.description} action={{ label: 'Import data', href: '/import' }} />
       )}
     </div>
   );
