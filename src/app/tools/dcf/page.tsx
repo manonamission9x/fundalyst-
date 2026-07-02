@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { computeDCF, computeDCFSensitivity, validateDCFInputs, fmtNum } from '@/lib/calculations';
+import { computeDCF, computeDCFSensitivity, computeDCFScenarios, validateDCFInputs, fmtNum } from '@/lib/calculations';
 import { useDCFStore } from '@/store';
 import { extractDCFInputsFromModel } from '@/store/financial-model-selectors';
 import { useToast } from '@/components/shared/ToastProvider';
@@ -434,6 +434,20 @@ function DCFResults({
     ];
   }, [dataset, formatted.eq, formatted.ev, formatted.iv, formatted.mos, sheetRows]);
 
+  const scenarios = useMemo(() => {
+    const m = rowsToDCFInputs(sheetRows);
+    const fcf = Number(m.fcf);
+    const growth = Number(m.growth || 0);
+    const years = Number(m.years);
+    const discount = Number(m.discount);
+    const terminal = Number(m.terminal);
+    const netDebt = m.netDebt === '' || m.netDebt === undefined ? 0 : Number(m.netDebt);
+    const shares = Number(m.shares);
+    const price = Number(m.price);
+    if (![fcf, years, discount, terminal, shares].every(Number.isFinite)) return [];
+    return computeDCFScenarios(fcf, growth, years, discount, terminal, netDebt, shares, price);
+  }, [sheetRows]);
+
   const verdictText = isUndervalued
     ? `Intrinsic value of ${formatted.iv} is above the current price of ${formatted.price}, suggesting the stock may be undervalued.`
     : `Intrinsic value of ${formatted.iv} is below the current price of ${formatted.price}, suggesting the stock may be overvalued.`;
@@ -466,6 +480,45 @@ function DCFResults({
           formula="Intrinsic Value = (Enterprise Value − Net Debt) / Shares Outstanding"
         />
       </Card>
+
+      {scenarios.length === 3 && (
+        <Card label="Scenario Range" className="mt-4">
+          <div className="card-body">
+            <p className="text-sm text-secondary" style={{ margin: 0, marginBottom: 'var(--space-2)' }}>
+              Intrinsic value under bear, base, and bull cases — growth, WACC, and terminal growth flexed together.
+              <br />
+              <span className="text-muted">Green = above current price ({formatted.price}), red = below.</span>
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="diff-table">
+              <thead>
+                <tr>
+                  <th>Scenario</th><th>Growth</th><th>WACC</th><th>Terminal</th>
+                  <th>Intrinsic / share</th><th>Margin of safety</th><th>Verdict</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scenarios.map((s) => {
+                  const under = s.iv != null && s.iv > priceVal;
+                  const cls = s.iv == null ? '' : under ? 'sens-td-up' : 'sens-td-down';
+                  return (
+                    <tr key={s.key}>
+                      <td>{s.key === 'base' ? <strong>{s.label} (your inputs)</strong> : s.label}</td>
+                      <td>{Math.round(s.growth * 10) / 10}%</td>
+                      <td>{Math.round(s.discount * 10) / 10}%</td>
+                      <td>{Math.round(s.terminal * 10) / 10}%</td>
+                      <td className={cls}>{s.iv == null ? '—' : '₹' + fmtNum(Math.round(s.iv * 100) / 100)}</td>
+                      <td className={cls}>{s.mos == null ? '—' : s.mos.toFixed(1) + '%'}</td>
+                      <td>{s.iv == null ? '—' : under ? 'Undervalued' : 'Overvalued'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       <CalculationTracePanel traces={traceItems} />
 

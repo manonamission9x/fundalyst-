@@ -64,7 +64,7 @@ Rules: read `AGENTS.md` first · obey `DESIGN.md` (tokens, no raw hex/px/font in
   Turn the dataset badge into a switcher over `datasets[]` (fuzzy switch, add another). Surface a managed multi-company "Coverage" set; enable side-by-side compare across your own imports (not a market screener).
   **Done:** switch active company anywhere; coverage list persists; compare works across imports.
 
-- [ ] **T13 — DCF scenario manager (bull/base/bear)** `src/app/tools/dcf/page.tsx`, `src/lib/calculations.ts`
+- [~] — claude 2026-07-02 **T13 — DCF scenario manager (bull/base/bear)** `src/app/tools/dcf/page.tsx`, `src/lib/calculations.ts`
   Store 3 assumption sets; show 3 intrinsic values vs current price on one view. Reuse `computeDCF`/sensitivity.
   **Done:** three scenarios persist and render together; engine unchanged/pure.
 

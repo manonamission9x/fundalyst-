@@ -252,6 +252,59 @@ export function computeDCFSensitivity(
   }));
 }
 
+/** One DCF scenario (bear/base/bull) — assumptions flexed together. */
+export interface DCFScenario {
+  key: 'bear' | 'base' | 'bull';
+  label: string;
+  growth: number;
+  discount: number;
+  terminal: number;
+  iv: number | null;
+  mos: number | null;
+}
+
+/**
+ * Compute bear / base / bull DCF scenarios by flexing growth, WACC, and
+ * terminal growth together around the user's base assumptions. Reuses
+ * computeDCF; discount is floored and terminal is clamped below WACC so the
+ * Gordon Growth spread stays valid. iv/mos are null for any scenario that
+ * cannot be computed.
+ */
+export function computeDCFScenarios(
+  fcf: number,
+  growth: number,
+  years: number,
+  discount: number,
+  terminal: number,
+  netDebt: number,
+  shares: number,
+  price: number,
+  opts?: { growthDelta?: number; waccDelta?: number; terminalDelta?: number },
+): DCFScenario[] {
+  const gD = opts?.growthDelta ?? 3;
+  const wD = opts?.waccDelta ?? 2;
+  const tD = opts?.terminalDelta ?? 1;
+
+  const build = (
+    key: DCFScenario['key'],
+    label: string,
+    g: number,
+    d: number,
+    t: number,
+  ): DCFScenario => {
+    const disc = Math.max(0.5, d);
+    const term = Math.min(Math.max(0, t), disc - 0.5); // keep WACC - terminal > 0
+    const r = computeDCF(fcf, g, years, disc, term, netDebt, shares, price);
+    return { key, label, growth: g, discount: disc, terminal: term, iv: r?.iv ?? null, mos: r?.mos ?? null };
+  };
+
+  return [
+    build('bear', 'Bear', Math.max(0, growth - gD), discount + wD, terminal - tD),
+    build('base', 'Base', growth, discount, terminal),
+    build('bull', 'Bull', growth + gD, discount - wD, terminal + tD),
+  ];
+}
+
 // ── Working Capital ──
 
 export function computeWC(

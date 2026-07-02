@@ -58,3 +58,11 @@ Don't extend a long thread — token cost scales with transcript length. Begin f
 ```
 Task: <one line>. Read AGENTS.md + <the one relevant file>. <the playbook above>.
 ```
+
+## P8 - Multi-agent resume / coordination check
+```
+Read AGENTS.md and AGENT_COLLABORATION.md. Then inspect only the queue file for the lane:
+Codex/Claude -> CODEX_TICKETS.md; DeepSeek -> DEEPSEEK_TASKS.md.
+Report any [~] in-progress tickets, any stale [ ] items that appear complete, and the safest next ticket to take.
+Do not read FUNDALYST_DESIGN_AUDIT.md unless a specific ticket needs rationale.
+```

@@ -7,14 +7,14 @@
 Implement, don't redesign. One token = one place. Preserve: tabular-nums+mono numerics, ghost-only buttons, muted semantic colors, single accent (gold) for interactivity only, static charts (`isAnimationActive={false}`), provenance/confidence/data-quality system, a11y (focus-visible, reduced-motion, hover:none, 44px touch, 16px mobile inputs).
 
 ## P0 — silent failures
-- [ ] **F-01** `--shadow-md` used (context-menu + suggestions) but never defined → no shadow. Define `--shadow-md` in `:root` + elevation scale (sm/base/md/lg).
-- [ ] **F-02** `--font-mono` used in inline styles (`ui/index.tsx`; `import/page.tsx`; `PdfViewer.tsx`; `ProvenanceBadge.tsx`) but never defined → rendered in Inter. Define `--font-mono`.
-- [ ] **F-03** Fonts loaded via `next/font` as `--font-inter`/`--font-ibm-plex-mono` but `globals.css` used literal `'Inter'`/`'IBM Plex Mono'` → optimized fonts may never apply. Route `body` + all mono rules through the CSS vars. Validate on a no-fonts machine.
-- [ ] **F-20** `layout.tsx` `<div className="bg-noise">` has no matching CSS (texture is `body::before`). Remove it.
+- [x] **F-01** `--shadow-md` used (context-menu + suggestions) but never defined → no shadow. Define `--shadow-md` in `:root` + elevation scale (sm/base/md/lg).
+- [x] **F-02** `--font-mono` used in inline styles (`ui/index.tsx`; `import/page.tsx`; `PdfViewer.tsx`; `ProvenanceBadge.tsx`) but never defined → rendered in Inter. Define `--font-mono`.
+- [x] **F-03** Fonts loaded via `next/font` as `--font-inter`/`--font-ibm-plex-mono` but `globals.css` used literal `'Inter'`/`'IBM Plex Mono'` → optimized fonts may never apply. Route `body` + all mono rules through the CSS vars. Validate on a no-fonts machine.
+- [x] **F-20** `layout.tsx` `<div className="bg-noise">` has no matching CSS (texture is `body::before`). Remove it.
 
 ## P1 — consistency
-- [ ] **F-06** `chart-theme.ts` used `IBM Plex Sans` (never loaded). Use Inter var.
-- [ ] **F-07** Two color systems: `globals.css` tokens vs hardcoded hex in `chart-theme.ts`. Make chart-theme derive from CSS tokens; if charts intentionally differ, name `--chart-accent`.
+- [x] **F-06** `chart-theme.ts` used `IBM Plex Sans` (never loaded). Use Inter var.
+- [x] **F-07** Two color systems: `globals.css` tokens vs hardcoded hex in `chart-theme.ts`. Make chart-theme derive from CSS tokens; if charts intentionally differ, name `--chart-accent`.
 - [ ] **F-08** `ui/index.tsx` badges hardcoded off-palette `rgba(245,158,11…)`/`rgba(34,197,94…)`/`rgba(148,163,184…)`. Replace with `--caution`/`--green`/muted tokens.
 - [ ] **F-04** Inline `fontSize:8/9/10/11` bypass the scale. Add `--text-3xs:11px`; replace raw px with tokens.
 - [ ] **F-10** `import/page.tsx` + `PdfViewer.tsx` use inline `style={{}}` literals. Migrate to classes/tokens. No inline px/color/font in page files.
@@ -28,8 +28,8 @@ Implement, don't redesign. One token = one place. Preserve: tabular-nums+mono nu
 - [ ] **F-14** Change cells encode gain/loss by color alone. Make sign/arrow mandatory (~8% color-blind).
 
 ## P3 — brand/cleanup
-- [ ] **F-19** Remove unused `@keyframes skeleton-pulse`; one shimmer.
-- [ ] **F-17** `.nav-tab.active` 2px border others lack → layout shift. Reserve the space.
+- [x] **F-19** Remove unused `@keyframes skeleton-pulse`; one shimmer.
+- [x] **F-17** `.nav-tab.active` 2px border others lack → layout shift. Reserve the space.
 - [ ] **F-13** Two custom icon sets + lucide. Standardize on the custom currentColor set; one stroke/size spec.
 - [ ] **F-18** Brand color hardcoded in `layout.tsx`/`Nav.tsx`. Tokenize; one shared logo component.
 
@@ -64,7 +64,7 @@ Low-stakes, self-contained. Tick each box when done; don't delete this file.
 - [ ] **D1 — About out of primary nav -> footer.** Remove About `nav-tab` from `Nav.tsx` (desktop + mobile); add About link to `site-footer` in `layout.tsx`. Keep `/about`.
 - [ ] **D2 — Lazy-load OCR (tesseract.js).** Dynamic `import()` only inside the OCR path (`lib/importer/ocr.ts`) when a scanned/image file is imported; show "preparing OCR…". Text-PDF path must NOT load tesseract.
 - [ ] **D3 — Privacy front-door signal.** One calm line/badge on home hero (`app/page.tsx`): lock glyph + "Runs entirely in your browser. Your data never leaves this device." Use `trust-badge` styling, no new colors.
-- [ ] **D4 — Nav active-tab no layout shift.** Reserve the 2px active border on inactive tabs in `globals.css` `.nav-tab`. (= F-17)
+- [x] **D4 — Nav active-tab no layout shift.** Reserve the 2px active border on inactive tabs in `globals.css` `.nav-tab`. (= F-17)
 - [ ] **D5 — Empty-state copy polish.** Update strings passed to `EmptyState` (not its API): headline names the space, one-line body, verb-first action, sentence case, no "Nothing here yet", no "!".
 - [ ] **D6 — Consolidate number formatting.** One shared `fmtINR`/`fmtPct`/`fmtNum` (`lib/format.ts`); re-export from `memo-export.ts`, `chart-theme.ts`, `lib/calculations.ts`. No behavior change.
 

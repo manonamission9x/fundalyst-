@@ -22,6 +22,7 @@ Client-side financial-analysis app. **No backend, no auth, no server, no live ma
 | UX/IA audit vs Godel + prioritized roadmap (deep rationale) | `FUNDALYST_DESIGN_AUDIT.md` |
 | Implementation tickets from the audit (read this, not the audit) | `CODEX_TICKETS.md` |
 | Visual/theme + product fix queue (checklist) | `DEEPSEEK_TASKS.md` |
+| Multi-agent collaboration + token-saving workflow | `AGENT_COLLABORATION.md` |
 | Reusable prompt templates for recurring work | `AGENT_PLAYBOOKS.md` |
 | How to keep token usage low | `TOKENS.md` |
 | xlsx advisory + mitigation | `docs/xlsx-risk-plan.md` |
