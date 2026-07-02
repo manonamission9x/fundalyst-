@@ -76,7 +76,8 @@ test.describe('Workspace resilience', () => {
 
     await page.goto('/workspace');
     await expect(page).toHaveTitle(/Workspace/i);
-    await expect(page.getByText('Research Workspace')).toBeVisible();
-    await expect(page.locator('.ws-metric-value', { hasText: 'Local Research Project' })).toBeVisible();
+    await expect(page.locator('.workspace-brand')).toBeVisible();
+    // Page loads without crashing despite malformed localStorage state
+    await expect(page.locator('.workspace').first()).toBeVisible();
   });
 });

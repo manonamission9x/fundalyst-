@@ -1,6 +1,31 @@
 # Fundalyst Handoff
 
-Last updated: 2026-07-01 (homepage + workspace institutional design pass)
+Last updated: 2026-07-02 (v6 "Living Ledger" marketing-surface redesign)
+
+## Latest change (2026-07-02) — v6 landing/marketing redesign
+
+Landing page reinvented and a v6 design layer added on top of v5 (Institutional Slate),
+scoped to *marketing surfaces only* (landing + about); tool pages untouched.
+
+- `src/app/globals.css` — appended a `v6 "Living Ledger"` block at the very end: new
+  `--text-4xl/-5xl`, `--ease-out`, `--ledger-grid` tokens; `.fnd-reveal` entrance motion
+  (reduced-motion + touch safe); `.lp-*` landing patterns (ambient hero, numbered section
+  rhythm, question-first tool cards, trust strip/columns, final CTA, resume banner);
+  restructured `.site-footer`. All token-based, no raw component colours.
+- `src/app/page.tsx` — full rewrite to the `.lp-*` system. Tool cards now surface each
+  tool's `ToolMetadata.answer` (the question it settles). Stagger via `d(ms)` helper.
+- `src/app/layout.tsx` — richer structured footer (brand + tag, quick links, legal row).
+- `src/components/ui/index.tsx` — `PageHeader` gained an optional `kicker` prop.
+- `src/app/about/page.tsx` — uses the new kicker + sharper title.
+- `DESIGN.md` — documented as §10 (keep in sync; no silent drift).
+
+NOTE: verified statically (authoring + full read-through); a local `tsc/build/e2e` run is
+still recommended on a real checkout — the sandbox used for this pass had an unreliable
+shell mount, so no compiler run was captured here.
+
+---
+
+Prior update: 2026-07-01 (homepage + workspace institutional design pass)
 
 Repo: `C:\Users\kingo\Desktop\fundalyst-next`  
 GitHub: `https://github.com/manonamission9x/fundalyst-`  

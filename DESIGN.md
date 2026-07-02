@@ -170,3 +170,36 @@ Known drift not yet resolved (safe to tackle incrementally):
   CSS vars directly; read it via `getComputedStyle` to respect the theme.
 - **Off-grid pixel sizes** — a few `15/17/20px` display sizes were snapped to `--text-sm/-lg`;
   if a distinct "metric display" tier is wanted, define a token rather than reintroducing raw px.
+
+---
+
+## 10. v6 "Living Ledger" — marketing surfaces (landing + about)
+
+A step-change layer over v5 for *marketing* surfaces only. Tool surfaces stay flat and
+quiet — nothing here applies inside a tool page. The layer lives at the bottom of
+`globals.css` under the `v6` banner and reuses every existing token; it adds only:
+
+- **`--text-4xl` (46px), `--text-5xl` (60px)** — display sizes for the landing headline.
+  Governed additions to the scale; do not use them on tool pages.
+- **`--ease-out`, `--ledger-grid`** — one shared easing curve and the finance-native grid
+  motif (thin `--border-light` lines, radially masked). Reference the tokens, never inline.
+
+**Patterns (class prefix `lp-`):**
+
+- **Ambient hero** (`.lp-hero-canvas`) — `--glow-hero` radial glow + radially-masked
+  `--ledger-grid`, both behind a `z-index:1` content column. Ambient depth only (§8):
+  no colour or gradient sits *behind text*, and the primary CTA stays inverted.
+- **Entrance motion** (`.fnd-reveal` + `--d` stagger) — one calm rise, ~0.7s, staggered
+  per element. Fully disabled under `prefers-reduced-motion` and neutralised on
+  `(hover: none)`. In TSX pass the stagger via the `d(ms)` helper (`--d` cast to
+  `CSSProperties`), never a raw inline colour.
+- **Numbered section rhythm** (`.lp-eyebrow-row` + `.lp-index`) — a mono index chip
+  ("01/02/03") beside an editorial `--text-2xl` heading. The landing's identity now
+  comes from this rhythm, not from decoration.
+- **Question-first tool cards** (`.lp-tool`) — each card leads with the *question the tool
+  answers* (`ToolMetadata.answer`), with a slate left-rail that scales in on hover. Colour
+  is still meaning-only; the rail is wayfinding, not brand flair.
+
+**Rule:** if a v6 element were removed and the page still read as calm and intentional, the
+element is doing its job. Anything that only adds sparkle gets cut. Keep this section in sync
+if the layer changes — don't let the landing drift from the doc.

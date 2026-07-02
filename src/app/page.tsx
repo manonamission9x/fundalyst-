@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { TOOL_BY_ID } from '@/lib/tool-metadata';
@@ -46,6 +47,8 @@ const toolCards: ToolCard[] = (['dcf', 'filing', 'trends', 'ratios', 'peer', 'wc
   question: TOOL_BY_ID[id].answer,
   value: TOOL_BY_ID[id].value,
 }));
+
+const d = (ms: number): CSSProperties => ({ ['--d']: `${ms}ms` } as CSSProperties);
 
 const steps = [
   {
@@ -122,24 +125,24 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── Hero ── */}
+      {/* ── Hero ── v6 ── */}
       <section className="lp-hero">
         <div className="lp-hero-canvas" aria-hidden="true" />
         <div className="lp-hero-inner">
           <div className="lp-hero-copy">
-            <span className="lp-eyebrow fnd-reveal" style={{ ['--d' as string]: '0ms' }}>
+            <span className="lp-eyebrow fnd-reveal" style={d(0)}>
               <span className="lp-eyebrow-dot" />
               Annual report in — analyst view out
             </span>
-            <h1 className="lp-title fnd-reveal" style={{ ['--d' as string]: '60ms' }}>
+            <h1 className="lp-title fnd-reveal" style={d(60)}>
               Turn filings into numbers <em>you can defend.</em>
             </h1>
-            <p className="lp-lede fnd-reveal" style={{ ['--d' as string]: '120ms' }}>
+            <p className="lp-lede fnd-reveal" style={d(120)}>
               Fundalyst reads the filing, normalizes the statements, and carries every{' '}
               <strong>accepted</strong> figure into valuation, ratios, trends, peers, and
               filing comparison — each number keeping its source.
             </p>
-            <div className="lp-actions fnd-reveal" style={{ ['--d' as string]: '180ms' }}>
+            <div className="lp-actions fnd-reveal" style={d(180)}>
               <Link href="/import" className="btn-primary lp-cta">
                 Import annual report
                 <ArrowRight size={15} weight="bold" />
@@ -159,19 +162,19 @@ export default function HomePage() {
             <button
               type="button"
               className="lp-cmd fnd-reveal"
-              style={{ ['--d' as string]: '220ms' }}
+              style={d(220)}
               onClick={() => window.dispatchEvent(new Event('fundalyst:open-palette'))}
             >
               <span className="cmdk-kbd">`</span>
               or press to run any command
             </button>
-            <p className="lp-trust fnd-reveal" style={{ ['--d' as string]: '260ms' }}>
+            <p className="lp-trust fnd-reveal" style={d(260)}>
               <LockSimple size={12} weight="regular" />
               Runs entirely in your browser. Your data never leaves this device.
             </p>
           </div>
 
-          <div className="lp-stage fnd-reveal" style={{ ['--d' as string]: '160ms' }}>
+          <div className="lp-stage fnd-reveal" style={d(160)}>
             <div className="lp-stage-caption">
               <span>Filing PDF</span>
               <span className="arrow">→</span>

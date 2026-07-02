@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('navigation has accessible landmarks', async ({ page }) => {
   await page.goto('/');
-  const nav = page.locator('nav');
+  const nav = page.getByRole('navigation', { name: 'Tool navigation' });
   await expect(nav).toBeVisible();
   // Check for at least one nav link
   const navLinks = nav.locator('a, button');
@@ -53,5 +53,5 @@ test('mobile hamburger menu remains available', async ({ page }) => {
 
   await page.getByRole('button', { name: /Open navigation menu/i }).click();
   await expect(page.getByRole('dialog', { name: /Navigation menu/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Workspace/i })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: /Navigation menu/i }).getByRole('link', { name: /Workspace/i })).toBeVisible();
 });
