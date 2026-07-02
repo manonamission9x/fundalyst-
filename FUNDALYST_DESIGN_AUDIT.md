@@ -246,7 +246,7 @@ Godel is fully keyboard-operable (L6). Fundalyst has Cmd/Ctrl+K + palette arrows
 - **Go-to (`g` then key)** — `g d` DCF, `g r` ratios, `g f` filing, `g t` trends, `g p` peers, `g w` workspace, `g i` import. (Linear's proven pattern.)
 - **Actions:** `e` export memo, `/` focus command bar, `?` open shortcut cheat-sheet overlay, `Esc` close panel/overlay/clear.
 - **Tables:** arrow keys move the active cell/row, `Enter` drills in (to a trace or source row), sort with a key on the focused column. (See §13.)
-- **Panels (after §11):** number keys focus panel N; a key to cycle; a key to close the focused panel.
+- **Panels (after §11):** number keys focus panel N; a key to cycle; a key to close the focused panel. Godel's own docs expose exactly this class of window shortcuts — focus terminal, cycle windows, move/resize, snap to edges, change scale, undo window-close — a proven template to mirror for the split-grid.
 - **Shortcut discoverability:** a `?` overlay listing all shortcuts (Superhuman/Linear pattern). Also surface the relevant shortcut as a hint chip on the corresponding button (the nav already shows an `esc` chip in the palette — extend that habit).
 
 *Trade-offs:* must not hijack keys inside `ToolSpreadsheet`/textareas. *Complexity:* Low–Medium. *Priority:* **[QUICK WIN]** for summon key + go-to + `?` overlay; **[MEDIUM]** for table/panel navigation.

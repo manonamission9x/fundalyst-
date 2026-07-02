@@ -1,5 +1,7 @@
 # Fundalyst — Fix Queue (implementer spec)
 
+> **Read `AGENTS.md` first** for shared project context, stack, rules, verify commands, and ownership lanes (include it alongside this file in your context). This file is DeepSeek's task queue only — it does not restate project context.
+
 > Most of this is already implemented (first pass done). Treat this as the canonical spec for your **second-pass verification** — re-check each item against the live code and tick the box when confirmed. Don't redesign.
 
 Implement, don't redesign. One token = one place. Preserve: tabular-nums+mono numerics, ghost-only buttons, muted semantic colors, single accent (gold) for interactivity only, static charts (`isAnimationActive={false}`), provenance/confidence/data-quality system, a11y (focus-visible, reduced-motion, hover:none, 44px touch, 16px mobile inputs).
@@ -66,6 +68,4 @@ Low-stakes, self-contained. Tick each box when done; don't delete this file.
 - [ ] **D5 — Empty-state copy polish.** Update strings passed to `EmptyState` (not its API): headline names the space, one-line body, verb-first action, sentence case, no "Nothing here yet", no "!".
 - [ ] **D6 — Consolidate number formatting.** One shared `fmtINR`/`fmtPct`/`fmtNum` (`lib/format.ts`); re-export from `memo-export.ts`, `chart-theme.ts`, `lib/calculations.ts`. No behavior change.
 
-Rules: implement exactly as specced; preserve all principles above; no architectural changes; flag ambiguity instead of guessing. Claude owns high-stakes work (command palette, demo-data removal, compare, nav restructure) — don't touch those.
-
-> Note: Claude added a global command palette (`components/layout/CommandPalette.tsx`, mounted in `layout.tsx`, styles `.cmdk-*` + `.nav-cmdk-trigger` in `globals.css`). Don't remove or restyle it.
+Rules: implement exactly as specced; preserve all principles above; no architectural changes; flag ambiguity instead of guessing. Ownership lanes are in `AGENTS.md` — don't touch architectural items owned by Claude/Codex (command palette, compare, nav restructure, workspace architecture) or restyle the command palette (`components/layout/CommandPalette.tsx`, mounted in `layout.tsx`, styles `.cmdk-*` + `.nav-cmdk-trigger` in `globals.css`).

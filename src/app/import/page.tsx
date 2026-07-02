@@ -9,6 +9,7 @@ import { canonicalDisplayName } from '@/lib/importer/metric-aliases';
 import { validatePdfFile, deepValidatePdf } from '@/lib/importer/pdf-validator';
 import type { MetricMapping } from '@/lib/importer/types';
 import type { PdfValidationResult } from '@/lib/importer/pdf-validator';
+import ToolReadinessCards from '@/components/shared/ToolReadinessCards';
 import dynamic from 'next/dynamic';
 
 // Lazy-load PDF viewer (heavy dependency)
@@ -665,6 +666,12 @@ function ImportResult({
               </Link>
             </div>
           </div>
+        </div>
+      </Card>
+
+      <Card label="Tool readiness" style={{ marginTop: 2 }}>
+        <div className="card-body">
+          <ToolReadinessCards />
         </div>
       </Card>
 

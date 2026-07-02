@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { generateMemo, downloadMemoMarkdown } from '@/lib/memo-export';
-import { TOOL_METADATA, findToolByAlias } from '@/lib/tool-metadata';
+import { ANALYSIS_TOOLS, TOOL_METADATA, findToolByAlias } from '@/lib/tool-metadata';
+import { canonicalDisplayName } from '@/lib/importer/metric-aliases';
 
 // Public helper: any component can open the palette by dispatching this event.
 export const PALETTE_EVENT = 'fundalyst:open-palette';
@@ -69,6 +70,15 @@ function fuzzyScore(text: string, q: string): number {
   return score + last * 0.01; // mild preference for earlier completion
 }
 
+function sourceMetricQuery(input: string): string | null {
+  const q = input.trim().toLowerCase();
+  if (!q) return null;
+  for (const prefix of ['source ', 'evidence ', 'metric ']) {
+    if (q.startsWith(prefix)) return q.slice(prefix.length).trim();
+  }
+  return null;
+}
+
 function cycleTheme() {
   if (typeof window === 'undefined') return;
   const cur = document.documentElement.getAttribute('data-theme');
@@ -96,6 +106,7 @@ export default function CommandPalette() {
   const activeDatasetId = useGlobalDataStore((s) => s.activeDatasetId);
   const setActiveDataset = useGlobalDataStore((s) => s.setActiveDataset);
   const clearAllData = useGlobalDataStore((s) => s.clearAllData);
+  const getToolReadiness = useGlobalDataStore((s) => s.getToolReadiness);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -112,6 +123,9 @@ export default function CommandPalette() {
     const openCompanyQuery = normalizedQuery.startsWith('open ')
       ? normalizedQuery.slice(5).trim()
       : '';
+    const metricQuery = sourceMetricQuery(normalizedQuery);
+    const toolReadiness = ANALYSIS_TOOLS.map((tool) => getToolReadiness(tool.id));
+    const missingMetrics = [...new Set(toolReadiness.flatMap((readiness) => readiness.missingMetrics))];
 
     for (const d of datasets) {
       const name = d.companyName || `${d.facts.length} metrics`;
@@ -140,10 +154,16 @@ export default function CommandPalette() {
     }
 
     if (openCompanyQuery) {
-      const match = datasets.find((d) =>
-        (d.companyName || '').toLowerCase().includes(openCompanyQuery) ||
-        d.id.toLowerCase().includes(openCompanyQuery),
-      );
+      const match = datasets
+        .map((d) => {
+          const haystack = `${d.companyName || ''} ${d.id} ${d.sourceType} ${d.periods.join(' ')}`;
+          const directScore = haystack.toLowerCase().includes(openCompanyQuery) ? 0 : Number.POSITIVE_INFINITY;
+          const fuzzy = fuzzyScore(haystack, openCompanyQuery);
+          const score = Math.min(directScore, fuzzy >= 0 ? fuzzy + 1 : Number.POSITIVE_INFINITY);
+          return { dataset: d, score };
+        })
+        .filter(({ score }) => Number.isFinite(score))
+        .sort((a, b) => a.score - b.score)[0]?.dataset;
       if (match) {
         cmds.push({
           id: `cmd-open-${match.id}`,
@@ -158,6 +178,18 @@ export default function CommandPalette() {
           },
         });
       }
+    }
+
+    if (metricQuery) {
+      cmds.push({
+        id: `cmd-source-${metricQuery}`,
+        section: 'Commands',
+        label: `Source ${canonicalDisplayName(metricQuery)}`,
+        keywords: `source evidence metric accepted fact ${metricQuery}`,
+        meta: 'workspace evidence',
+        glyph: 'action',
+        run: () => router.push(`/workspace?metric=${encodeURIComponent(metricQuery)}`),
+      });
     }
 
     for (const t of NAV_TARGETS) {
@@ -189,6 +221,61 @@ export default function CommandPalette() {
       },
     });
     cmds.push({
+      id: 'act-backup',
+      section: 'Actions',
+      label: 'Open workspace backup',
+      keywords: 'backup restore export workspace data json',
+      glyph: 'action',
+      run: () => router.push('/workspace?lens=backup'),
+    });
+    cmds.push({
+      id: 'act-evidence',
+      section: 'Actions',
+      label: 'Open evidence review',
+      keywords: 'evidence source accepted facts assumptions audit',
+      glyph: 'action',
+      run: () => router.push('/workspace?lens=evidence'),
+    });
+    cmds.push({
+      id: 'act-coverage',
+      section: 'Actions',
+      label: 'Open coverage list',
+      keywords: 'coverage saved companies source dataset active',
+      meta: hasData ? `${datasets.length} saved` : 'no data',
+      glyph: 'action',
+      run: () => router.push('/workspace?lens=coverage'),
+    });
+    cmds.push({
+      id: 'act-show-missing',
+      section: 'Actions',
+      label: 'Show missing metrics',
+      keywords: 'show missing needs incomplete data required metrics',
+      meta: hasData ? `${missingMetrics.length} missing` : 'import first',
+      glyph: 'action',
+      run: () => {
+        const firstMissing = missingMetrics[0];
+        router.push(firstMissing ? `/workspace?metric=${encodeURIComponent(firstMissing)}` : '/workspace?lens=evidence');
+      },
+    });
+    cmds.push({
+      id: 'act-compare-saved',
+      section: 'Actions',
+      label: 'Compare saved companies',
+      keywords: 'compare saved coverage peer benchmark companies',
+      meta: hasData ? `${datasets.length} saved` : 'needs companies',
+      glyph: 'action',
+      run: () => router.push('/tools/peer'),
+    });
+    cmds.push({
+      id: 'act-export-dcf',
+      section: 'Actions',
+      label: 'Export DCF',
+      keywords: 'export dcf valuation model download formulas',
+      meta: hasData ? 'open valuation' : 'needs data',
+      glyph: 'action',
+      run: () => router.push('/tools/dcf?export=1'),
+    });
+    cmds.push({
       id: 'act-theme',
       section: 'Actions',
       label: 'Toggle theme (light / dark / auto)',
@@ -215,7 +302,7 @@ export default function CommandPalette() {
       });
     }
     return cmds;
-  }, [datasets, activeDatasetId, setActiveDataset, clearAllData, router, query]);
+  }, [datasets, activeDatasetId, setActiveDataset, clearAllData, getToolReadiness, router, query]);
 
   // Filter + sort by fuzzy score, preserving section grouping order.
   const filtered = useMemo(() => {
@@ -382,7 +469,12 @@ export default function CommandPalette() {
         </div>
 
         <div className="cmdk-list" ref={listRef}>
-          {flat.length === 0 && <div className="cmdk-empty">No matches</div>}
+          {flat.length === 0 && (
+            <div className="cmdk-empty">
+              <div>No matches</div>
+              <div className="cmdk-empty-examples">Try: source revenue, show missing, compare saved, export dcf</div>
+            </div>
+          )}
           {groups.map((g) => (
             <div key={g.section}>
               <div className="cmdk-section">{g.section}</div>

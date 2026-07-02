@@ -2,13 +2,15 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { useImporterStore } from '@/store/importer-store';
-import { ANALYSIS_TOOLS } from '@/lib/tool-metadata';
+import { getCanonicalFactId } from '@/lib/calculation-trace';
 import { SectionTitle, Disclaimer, Card, TrustBadge, DataSourceBadge } from '@/components/ui';
 import type { FundalystDataset, CanonicalFact } from '@/lib/importer/types';
-import { useEnterpriseStore, type EnterpriseRole, type ProjectStatus } from '@/store/enterprise-store';
+import { useEnterpriseStore } from '@/store/enterprise-store';
+import ToolReadinessCards from '@/components/shared/ToolReadinessCards';
 import {
   collectFundalystLocalState,
 } from '@/lib/enterprise-backup';
@@ -55,6 +57,8 @@ type StepId = (typeof steps)[number]['id'];
 const settingsSteps = [
   { id: 'evidence', label: 'Evidence & Assumptions',
     icon: <ShieldCheck size={14} weight="regular" /> },
+  { id: 'coverage', label: 'Coverage',
+    icon: <UsersThree size={14} weight="regular" /> },
   { id: 'backup', label: 'Backup',
     icon: <GearSix size={14} weight="regular" /> },
 ] as const;
@@ -105,6 +109,17 @@ export default function WorkspacePage() {
   const [activeStep, setActiveStep] = useState<StepId>('overview');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeSettingsStep, setActiveSettingsStep] = useState<SettingsStepId | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedFactId = searchParams.get('fact');
+  const selectedMetric = searchParams.get('metric');
+  const selectedLens = searchParams.get('lens') as SettingsStepId | null;
+  const deepLinkedLens = settingsSteps.some((step) => step.id === selectedLens) ? selectedLens : null;
+  const isEvidencePivot = Boolean(selectedFactId || selectedMetric);
+  const hasWorkspaceQuery = Boolean(selectedFactId || selectedMetric || deepLinkedLens);
+  const visibleSettingsOpen = settingsOpen || isEvidencePivot || Boolean(deepLinkedLens);
+  const visibleActiveSettingsStep = isEvidencePivot ? 'evidence' : deepLinkedLens || activeSettingsStep;
+  const visibleActiveStep = visibleActiveSettingsStep ? 'overview' : activeStep;
   const datasets = useGlobalDataStore((s) => s.datasets);
   const activeDatasetId = useGlobalDataStore((s) => s.activeDatasetId);
   const activeDataset = useActiveDataset();
@@ -168,7 +183,7 @@ export default function WorkspacePage() {
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M7 2v8M3 6l4-4 4 4" /><path d="M2 10v2h10v-2" />
             </svg>
-            Upload Reports
+            Import Source
           </Link>
         </div>
       </div>
@@ -182,9 +197,13 @@ export default function WorkspacePage() {
             return (
               <button
                 key={step.id}
-                className={`workspace-step ${activeStep === step.id ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
-                onClick={() => { setActiveStep(step.id); setActiveSettingsStep(null); }}
-                aria-current={activeStep === step.id ? 'step' : undefined}
+                className={`workspace-step ${visibleActiveStep === step.id && !visibleActiveSettingsStep ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
+                onClick={() => {
+                  if (hasWorkspaceQuery) router.replace('/workspace', { scroll: false });
+                  setActiveStep(step.id);
+                  setActiveSettingsStep(null);
+                }}
+                aria-current={visibleActiveStep === step.id && !visibleActiveSettingsStep ? 'step' : undefined}
               >
                 <span className="workspace-step-icon">
                   {isCompleted ? (
@@ -202,25 +221,32 @@ export default function WorkspacePage() {
           <hr className="ws-settings-divider" />
           <button
             type="button"
-            className={`ws-settings-trigger${settingsOpen ? ' open' : ''}`}
-            onClick={() => setSettingsOpen(!settingsOpen)}
-            aria-expanded={settingsOpen}
+            className={`ws-settings-trigger${visibleSettingsOpen ? ' open' : ''}`}
+            onClick={() => {
+              if (hasWorkspaceQuery) router.replace('/workspace', { scroll: false });
+              setSettingsOpen(!settingsOpen);
+            }}
+            aria-expanded={visibleSettingsOpen}
             aria-label="Workspace lenses"
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
               <circle cx="5" cy="5" r="1.5" /><path d="M5 1v1M5 8v1M1.5 5h1M7.5 5h1" />
             </svg>
             <span>Workspace Lenses</span>
-            <svg className={`ws-settings-chevron${settingsOpen ? ' open' : ''}`} width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+            <svg className={`ws-settings-chevron${visibleSettingsOpen ? ' open' : ''}`} width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
               <path d="M2 3l2 2 2-2" />
             </svg>
           </button>
-          {settingsOpen && settingsSteps.map((step) => (
+          {visibleSettingsOpen && settingsSteps.map((step) => (
             <button
               key={step.id}
-              className={`workspace-step ${activeSettingsStep === step.id ? 'active' : ''}`}
-              onClick={() => { setActiveSettingsStep(step.id); setActiveStep('overview'); }}
-              aria-current={activeSettingsStep === step.id ? 'step' : undefined}
+              className={`workspace-step ${visibleActiveSettingsStep === step.id ? 'active' : ''}`}
+              onClick={() => {
+                if (hasWorkspaceQuery) router.replace('/workspace', { scroll: false });
+                setActiveSettingsStep(step.id);
+                setActiveStep('overview');
+              }}
+              aria-current={visibleActiveSettingsStep === step.id ? 'step' : undefined}
             >
               <span className="workspace-step-icon">{step.icon}</span>
               <span className="workspace-step-label">{step.label}</span>
@@ -230,7 +256,7 @@ export default function WorkspacePage() {
 
         {/* ── Main content ── */}
         <main className="workspace-content" role="main">
-          {activeStep === 'overview' && !activeSettingsStep && (
+          {visibleActiveStep === 'overview' && !visibleActiveSettingsStep && (
             <OverviewPanel
               hasData={hasData}
               companyName={companyName}
@@ -241,14 +267,15 @@ export default function WorkspacePage() {
               thesisSaved={thesisSaved}
             />
           )}
-          {activeStep === 'import' && <ImportPanel />}
-          {activeStep === 'data' && <DataPanel datasets={datasets} />}
-          {activeStep === 'filing' && <FilingPanel />}
-          {activeStep === 'dcf' && <DCFPanel />}
-          {activeStep === 'ratios' && <RatiosPanel />}
-          {activeStep === 'thesis' && <ThesisPanel />}
-          {activeSettingsStep === 'evidence' && <EvidencePanel datasets={datasets} totalFacts={totalFacts} />}
-          {activeSettingsStep === 'backup' && <BackupPanel />}
+          {visibleActiveStep === 'import' && <ImportPanel />}
+          {visibleActiveStep === 'data' && <DataPanel datasets={datasets} />}
+          {visibleActiveStep === 'filing' && <FilingPanel />}
+          {visibleActiveStep === 'dcf' && <DCFPanel />}
+          {visibleActiveStep === 'ratios' && <RatiosPanel />}
+          {visibleActiveStep === 'thesis' && <ThesisPanel />}
+          {visibleActiveSettingsStep === 'evidence' && <EvidencePanel datasets={datasets} totalFacts={totalFacts} selectedFactId={selectedFactId} selectedMetric={selectedMetric} />}
+          {visibleActiveSettingsStep === 'coverage' && <CoveragePanel />}
+          {visibleActiveSettingsStep === 'backup' && <BackupPanel />}
         </main>
       </div>
     </div>
@@ -761,12 +788,37 @@ function RatiosPanel() {
 }
 
 // ── Evidence & Assumptions Panel ──
-function EvidencePanel({ datasets, totalFacts }: { datasets: FundalystDataset[]; totalFacts: number }) {
+function EvidencePanel({
+  datasets,
+  totalFacts,
+  selectedFactId,
+  selectedMetric,
+}: {
+  datasets: FundalystDataset[];
+  totalFacts: number;
+  selectedFactId: string | null;
+  selectedMetric: string | null;
+}) {
   const activeDataset = useGlobalDataStore((s) => s.getActiveDataset());
-  const getToolReadiness = useGlobalDataStore((s) => s.getToolReadiness);
   const validations = useGlobalDataStore((s) => s.getValidations());
   const facts = activeDataset?.facts ?? [];
-  const topFacts = facts.slice(0, 12);
+  const selectedFact = activeDataset && selectedFactId
+    ? facts.find((fact) => getCanonicalFactId(fact, activeDataset) === selectedFactId)
+    : undefined;
+  const metricFacts = selectedMetric
+    ? facts.filter((fact) => {
+      const metric = (fact.metric || fact.canonicalMetric || '').toLowerCase();
+      const original = fact.labelOriginal.toLowerCase();
+      const q = selectedMetric.toLowerCase();
+      return metric.includes(q) || original.includes(q);
+    })
+    : [];
+  const previewFacts = facts.slice(0, 12);
+  const displayFacts = metricFacts.length > 0
+    ? metricFacts.slice(0, 12)
+    : selectedFact && !previewFacts.includes(selectedFact)
+    ? [selectedFact, ...previewFacts.slice(0, 11)]
+    : previewFacts;
 
   return (
     <div>
@@ -805,34 +857,25 @@ function EvidencePanel({ datasets, totalFacts }: { datasets: FundalystDataset[];
 
         <div className="workspace-card">
           <div className="workspace-card-header">Tool Readiness</div>
-          <div className="p-4 grid grid-cols-2 gap-3">
-            {ANALYSIS_TOOLS.map((tool) => {
-              const readiness = getToolReadiness(tool.id);
-              return (
-                <Link key={tool.id} href={tool.href} className="workspace-quick-link">
-                  <div className="flex items-center justify-between">
-                    <span>{tool.label}</span>
-                    <span className={`text-2xs ${readiness.ready ? 'text-primary' : 'text-muted'}`}>
-                      {readiness.ready ? 'Ready' : `${readiness.missingMetrics.length} missing`}
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted font-mono mt-1">
-                    {readiness.ready
-                      ? tool.answer
-                      : readiness.missingMetrics.length > 0
-                        ? `Needs: ${readiness.missingMetrics.slice(0, 4).join(', ')}${readiness.missingMetrics.length > 4 ? '...' : ''}`
-                        : tool.description}
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="p-4">
+            <ToolReadinessCards className="grid grid-cols-2 gap-3" />
           </div>
         </div>
 
         <div className="workspace-card">
           <div className="workspace-card-header">Accepted Facts</div>
           <div className="p-4">
-            {topFacts.length === 0 ? (
+            {selectedFactId && !selectedFact && (
+              <div className="text-xs text-tertiary font-mono mb-3">
+                Linked source fact was not found in the active dataset. Switch coverage or re-import the source to inspect it.
+              </div>
+            )}
+            {selectedMetric && metricFacts.length === 0 && (
+              <div className="text-xs text-tertiary font-mono mb-3">
+                No accepted fact matched <strong>{selectedMetric}</strong> in the active dataset.
+              </div>
+            )}
+            {displayFacts.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-title">No accepted facts yet</div>
                 <div className="empty-state-desc">Import a source document and confirm mappings to build the evidence base.</div>
@@ -842,14 +885,18 @@ function EvidencePanel({ datasets, totalFacts }: { datasets: FundalystDataset[];
               <table className="diff-table">
                 <thead><tr><th>Metric</th><th>Period</th><th>Value</th><th>Source</th></tr></thead>
                 <tbody>
-                  {topFacts.map((fact, i) => (
-                    <tr key={`${fact.metric}-${fact.periodLabel}-${i}`}>
+                  {displayFacts.map((fact, i) => {
+                    const factId = activeDataset ? getCanonicalFactId(fact, activeDataset) : '';
+                    const isSelected = factId === selectedFactId;
+                    return (
+                    <tr key={`${fact.metric}-${fact.periodLabel}-${i}`} className={isSelected ? 'evidence-fact-selected' : undefined}>
                       <td>{fact.metric || fact.canonicalMetric || '—'}</td>
                       <td>{fact.periodLabel || '—'}</td>
                       <td>{fact.value ?? '—'}</td>
                       <td>{fact.sourceType || activeDataset?.sourceType || 'imported'}</td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -862,6 +909,80 @@ function EvidencePanel({ datasets, totalFacts }: { datasets: FundalystDataset[];
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Coverage Panel ──
+function CoveragePanel() {
+  const datasets = useGlobalDataStore((s) => s.datasets);
+  const activeDatasetId = useGlobalDataStore((s) => s.activeDatasetId);
+  const setActiveDataset = useGlobalDataStore((s) => s.setActiveDataset);
+  const removeDataset = useGlobalDataStore((s) => s.removeDataset);
+
+  return (
+    <div>
+      <SectionTitle>Coverage</SectionTitle>
+      <div className="flex flex-col gap-4 mt-4">
+        <div className="workspace-card">
+          <div className="workspace-card-header">Saved Companies</div>
+          <div className="p-4">
+            {datasets.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-title">No coverage yet</div>
+                <div className="empty-state-desc">Import a company source to start a local coverage list.</div>
+                <Link href="/import" className="empty-state-action">Import source →</Link>
+              </div>
+            ) : (
+              <div className="coverage-list">
+                {datasets.map((dataset) => {
+                  const isActive = dataset.id === activeDatasetId;
+                  const periods = dataset.periods?.length || 0;
+
+                  return (
+                    <div key={dataset.id} className={`coverage-row${isActive ? ' active' : ''}`}>
+                      <div className="coverage-row-main">
+                        <div className="coverage-name">{dataset.companyName || 'Unnamed company'}</div>
+                        <div className="coverage-meta">
+                          {dataset.sourceType} · {periods} period{periods !== 1 ? 's' : ''} · {dataset.facts.length} facts
+                        </div>
+                      </div>
+                      <div className="coverage-actions">
+                        <button
+                          type="button"
+                          className={isActive ? 'btn-primary btn-sm' : 'btn-ghost btn-sm'}
+                          onClick={() => setActiveDataset(dataset.id)}
+                        >
+                          {isActive ? 'Active' : 'Make active'}
+                        </button>
+                        <Link href="/workspace?metric=revenue" className="btn-ghost btn-sm">
+                          Evidence
+                        </Link>
+                        <button
+                          type="button"
+                          className="btn-ghost btn-sm"
+                          onClick={() => removeDataset(dataset.id)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="workspace-card">
+          <div className="workspace-card-header">Coverage Actions</div>
+          <div className="p-4 flex gap-2 flex-wrap">
+            <Link href="/import" className="btn-primary btn-sm">Import another company</Link>
+            <Link href="/tools/peer" className="btn-ghost btn-sm">Compare saved companies</Link>
+            <Link href="/workspace?metric=revenue" className="btn-ghost btn-sm">Source revenue</Link>
           </div>
         </div>
       </div>
@@ -927,192 +1048,6 @@ function BackupPanel() {
             <input ref={importInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleImportFile} />
           </div>
           {importMsg && <div className="text-xs text-primary font-mono">{importMsg}</div>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Governance Panel ──
-function GovernancePanel() {
-  const projects = useEnterpriseStore((s) => s.projects);
-  const activeProjectId = useEnterpriseStore((s) => s.activeProjectId);
-  const members = useEnterpriseStore((s) => s.members);
-  const updateProject = useEnterpriseStore((s) => s.updateProject);
-  const updateMemberRole = useEnterpriseStore((s) => s.updateMemberRole);
-  const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
-
-  return (
-    <div>
-      <SectionTitle>Governance</SectionTitle>
-      <div className="flex flex-col gap-4 mt-4">
-        <div className="workspace-card" style={{ borderColor: 'var(--caution)', marginBottom: 8 }}>
-          <div className="workspace-card-header" style={{ color: 'var(--caution)' }}>Local Simulation Mode</div>
-          <div className="p-4 text-xs text-tertiary leading-normal">
-            All governance controls, roles, and audit features shown here are LOCAL SIMULATIONS.
-            They are NOT enforced by any server. Data is stored in unencrypted browser localStorage
-            and can be cleared by the user at any time. Production enforcement requires a backend
-            with authentication, permission checks, encrypted storage, and immutable audit retention.
-          </div>
-        </div>
-        <div className="workspace-card">
-          <div className="workspace-card-header">Project Controls — local simulation</div>
-          <div className="p-4 grid grid-cols-3 gap-4">
-            <div>
-              <div className="ws-metric-label">Approval Gate</div>
-              <label className="flex items-center gap-2 text-sm text-tertiary mt-2">
-                <input type="checkbox" checked={activeProject?.approvalRequired ?? true} onChange={(e) => activeProject && updateProject(activeProject.id, { approvalRequired: e.target.checked })} />
-                Require review before final thesis
-              </label>
-            </div>
-            <div>
-              <div className="ws-metric-label">Retention Policy</div>
-              <input className="num-input" value={activeProject?.retentionPolicy || ''} onChange={(e) => activeProject && updateProject(activeProject.id, { retentionPolicy: e.target.value })} aria-label="Retention policy" />
-            </div>
-            <div>
-              <div className="ws-metric-label">Project Status</div>
-              <select className="num-input" value={activeProject?.status || 'Active'} onChange={(e) => activeProject && updateProject(activeProject.id, { status: e.target.value as ProjectStatus })}>
-                {(['Active', 'Review', 'Approved', 'Archived'] as ProjectStatus[]).map((s) => <option key={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="workspace-card">
-          <div className="workspace-card-header">Role Simulation — local simulation</div>
-          <div className="p-4">
-            <table className="diff-table">
-              <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Role</th></tr></thead>
-              <tbody>
-                {members.map((m) => (
-                  <tr key={m.id}>
-                    <td>{m.name}</td>
-                    <td>{m.email}</td>
-                    <td>{m.status}</td>
-                    <td>
-                      <select className="num-input" value={m.role} onChange={(e) => updateMemberRole(m.id, e.target.value as EnterpriseRole)}>
-                        {(['Owner', 'Admin', 'Analyst', 'Reviewer', 'Viewer'] as EnterpriseRole[]).map((role) => <option key={role}>{role}</option>)}
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="workspace-card">
-          <div className="workspace-card-header">Backend Boundary</div>
-          <div className="p-4 text-xs text-tertiary leading-normal">
-            These controls are LOCAL-ONLY and NOT enforced. They simulate what a production server would enforce. All data is stored in unencrypted browser localStorage.
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Audit Panel ──
-function AuditPanel({ datasets, totalFacts }: { datasets: FundalystDataset[]; totalFacts: number }) {
-  const auditEvents = useEnterpriseStore((s) => s.auditEvents);
-  const versions = useEnterpriseStore((s) => s.versions);
-  const clearAuditEvents = useEnterpriseStore((s) => s.clearAuditEvents);
-  const createVersion = useEnterpriseStore((s) => s.createVersion);
-
-  function handleSnapshot() {
-    createVersion({
-      label: `Audit snapshot ${new Date().toLocaleDateString('en-IN')}`,
-      summary: `${datasets.length} data source(s), ${totalFacts} fact(s), ${auditEvents.length} audit event(s)`,
-      datasetCount: datasets.length,
-      factCount: totalFacts,
-      payload: collectFundalystLocalState(),
-    });
-  }
-
-  return (
-    <div>
-      <SectionTitle>Audit Trail</SectionTitle>
-      <div className="flex flex-col gap-4 mt-4">
-        <div className="workspace-card">
-          <div className="workspace-card-header">Version History</div>
-          <div className="p-4 flex flex-col gap-3">
-            <div className="flex gap-2 flex-wrap">
-              <button type="button" className="btn-primary btn-sm" onClick={handleSnapshot}>Create audit snapshot</button>
-              <button type="button" className="btn-ghost btn-sm" onClick={clearAuditEvents}>Clear local audit log</button>
-            </div>
-            {versions.length === 0 ? (
-              <div className="text-xs text-muted">No snapshots yet.</div>
-            ) : (
-              <table className="diff-table">
-                <thead><tr><th>Version</th><th>Created</th><th>Data</th><th>Summary</th></tr></thead>
-                <tbody>
-                  {versions.slice(0, 8).map((v) => (
-                    <tr key={v.id}>
-                      <td>{v.label}</td>
-                      <td>{new Date(v.createdAt).toLocaleString('en-IN')}</td>
-                      <td>{v.datasetCount} source(s), {v.factCount} fact(s)</td>
-                      <td>{v.summary}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-
-        <div className="workspace-card">
-          <div className="workspace-card-header">Recent Events</div>
-          <div className="p-4">
-            <table className="diff-table">
-              <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Severity</th></tr></thead>
-              <tbody>
-                {auditEvents.slice(0, 20).map((event) => (
-                  <tr key={event.id}>
-                    <td>{new Date(event.timestamp).toLocaleString('en-IN')}</td>
-                    <td>{event.actor}</td>
-                    <td>{event.action}</td>
-                    <td>{event.target}</td>
-                    <td>{event.severity}</td>
-                  </tr>
-                ))}
-                {auditEvents.length === 0 && <tr><td colSpan={5}>No local audit events recorded.</td></tr>}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Integrations Panel ──
-function IntegrationsPanel() {
-  const integrations = useEnterpriseStore((s) => s.integrations);
-  return (
-    <div>
-      <SectionTitle>Integrations</SectionTitle>
-      <div className="flex flex-col gap-4 mt-4">
-        <div className="workspace-card">
-          <div className="workspace-card-header">Backend-Ready Connectors</div>
-          <div className="p-4 grid grid-cols-2 gap-3">
-            {integrations.map((integration) => (
-              <div key={integration.id} className="workspace-quick-link">
-                <div className="flex items-center justify-between">
-                  <span>{integration.label}</span>
-                  <span className="text-2xs text-muted">{integration.status.replace(/_/g, ' ')}</span>
-                </div>
-                <div className="text-xs text-muted font-mono mt-1">{integration.description}</div>
-                {integration.requiresBackend && <div className="text-2xs text-tertiary mt-2">Requires backend API, credential vault, and scheduled jobs.</div>}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="workspace-card">
-          <div className="workspace-card-header">Implementation Contract</div>
-          <div className="p-4 text-xs text-tertiary leading-normal">
-            The UI now models connector status, identity readiness, audit export, and data-ingestion surfaces. A backend can replace the local store with organization-scoped APIs without changing the analyst workflow.
-          </div>
         </div>
       </div>
     </div>

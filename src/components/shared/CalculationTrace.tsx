@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import type { CalculationTrace } from '@/lib/calculation-trace';
 
 function formatConfidence(confidence?: number): string {
@@ -42,26 +43,45 @@ export default function CalculationTracePanel({ traces }: { traces: CalculationT
                 <div className="calc-trace-value">{trace.value}</div>
               </div>
               <div className="calc-trace-source-list" role="list">
-                {trace.sources.map((source, index) => (
-                  <div key={`${trace.label}-${source.label}-${index}`} className="calc-trace-source" role="listitem">
-                    <div className="calc-trace-source-main">
-                      <span className="calc-trace-source-label" aria-label={`Source: ${source.label}`}>{source.label}</span>
-                      <span className="calc-trace-source-value" aria-label={`Value: ${source.value}`}>{source.value}</span>
-                      <span className={`confidence-badge ${source.confidence !== undefined && source.confidence >= 0.9 ? 'good' : source.confidence !== undefined && source.confidence < 0.7 ? 'warn' : ''}`}>
-                        {formatConfidence(source.confidence)}
-                      </span>
+                {trace.sources.map((source, index) => {
+                  const content = (
+                    <>
+                      <div className="calc-trace-source-main">
+                        <span className="calc-trace-source-label" aria-label={`Source: ${source.label}`}>{source.label}</span>
+                        <span className="calc-trace-source-value" aria-label={`Value: ${source.value}`}>{source.value}</span>
+                        <span className={`confidence-badge ${source.confidence !== undefined && source.confidence >= 0.9 ? 'good' : source.confidence !== undefined && source.confidence < 0.7 ? 'warn' : ''}`}>
+                          {formatConfidence(source.confidence)}
+                        </span>
+                      </div>
+                      <div className="calc-trace-meta">
+                        <span>{source.source}</span>
+                        {source.period && <span>{source.period}</span>}
+                        {source.originalLabel && <span>Original: {source.originalLabel}</span>}
+                        {source.rawValue && <span>Raw: {source.rawValue}</span>}
+                        {source.location && <span>{source.location}</span>}
+                        {source.capturedAt && <span>{formatDate(source.capturedAt)}</span>}
+                        {source.overridden && <span>Edited after import</span>}
+                      </div>
+                    </>
+                  );
+                  const className = `calc-trace-source${source.factId ? ' is-clickable' : ''}`;
+
+                  return source.factId ? (
+                    <Link
+                      key={`${trace.label}-${source.label}-${index}`}
+                      href={`/workspace?fact=${encodeURIComponent(source.factId)}`}
+                      className={className}
+                      role="listitem"
+                      aria-label={`Open evidence for ${source.metric || source.label}`}
+                    >
+                      {content}
+                    </Link>
+                  ) : (
+                    <div key={`${trace.label}-${source.label}-${index}`} className={className} role="listitem">
+                      {content}
                     </div>
-                    <div className="calc-trace-meta">
-                      <span>{source.source}</span>
-                      {source.period && <span>{source.period}</span>}
-                      {source.originalLabel && <span>Original: {source.originalLabel}</span>}
-                      {source.rawValue && <span>Raw: {source.rawValue}</span>}
-                      {source.location && <span>{source.location}</span>}
-                      {source.capturedAt && <span>{formatDate(source.capturedAt)}</span>}
-                      {source.overridden && <span>Edited after import</span>}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}

@@ -3,9 +3,11 @@ import type { CanonicalFact, FundalystDataset } from '@/lib/importer/types';
 import type { ProvenanceSource, ProvenanceKind } from '@/types/financial';
 
 export interface CalculationSource {
+  factId?: string;
   label: string;
   value: string;
   source: string;
+  metric?: string;
   period?: string;
   originalLabel?: string;
   rawValue?: string;
@@ -20,6 +22,17 @@ export interface CalculationTrace {
   value: string;
   formula: string;
   sources: CalculationSource[];
+}
+
+export function getCanonicalFactId(fact: CanonicalFact, dataset?: FundalystDataset | null): string {
+  return [
+    dataset?.id || fact.company || '',
+    fact.metric || fact.canonicalMetric || '',
+    fact.periodLabel || '',
+    fact.sourceTableId || '',
+    fact.sourceRow,
+    fact.sourceColumn,
+  ].join('::');
 }
 
 function normalizeLabel(label: string): string {
@@ -81,9 +94,11 @@ export function makeTraceSource(
 
   if (fact && valuesMatch(row, fact)) {
     return {
+      factId: getCanonicalFactId(fact, dataset),
       label,
       value: displayValue,
       source: `${dataset?.companyName || 'Imported dataset'} (${fact.sourceType})`,
+      metric: fact.metric || fact.canonicalMetric,
       period: fact.periodLabel,
       originalLabel: fact.labelOriginal,
       rawValue: fact.rawValue !== undefined ? String(fact.rawValue) : undefined,
@@ -97,9 +112,11 @@ export function makeTraceSource(
   }
 
   return {
+    factId: fact ? getCanonicalFactId(fact, dataset) : undefined,
     label,
     value: displayValue,
     source: fact ? 'Manual override' : 'Manual input',
+    metric: fact?.metric || fact?.canonicalMetric,
     period: fact?.periodLabel,
     originalLabel: fact?.labelOriginal,
     confidence: fact?.confidence,
