@@ -1,0 +1,269 @@
+// Fundalyst — Prisma Schema (Phase 1)
+//
+// Convention:
+//   - Model names are PascalCase, singular.
+//   - Fields use camelCase.
+//   - Relations are explicit (no implicit many-to-many).
+//   - Every model has id (cuid), createdAt, updatedAt.
+//   - Soft-delete via deletedAt where applicable.
+//   - AuditLog is append-only — insert-only, never updated.
+//
+// User ──┐
+//        ├── Workspace ──┐
+//        │               ├── Document ──┐
+//        │               │              ├── ExtractionJob
+//        │               │              └── FinancialStatement
+//        │               ├── Spreadsheet
+//        │               ├── DCFModel ── Scenario
+//        │               └── AuditLog
+//        └── Session / Account (Better Auth)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ──────────────────────────────────────────────
+// Better Auth — required models (table names match Better Auth defaults)
+// ──────────────────────────────────────────────
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  emailVerified DateTime?
+  name        String?
+  image       String?
+
+  // Better Auth fields
+  role        String   @default("user")
+  banned      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  accounts    Account[]
+  sessions    Session[]
+  workspaces  Workspace[]
+
+  @@map("user")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  accountId         String
+  providerId        String
+  accessToken       String?
+  refreshToken      String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope             String?
+  idToken           String?
+  password          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("account")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  expiresAt    DateTime
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+// ──────────────────────────────────────────────
+// Application models
+// ──────────────────────────────────────────────
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  ownerId     String
+
+  // Soft-delete support
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  owner       User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  documents   Document[]
+  spreadsheets Spreadsheet[]
+  dcfModels   DCFModel[]
+  auditLogs   AuditLog[]
+
+  @@map("workspace")
+}
+
+model Document {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  originalName  String
+  mimeType      String
+  sizeBytes     Int
+  storageKey    String?    // Object storage key (R2/S3)
+
+  // Processing metadata
+  status        String   @default("uploaded") // uploaded | processing | ready | failed
+  errorMessage  String?
+
+  // Soft-delete support
+  deletedAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  workspace            Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  extractionJobs       ExtractionJob[]
+  financialStatements  FinancialStatement[]
+
+  @@map("document")
+}
+
+model ExtractionJob {
+  id          String   @id @default(cuid())
+  documentId  String
+  type        String   @default("ocr") // ocr | pdf_text | table_extraction
+
+  // BullMQ job tracking
+  queueJobId  String?  // BullMQ job ID for status polling
+  status      String   @default("queued") // queued | running | succeeded | failed
+  errorMessage String?
+
+  // Result — JSON blob of extracted data (schema-versioned)
+  result      Json?
+  resultSchemaVersion Int @default(1)
+
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@map("extraction_job")
+}
+
+model FinancialStatement {
+  id          String   @id @default(cuid())
+  documentId  String
+  type        String   // income_statement | balance_sheet | cash_flow
+
+  // Parsed statement data (JSON: periods × metrics grid)
+  data        Json
+  schemaVersion Int @default(1)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@map("financial_statement")
+}
+
+model Spreadsheet {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?
+
+  // Canonical model snapshot (FundalystDataset shape)
+  data        Json
+  schemaVersion Int @default(1)
+
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("spreadsheet")
+}
+
+model DCFModel {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?
+
+  // DCF parameters and results
+  parameters  Json     // growth rates, WACC, terminal value assumptions
+  results     Json?    // computed DCF results (NPV, sensitivity tables)
+  schemaVersion Int @default(1)
+
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  workspace  Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  scenarios  Scenario[]
+
+  @@map("dcf_model")
+}
+
+model Scenario {
+  id         String   @id @default(cuid())
+  dcfModelId String
+  name       String   // bear | base | bull | custom
+  label      String?
+
+  // Scenario deltas relative to base parameters
+  parameters Json
+  results    Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  dcfModel DCFModel @relation(fields: [dcfModelId], references: [id], onDelete: Cascade)
+
+  @@map("scenario")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  workspaceId String
+  actorId     String?  // userId, nullable for system events
+  action      String   // e.g. document_uploaded, fact_edited, dcf_computed
+  entityType  String?  // e.g. document, spreadsheet, dcf_model
+  entityId    String?
+  metadata    Json?    // free-form event payload
+  createdAt   DateTime @default(now())
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@map("audit_log")
+}

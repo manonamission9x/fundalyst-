@@ -1,17 +1,23 @@
 # Fundalyst — Database (Persistence)
 
-**There is no database server.** Persistence is entirely via the browser's `localStorage` API.
+Fundalyst uses a **dual persistence** model:
 
-## Schema
+1. **Local** (client-side) — `localStorage` for the core financial analysis.
+   All imported datasets, facts, and tool state persist locally.
+2. **Server** (PostgreSQL via Prisma) — for auth, workspaces, documents,
+   and background job state. Optional — the app works without it.
 
-All state is serialised as JSON strings under `localStorage` keys prefixed with `fundalyst-`.
+## Current local schema
+
+All client-side state is serialised as JSON strings under `localStorage`
+keys prefixed with `fundalyst-`.
 
 | localStorage key | Store | Contents |
 |---|---|---|
-| `fundalyst-global-data` | `global-data-store` | `datasets[]` (canonical `FundalystDataset`), `activeDatasetId` |
-| `fundalyst-importer` | `importer-store` | Last import state, `lastDataset` |
+| `fundalyst-global-data` | `global-data-store` | `datasets[]`, `activeDatasetId` |
+| `fundalyst-importer` | `importer-store` | Last import state |
 | `fundalyst-enterprise` | `enterprise-store` | Projects, audit events, backup metadata |
-| `fundalyst-dcf` | `useDCFStore` | DCF scenario config (growth/WACC/terminal deltas) — via `partialize`, summary/sens are session-only |
+| `fundalyst-dcf` | `useDCFStore` | DCF scenario config |
 | `fundalyst-filing` | `filing-store` | Filing comparison results |
 | `fundalyst-wc` | `wc-store` | Working capital results |
 | `fundalyst-ratios` | `ratios-store` | Ratio analysis results |
@@ -20,7 +26,70 @@ All state is serialised as JSON strings under `localStorage` keys prefixed with 
 | `fundalyst-yoy` | `yoy-store` | YoY growth state |
 | `fundalyst-thesis` | thesis (ad-hoc) | Saved investment thesis text |
 
-## Data model (canonical)
+## Server schema (PostgreSQL)
+
+The server database is defined in `prisma/schema.prisma`.
+Generate the client with `npx prisma generate`.
+
+### Models
+
+```
+User ── Workspace ──┐
+                    ├── Document ──┐
+                    │              ├── ExtractionJob
+                    │              └── FinancialStatement
+                    ├── Spreadsheet
+                    ├── DCFModel ── Scenario
+                    └── AuditLog
+```
+
+Plus Better Auth models: `Account`, `Session`, `Verification`.
+
+### Key design decisions
+
+- **Soft-delete**: `Workspace`, `Document`, `Spreadsheet`, and `DCFModel`
+  have a nullable `deletedAt` field. The default Prisma service layer
+  automatically filters out soft-deleted records.
+- **Append-only audit**: `AuditLog` has no `updatedAt` — records are never
+  updated after creation.
+- **JSON columns**: `FinancialStatement.data`, `Spreadsheet.data`,
+  `DCFModel.parameters/results`, `Scenario.parameters/results` use
+  PostgreSQL JSONB for flexible schema evolution. Each has a `schemaVersion`
+  integer for migration support.
+- **Cascade deletes**: Deleting a `Workspace` cascades to all children.
+  Deleting a `User` cascades to their workspaces.
+
+## Read/write pattern
+
+### Client-side (local-first)
+- **Read:** Components use `useModelData(extractor)` or store selectors.
+- **Write:** Always through the store write API (`writeCell`, `applyEdits`).
+- **Notify:** Every write calls `notifyModelUpdated()` (debounced ~80ms).
+
+### Server-side (when backend is running)
+- **Read:** Route handlers call `services/prisma.ts` or `modules/*/service.ts`
+  helpers (never `prisma` directly outside the service layer).
+- **Write:** Same service layer, which enforces ownership scoping and
+  soft-delete filtering.
+- **Auth:** All server writes require a valid session via Better Auth.
+
+## Running migrations
+
+```bash
+# Create initial migration
+npx prisma migrate dev --name init
+
+# After schema changes
+npx prisma migrate dev --name <description>
+
+# Apply in production
+npx prisma migrate deploy
+
+# Generate Prisma client (after pulling schema changes)
+npx prisma generate
+```
+
+## Data model (canonical — local)
 
 The core data model is `FundalystDataset` (defined in `src/lib/importer/types.ts`):
 
@@ -40,39 +109,20 @@ interface FundalystDataset {
 }
 ```
 
-Facts are the atomic unit: one `CanonicalFact` = one metric × one period × one value with full provenance (confidence, source row/column, statement type, userOverridden flag).
-
-## Read/write pattern
-
-- **Read:** Components use `useModelData(extractor)` or `useGlobalDataStore(s => ...)` selectors.
-- **Write:** Always through the store's write API (`writeCell`, `applyEdits`, etc.) — never write to localStorage directly.
-- **Notify:** Every write calls `notifyModelUpdated()` (debounced ~80ms) so all subscribers re-extract.
+Facts are the atomic unit: one `CanonicalFact` = one metric × one period
+× one value with full provenance (confidence, source row/column,
+statement type, userOverridden flag).
 
 ## Backup and restore
 
-Export: collects every `fundalyst-*` key from localStorage into a single JSON file (`fundalyst-workspace-<date>.json`).
-
-Import: reads a workspace file and writes matching keys back to localStorage, followed by a page reload.
-
-See `src/app/workspace/page.tsx` `handleExport()` / `handleImportFile()`.
-
-## Migration
-
-Zustand's `persist` middleware handles this via two separate options: `partialize` (choose which fields persist) and `merge` (reconcile persisted state with the current shape on load). The global-data store's `merge` validates persisted datasets and picks a valid `activeDatasetId`:
-
-```typescript
-merge: (persisted, current) => {
-  // Validates persisted datasets, picks the first valid activeDatasetId
-  return { ...current, datasets, activeDatasetId };
-}
-```
+The workspace export/import feature (in the Workspace page) collects every
+`fundalyst-*` localStorage key into a single JSON file. This operates
+entirely client-side — no server involvement.
 
 ## Privacy promise
 
-- No data ever leaves `localStorage`.
-- No network call carries any persisted state.
-- The workspace export file is downloaded directly — never sent anywhere.
-
-## Known risk
-
-The `xlsx` library (used for Excel import) has a high-severity advisory with no available fix. Mitigations: it runs only on user-uploaded files, not on remote data. See `docs/xlsx-risk-plan.md` for the full plan. Do **not** run `npm audit fix --force`.
+- Imported financial data stays in `localStorage` by default.
+- Server persistence is explicitly opt-in (user creates an account,
+  enables cloud sync, or uses server-side document processing).
+- The workspace export file is a client-side download — never sent
+  anywhere unless the user explicitly uploads it.

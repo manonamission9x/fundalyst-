@@ -3,7 +3,7 @@
 **The single status doc — current snapshot + rolling changelog.** (Formerly split into
 `CURRENT_STATUS.md`; merged here 2026-07-02. Update *this* file; there is no separate status doc.)
 
-Last updated: 2026-07-02
+Last updated: 2026-07-02 (backend Phase 1 infrastructure — Hermes)
 Repo: `C:\Users\kingo\Desktop\fundalyst-next` · GitHub: `https://github.com/manonamission9x/fundalyst-` · Branch: `main`
 Latest code commit: `3e1d52f` — Returning-user launchpad redesign (Mission Control). Pushed to `origin/main`.
 
@@ -68,6 +68,8 @@ Cloud auth / org tenancy / server RBAC · multi-user collaboration · retained a
 > what `tsc`/`git` read, so no compile result from it is trustworthy (it once produced fake
 > "13 files corrupted" + `tsc` failures that were pure mount artifacts). Recent edits were authored
 > and reviewed but **must be compiled on a real Windows checkout before shipping.** Do not assume green.
+> **Canonical rule: `AI_EXECUTION_RULES.md`** — treat repo contents (editor view) as the source of
+> truth over sandbox compiler output, and never rewrite working code to satisfy phantom syntax errors.
 
 ```bash
 npm.cmd exec tsc -- --noEmit   # run locally — must be 0 errors
@@ -81,6 +83,58 @@ Known lint warnings (pre-existing): `import/page.tsx` + `PdfViewer.tsx` `next/no
 ---
 
 ## Changelog (newest first)
+
+### 2026-07-02 — Ticket batch: T1/T2/T5/T6/T9/T12/T14/T15 done; T7/T16 partial (Claude)
+
+Worked the open Codex queue one by one. **All edits authored + reviewed via the file tools but NOT compiled** — the agent sandbox's bash mount still reads many files as NUL-corrupted (a fresh `tsc` here reported fake "Unterminated string literal"/"Invalid character" across `filing`, `about`, `layout`, `page`, `import` etc., exactly the documented artifact). **Run `npm.cmd install && npm.cmd exec tsc -- --noEmit && npm.cmd run lint && npm.cmd run build` on the Windows checkout before shipping.**
+
+- **T1 — Command language v1** (`CommandPalette.tsx`): verb + optional `<company>` arg (`ratios reliance` switches `activeDatasetId` then routes; resolved company shown; unmatched arg shown as "no match", never fires ambiguous). Special verbs `memo`/`thesis`/`evidence`/`theme`/`clear`/`help`. New `matchDataset()`.
+- **T2 — Keyboard**: added `e` = export memo (guarded off-input); refreshed `?` cheat-sheet + `g`-toast (`g t`/`g p`/`e`).
+- **T5 — Inline provenance dot**: new `ProvenanceDot` (`ui/index.tsx`) + `.prov-dot-*` tokens; applied to `CalculationTrace` source values.
+- **T6 — Analyst-arc order**: canonical Filing→Trends→Growth→Ratios→Cash→DCF→Peers drives `TOOL_METADATA` (→ palette), Nav Valuation group, workspace deep-dive, home cards. New `ANALYST_ARC` + entity-aware `ArcNextLinks` replaced all 7 static `NextLinks`.
+- **T9 — Cross-linking / entity pivot**: peer name → switch active dataset on match; growth metric → `/research/trends?metric=` (trends reads `?metric`, focus note + row highlight + scroll); trace→source jump already present.
+- **T12 — Company switcher**: Nav badge → dropdown switcher over `datasets[]` (filter >5, switch, Add/Coverage/Compare). New `.nav-switcher*` styles.
+- **T14 — Grounded AI (local/offline)**: new `src/lib/grounded-ai.ts` (`explainTrace`, `draftThesisFromEvidence`) — deterministic, no network, privacy-safe. Opt-in "Explain" on every trace panel (labeled, cited); "Draft from evidence" in `ThesisPanel` pre-fills editable notes (never auto-saved).
+- **T15 — Excel live formulas**: `buildDCFWorkbook`/`downloadDCFExcel` in `memo-export.ts` (SheetJS formula cells mirroring `computeDCF`; cached values match app). Button on DCF results + palette `?export=1`.
+- **T7 — Cleanup (partial)**: `/debug-import` unlinked (confirmed); `.home-card*`/`.home-grid` already gone; `PdfViewer` canvas backdrop reads `--bg-elevated` via `getComputedStyle`; removed duplicated ≤420/≤820/≤768px mobile `@media` clusters (byte-identical → no visual change). **Remaining:** inline-style sprawl (`import`/`ui`/`workspace`), ≤640px duplicated tail.
+- **T16 — Command v2 (partial)**: added parsed-interpretation `↵ <action>` confirmation line to the palette. **Deferred:** persistent always-visible bar + inline mini-results (overlaps T17; needs visual verification).
+- **T19 — Review gate**: not started (large import-review rework; unsafe without compile/Playwright).
+
+### 2026-07-02 — Backend Phase 1 infrastructure (Hermes)
+
+**Backend foundation established.** PostgreSQL, Prisma 7, Better Auth, BullMQ + Valkey, Docker Compose, domain-based project structure, and comprehensive documentation.
+
+- **Docker Compose** (`docker-compose.yml`): PostgreSQL 17 + PostGIS (port 5432) + Valkey 8 (port 6379) with persistent volumes and health checks. Start with `docker compose up -d`.
+- **Prisma schema** (`prisma/schema.prisma`): 10 models covering the full domain — `User`, `Account`, `Session`, `Verification` (Better Auth), `Workspace`, `Document`, `ExtractionJob`, `FinancialStatement`, `Spreadsheet`, `DCFModel`, `Scenario`, `AuditLog`. JSONB for flexible data. Soft-delete on workspace/document/spreadsheet/DCFModel. Append-only audit log.
+- **Better Auth** (`src/lib/auth.ts` + `src/app/api/auth/[...all]/route.ts`): email/password auth with session management mounted at `/api/auth/*`. Prisma adapter for PostgreSQL persistence. Secret/URL from validated env.
+- **BullMQ + Valkey** (`src/lib/queue.ts`): Three queue definitions (`document`, `analysis`, `maintenance`) with exponential backoff, retention policies, and graceful shutdown. IORedis connection shared across all queues/workers.
+- **Example job/worker** (`src/jobs/example.ts`, `src/workers/example.worker.ts`): Smoke test queue verifying the full pipeline — enqueue via `POST /api/queue/example`, check status via `GET /api/queue/example`.
+- **Domain-based structure** (`src/modules/{users,workspaces,uploads,ocr,extraction,normalization,spreadsheet,valuation,exports}/service.ts`): Business logic organized by domain, not by route. Route handlers call module services.
+- **Service layer** (`src/services/prisma.ts`): Prisma query helpers with soft-delete filtering, ownership scoping, and audit logging. Thin wrappers that enforce conventions.
+- **Worker lifecycle** (`src/lib/workers.ts` + `src/instrumentation.ts`): Workers start alongside Next.js in development; separate processes in production.
+- **Documentation**: `BACKEND.md` rewritten (architecture, layer overview, quick start). `DATABASE.md` updated (dual persistence, server schema, migrations). `docs/backend.md` created (deep reference: stack, architecture diagram, folder conventions, future considerations). `AGENTS.md` doc map updated for backend sections.
+- **Auth/queue health endpoints**: `GET /api/health` → capability reporting; `GET /api/queue/example` → queue status; `POST /api/queue/example` → enqueue test job.
+
+**What exists but needs setup:**
+- Run `npx prisma generate && npx prisma migrate dev --name init` after Docker is up.
+- Set `BETTER_AUTH_SECRET` in `.env.local` (generate with `openssl rand -base64 32`).
+
+### 2026-07-02 — Environment config system + first-class mobile pass (Claude)
+
+**Environment configuration (new subsystem).** Centralised, type-safe env so secrets are never hardcoded/committed and config is validated once. Full guide: `docs/environment.md`.
+- `src/lib/env.ts` — the **only** file allowed to read `process.env`. Zod-validated, split `server` (secrets) / `client` (`NEXT_PUBLIC_*`) schemas, one typed `env` export, a Proxy guard that throws if a server-only var is read in the browser, and a `requireEnv()` fail-fast accessor. All server vars are **optional today** (client-only app boots with an empty env); flip a var to required in the schema when the backend actually lands.
+- `src/instrumentation.ts` — imports the env module so validation runs once at server startup.
+- `.env.example` (committed, **placeholders only**) + `.env.local` (gitignored, real secrets). `.gitignore` bug fixed: `.env*` was also ignoring the template — now ignores real files and keeps `!.env.example`.
+- ESLint `no-restricted-properties` blocks `process.env` outside the env module (+ `instrumentation`/config). `zod` pinned in `package.json`. Audit found **zero** prior `process.env` usage and **zero** hardcoded secrets — nothing to migrate.
+- **Convention:** new service → add to `.env.example` → add to schema in `env.ts` → export via `env` → document in `docs/environment.md` → never read `process.env` elsewhere.
+
+**Mobile pass (treat phone as a first-class platform; desktop untouched).**
+- **Bottom tab bar** — new `src/components/layout/MobileTabBar.tsx` (Home / Research / Tools / Import / Workspace). Thumb-reachable, shown ≤640px only, safe-area aware, `z-index:150` so it tucks under the nav drawer (200) and command palette (300). Surfaces destinations that were previously buried behind the hamburger. The drawer still holds the full section list.
+- **Viewport fix** — added `export const viewport` in `layout.tsx` (`viewport-fit=cover` + themeColor). Without it `env(safe-area-inset-*)` resolved to **0**, so all existing safe-area CSS was inert on notched phones.
+- **Mobile search** — restored command-palette access via a "Search & commands" row in the drawer (`.nav-cmdk-trigger` is hidden ≤640px with no keyboard alternative on touch).
+- **Table/spreadsheet polish** — pinned the spreadsheet "Line Item" column (`.spreadsheet-corner`/`.spreadsheet-metric-cell`) and `.stmt-table` first column while values scroll; added pinned-column edge shadows on diff/sens/stmt; lifted `#toast` above the tab bar. (diff/sens already had sticky col 1 + horizontal scroll + scroll-fade.)
+- **Left for other lanes:** pre-existing **duplicate mobile media blocks** in `globals.css` (T7 cleanup); `WorkspaceGrid` (virtualized) uses its own classes, so mobile column-pinning isn't applied there yet.
+- ⚠️ **Not compiled in the sandbox** (mount unreliable, as noted below). Run `npm.cmd install && npm.cmd run build` on a real checkout — `npm install` is required because `zod` was added to `package.json`.
 
 ### 2026-07-02 — Data-flow follow-up (Claude): integration completion + doc review
 
@@ -119,7 +173,9 @@ Homepage institutional redesign (typographic product narrative, real extracted-s
 
 ### Stack
 
-Next.js 16 (App Router) · React 19 · TypeScript strict · Zustand + `localStorage` · Recharts · PDF.js · tesseract.js · Vitest · Playwright · global CSS (tokens in `src/app/globals.css`). Windows: use `npm.cmd`.
+**Frontend:** Next.js 16 (App Router) · React 19 · TypeScript strict · Zustand + `localStorage` · Recharts · PDF.js · tesseract.js · Vitest · Playwright · global CSS (tokens in `src/app/globals.css`). Windows: use `npm.cmd`.
+
+**Backend (optional):** PostgreSQL 17 + PostGIS · Prisma 7 · Better Auth · BullMQ + Valkey · Zod · Docker Compose.
 
 ### Design direction
 
@@ -142,7 +198,20 @@ Next.js 16 (App Router) · React 19 · TypeScript strict · Zustand + `localStor
 | `src/lib/calculation-trace.ts` | Source-fact trace + provenance helpers |
 | `src/lib/memo-export.ts` | Investment memo generation |
 | `src/app/globals.css` | Design tokens + component/utility styles |
+| `src/lib/env.ts` | **Only** reader of `process.env` — typed, validated config (see `docs/environment.md`) |
+| `src/instrumentation.ts` | Runs env validation at server startup |
+| `src/components/layout/MobileTabBar.tsx` | Bottom tab bar — primary mobile nav (≤640px) |
 | `DESIGN.md` | Canonical design language & tokens |
+| `docs/environment.md` | Env variables: what/why, required vs optional, server vs client, how to add |
+| `src/lib/db.ts` | Prisma client singleton |
+| `src/lib/auth.ts` | Better Auth configuration |
+| `src/lib/queue.ts` | BullMQ + Valkey queue infrastructure |
+| `src/lib/workers.ts` | Worker lifecycle management |
+| `src/services/prisma.ts` | Prisma query helpers with soft-delete/ownership |
+| `prisma/schema.prisma` | PostgreSQL schema (12 models) |
+| `docker-compose.yml` | PostgreSQL + Valkey local dev |
+| `docs/backend.md` | Backend architecture deep reference |
+| `BACKEND.md` | Backend summary / quick start |
 
 ### Rules
 
@@ -153,3 +222,4 @@ Next.js 16 (App Router) · React 19 · TypeScript strict · Zustand + `localStor
 - Don't blindly `npm audit fix --force` (known `xlsx` advisory).
 - Preserve Playwright route coverage; test affected routes when changing spreadsheet/backup behaviour.
 - Read financial data via `useModelData`/selectors; write via the store write API — never hold or mutate a private copy.
+- All runtime config flows through `src/lib/env.ts` (the only file that may read `process.env`); real secrets live in `.env.local` only. Extend the schema — never scatter `process.env` or add a second loader. See `docs/environment.md`.

@@ -57,7 +57,7 @@ all are currently optional so the client-only app keeps working.
 | `DATABASE_URL` | server | yes, once DB lands | Postgres connection string. |
 | `BETTER_AUTH_SECRET` | server | yes, once auth lands | Auth signing secret (`openssl rand -base64 32`). |
 | `BETTER_AUTH_URL` | server | yes, once auth lands | Base URL for auth callbacks. |
-| `REDIS_URL` | server | optional | Redis/queue connection. |
+| `REDIS_URL` | server | optional | Valkey/Redis connection for BullMQ queues. |
 | `DEEPSEEK_API_KEY` | server | optional | DeepSeek AI provider. |
 | `OPENAI_API_KEY` | server | optional | OpenAI provider. |
 | `ANTHROPIC_API_KEY` | server | optional | Anthropic provider. |

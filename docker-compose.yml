@@ -1,0 +1,44 @@
+# Fundalyst — Local development infrastructure
+#
+# Start:   docker compose up -d
+# Stop:    docker compose down
+# Reset:   docker compose down -v
+#
+# Services: PostgreSQL (database) + Valkey (Redis-compatible queue backend)
+
+services:
+  postgres:
+    image: postgis/postgis:17-3.5
+    container_name: fundalyst-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: fundalyst
+      POSTGRES_PASSWORD: fundalyst_dev
+      POSTGRES_DB: fundalyst
+    volumes:
+      - fundalyst-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fundalyst"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: fundalyst-valkey
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - fundalyst-valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  fundalyst-pgdata:
+  fundalyst-valkey-data:
