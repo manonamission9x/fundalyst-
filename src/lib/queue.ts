@@ -19,7 +19,9 @@
 
 import { Queue, QueueEvents } from "bullmq";
 import IORedis from "ioredis";
-import { requireEnv } from "@/lib/env";
+import { env, isProductionBuild, requireEnv } from "@/lib/env";
+
+const buildTimeRedisUrl = "redis://localhost:6379";
 
 /**
  * IORedis connection — shared by all queues and workers.
@@ -27,7 +29,7 @@ import { requireEnv } from "@/lib/env";
  * the raw IORedis instance for operations like quit() and pass
  * a connection-typed reference to BullMQ constructors.
  */
-const redisUrl = requireEnv("REDIS_URL");
+const redisUrl = env.REDIS_URL || (isProductionBuild ? buildTimeRedisUrl : requireEnv("REDIS_URL"));
 const rawRedis = new IORedis(redisUrl, {
   maxRetriesPerRequest: null,
   enableOfflineQueue: false,
