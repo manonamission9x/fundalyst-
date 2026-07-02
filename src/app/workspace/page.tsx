@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { useImporterStore } from '@/store/importer-store';
-import { SectionTitle, Disclaimer, Card, TrustBadge } from '@/components/ui';
+import { ANALYSIS_TOOLS } from '@/lib/tool-metadata';
+import { SectionTitle, Disclaimer, Card, TrustBadge, DataSourceBadge } from '@/components/ui';
 import type { FundalystDataset, CanonicalFact } from '@/lib/importer/types';
 import { useEnterpriseStore, type EnterpriseRole, type ProjectStatus } from '@/store/enterprise-store';
 import {
@@ -50,13 +51,11 @@ const steps = [
 
 type StepId = (typeof steps)[number]['id'];
 
-// ── Settings steps (collapsed below main workflow) ──
+// ── Workspace lenses (collapsed below main workflow) ──
 const settingsSteps = [
-  { id: 'governance', label: 'Governance',
+  { id: 'evidence', label: 'Evidence & Assumptions',
     icon: <ShieldCheck size={14} weight="regular" /> },
-  { id: 'audit', label: 'Audit Trail',
-    icon: <FileText size={14} weight="regular" /> },
-  { id: 'integrations', label: 'Integrations',
+  { id: 'backup', label: 'Backup',
     icon: <GearSix size={14} weight="regular" /> },
 ] as const;
 
@@ -206,12 +205,12 @@ export default function WorkspacePage() {
             className={`ws-settings-trigger${settingsOpen ? ' open' : ''}`}
             onClick={() => setSettingsOpen(!settingsOpen)}
             aria-expanded={settingsOpen}
-            aria-label="Workspace settings"
+            aria-label="Workspace lenses"
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
               <circle cx="5" cy="5" r="1.5" /><path d="M5 1v1M5 8v1M1.5 5h1M7.5 5h1" />
             </svg>
-            <span>Workspace Settings</span>
+            <span>Workspace Lenses</span>
             <svg className={`ws-settings-chevron${settingsOpen ? ' open' : ''}`} width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
               <path d="M2 3l2 2 2-2" />
             </svg>
@@ -248,9 +247,8 @@ export default function WorkspacePage() {
           {activeStep === 'dcf' && <DCFPanel />}
           {activeStep === 'ratios' && <RatiosPanel />}
           {activeStep === 'thesis' && <ThesisPanel />}
-          {activeSettingsStep === 'governance' && <GovernancePanel />}
-          {activeSettingsStep === 'audit' && <AuditPanel datasets={datasets} totalFacts={totalFacts} />}
-          {activeSettingsStep === 'integrations' && <IntegrationsPanel />}
+          {activeSettingsStep === 'evidence' && <EvidencePanel datasets={datasets} totalFacts={totalFacts} />}
+          {activeSettingsStep === 'backup' && <BackupPanel />}
         </main>
       </div>
     </div>
@@ -756,6 +754,179 @@ function RatiosPanel() {
             <TrustBadge label="Ratio Analysis" variant="source" />
             <TrustBadge label="₹ Indian Market" />
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Evidence & Assumptions Panel ──
+function EvidencePanel({ datasets, totalFacts }: { datasets: FundalystDataset[]; totalFacts: number }) {
+  const activeDataset = useGlobalDataStore((s) => s.getActiveDataset());
+  const getToolReadiness = useGlobalDataStore((s) => s.getToolReadiness);
+  const validations = useGlobalDataStore((s) => s.getValidations());
+  const facts = activeDataset?.facts ?? [];
+  const topFacts = facts.slice(0, 12);
+
+  return (
+    <div>
+      <SectionTitle>Evidence & Assumptions</SectionTitle>
+      <div className="flex flex-col gap-4 mt-4">
+        <div className="workspace-card">
+          <div className="workspace-card-header">Current Evidence</div>
+          <div className="p-4">
+            <div className="ws-status-grid">
+              <div className="ws-status-item">
+                <div className="ws-status-label">Company</div>
+                <div className="ws-status-value">{activeDataset?.companyName || 'No company selected'}</div>
+              </div>
+              <div className="ws-status-item">
+                <div className="ws-status-label">Sources</div>
+                <div className="ws-status-value">{datasets.length}</div>
+              </div>
+              <div className="ws-status-item">
+                <div className="ws-status-label">Accepted facts</div>
+                <div className="ws-status-value">{totalFacts}</div>
+              </div>
+              <div className="ws-status-item">
+                <div className="ws-status-label">Periods</div>
+                <div className="ws-status-value">{activeDataset?.periods?.length || 0}</div>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-wrap mt-3">
+              <DataSourceBadge variant={activeDataset ? 'imported' : 'none'} />
+              {activeDataset?.sourceType && <TrustBadge label={activeDataset.sourceType} variant="source" />}
+              {activeDataset?.confidence !== undefined && (
+                <TrustBadge label={`${Math.round(activeDataset.confidence * 100)}% import confidence`} />
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="workspace-card">
+          <div className="workspace-card-header">Tool Readiness</div>
+          <div className="p-4 grid grid-cols-2 gap-3">
+            {ANALYSIS_TOOLS.map((tool) => {
+              const readiness = getToolReadiness(tool.id);
+              return (
+                <Link key={tool.id} href={tool.href} className="workspace-quick-link">
+                  <div className="flex items-center justify-between">
+                    <span>{tool.label}</span>
+                    <span className={`text-2xs ${readiness.ready ? 'text-primary' : 'text-muted'}`}>
+                      {readiness.ready ? 'Ready' : `${readiness.missingMetrics.length} missing`}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted font-mono mt-1">
+                    {readiness.ready
+                      ? tool.answer
+                      : readiness.missingMetrics.length > 0
+                        ? `Needs: ${readiness.missingMetrics.slice(0, 4).join(', ')}${readiness.missingMetrics.length > 4 ? '...' : ''}`
+                        : tool.description}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="workspace-card">
+          <div className="workspace-card-header">Accepted Facts</div>
+          <div className="p-4">
+            {topFacts.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-title">No accepted facts yet</div>
+                <div className="empty-state-desc">Import a source document and confirm mappings to build the evidence base.</div>
+                <Link href="/import" className="empty-state-action">Import source →</Link>
+              </div>
+            ) : (
+              <table className="diff-table">
+                <thead><tr><th>Metric</th><th>Period</th><th>Value</th><th>Source</th></tr></thead>
+                <tbody>
+                  {topFacts.map((fact, i) => (
+                    <tr key={`${fact.metric}-${fact.periodLabel}-${i}`}>
+                      <td>{fact.metric || fact.canonicalMetric || '—'}</td>
+                      <td>{fact.periodLabel || '—'}</td>
+                      <td>{fact.value ?? '—'}</td>
+                      <td>{fact.sourceType || activeDataset?.sourceType || 'imported'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {validations.length > 0 && (
+              <div className="flex flex-col gap-2 mt-3">
+                {validations.slice(0, 3).map((validation, i) => (
+                  <div key={i} className="text-xs text-tertiary font-mono">
+                    {validation.passed ? 'ok' : 'review'}: {validation.message}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Backup Panel ──
+function BackupPanel() {
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  function handleExport() {
+    const payload = collectFundalystLocalState();
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fundalyst-workspace-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_WORKSPACE_RESTORE_BYTES) {
+      setImportMsg('Workspace file is too large. Please restore a file under 10 MB.');
+      e.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const imported = JSON.parse(evt.target?.result as string);
+        for (const key of Object.keys(imported)) {
+          if (RESTORABLE_WORKSPACE_KEYS.has(key)) {
+            localStorage.setItem(key, JSON.stringify(imported[key]));
+          }
+        }
+        setImportMsg('Workspace restored. Reloading page...');
+        setTimeout(() => window.location.reload(), 1000);
+      } catch {
+        setImportMsg('Invalid workspace file. No changes made.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  return (
+    <div>
+      <SectionTitle>Backup</SectionTitle>
+      <div className="workspace-card mt-4">
+        <div className="workspace-card-header">Local Workspace Backup</div>
+        <div className="p-4 flex flex-col gap-3">
+          <p className="text-sm text-tertiary leading-normal" style={{ margin: 0 }}>
+            Export the browser-stored research workspace, or restore a previous backup. This is local persistence, not simulated enterprise governance.
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            <button type="button" className="btn-primary btn-sm" onClick={handleExport}>Export workspace</button>
+            <button type="button" className="btn-ghost btn-sm" onClick={() => importInputRef.current?.click()}>Import workspace</button>
+            <input ref={importInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleImportFile} />
+          </div>
+          {importMsg && <div className="text-xs text-primary font-mono">{importMsg}</div>}
         </div>
       </div>
     </div>

@@ -623,6 +623,13 @@ textarea.num-input { resize: vertical; min-height: 72px; line-height: 1.6; }
 /* ── Homepage — typographic, information-first. No decorative grids, glows, or
    gradients: the identity comes from type, rhythm, and real product content
    (DESIGN.md §8). The page reads left-aligned, like professional software. */
+.home-resume { margin: var(--space-5) 0 0; padding: var(--space-4); border: 1px solid var(--border-light); border-radius: var(--radius-lg); background: var(--bg-elevated); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.home-resume-kicker { display: block; font-family: var(--font-ibm-plex-mono); font-size: var(--text-micro); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--space-1); }
+.home-resume h2 { margin: 0; font-size: var(--text-xl); line-height: 1.2; color: var(--text); }
+.home-resume p { margin: var(--space-1) 0 0; font-size: var(--text-xs); color: var(--text-tertiary); }
+.home-resume-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; justify-content: flex-end; }
+.home-command-hint { display: inline-flex; align-items: center; gap: var(--space-2); border: 1px solid var(--border); background: transparent; color: var(--text-tertiary); border-radius: var(--radius-sm); padding: 7px 10px; font-size: var(--text-2xs); cursor: pointer; }
+.home-command-hint:hover { border-color: var(--border-strong); color: var(--text-secondary); }
 .home-hero { padding: var(--space-12) 0; border-bottom: 1px solid var(--border-light); }
 .home-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr); gap: var(--space-12); align-items: center; }
 
@@ -1491,6 +1498,11 @@ details[open] .details-summary::before {
 .cmdk-empty { padding: var(--space-8) var(--space-4); text-align: center; color: var(--text-muted); font-size: var(--text-sm); }
 .cmdk-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; }
 .cmdk-dot.muted { background: var(--text-muted); }
+.shortcuts-panel { max-height: none; }
+.shortcuts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; padding: var(--space-3); background: var(--border-light); }
+.shortcut-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); background: var(--bg-elevated); padding: var(--space-2) var(--space-3); font-size: var(--text-xs); color: var(--text-secondary); }
+.shortcut-row .cmdk-kbd { flex-shrink: 0; }
+.shortcut-toast { position: fixed; top: calc(40px + var(--space-5)); left: 50%; transform: translateX(-50%); z-index: 320; padding: var(--space-2) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--bg-elevated); color: var(--text-secondary); box-shadow: var(--shadow-md); font-family: var(--font-ibm-plex-mono); font-size: var(--text-2xs); }
 .nav-cmdk-trigger { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-inter); font-size: var(--text-2xs); font-weight: 500; color: var(--text-tertiary); background: var(--bg-hover); border: none; border-radius: var(--radius-md); padding: 5px 10px; cursor: pointer; transition: background var(--transition-fast), color var(--transition-fast); min-height: unset; min-width: 112px; }
 .nav-cmdk-trigger:hover { background: var(--bg-surface); color: var(--text-secondary); }
 .nav-cmdk-trigger svg { width: 13px; height: 13px; flex-shrink: 0; }
@@ -1500,7 +1512,7 @@ details[open] .details-summary::before {
   .nav-cmdk-trigger span { display: none; }
   .nav-cmdk-trigger { min-width: 28px; width: 28px; justify-content: center; padding: 0; min-height: 28px; }
 }
-@media (max-width: 640px) { .cmdk-backdrop { padding-top: 8vh; } .nav-cmdk-trigger { display: none; } }
+@media (max-width: 640px) { .cmdk-backdrop { padding-top: 8vh; } .nav-cmdk-trigger { display: none; } .shortcuts-grid { grid-template-columns: 1fr; } .home-resume { flex-direction: column; align-items: stretch; } .home-resume-actions { justify-content: stretch; } .home-command-hint { justify-content: center; } }
 
 .site-footer { text-align: center; padding: var(--space-5) var(--space-4); border-top: 1px solid var(--border); font-size: var(--text-micro); font-family: var(--font-ibm-plex-mono); color: var(--text-muted); position: relative; z-index: 1; }
 .site-footer div { margin-bottom: 2px; }

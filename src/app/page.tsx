@@ -3,17 +3,12 @@
 import Link from 'next/link';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useGlobalDataStore } from '@/store/global-data-store';
+import { TOOL_BY_ID } from '@/lib/tool-metadata';
 import {
   ArrowRight,
-  Calculator,
-  ChartLineUp,
-  ChartPie,
   Detective,
-  FileText,
-  Gauge,
   Lightning,
   ShieldCheck,
-  UsersThree,
 } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 
@@ -46,47 +41,47 @@ const statementRows: StatementRow[] = [
 
 const toolCards: ToolCard[] = [
   {
-    href: '/tools/dcf',
-    icon: Calculator,
-    title: 'DCF valuation',
-    value: 'INR 12,847 Cr',
-    sub: 'Enterprise value from accepted assumptions',
+    href: TOOL_BY_ID.dcf.href,
+    icon: TOOL_BY_ID.dcf.icon,
+    title: TOOL_BY_ID.dcf.label,
+    value: TOOL_BY_ID.dcf.value,
+    sub: TOOL_BY_ID.dcf.description,
   },
   {
-    href: '/research/filing',
-    icon: FileText,
-    title: 'Filing comparison',
-    value: '+14.2%',
-    sub: 'Material changes by period',
+    href: TOOL_BY_ID.filing.href,
+    icon: TOOL_BY_ID.filing.icon,
+    title: TOOL_BY_ID.filing.label,
+    value: TOOL_BY_ID.filing.value,
+    sub: TOOL_BY_ID.filing.description,
     tone: 'positive',
   },
   {
-    href: '/research/trends',
-    icon: ChartLineUp,
-    title: 'Trend analysis',
-    value: '3 yr CAGR',
-    sub: 'Revenue, margin, profit, and cash direction',
+    href: TOOL_BY_ID.trends.href,
+    icon: TOOL_BY_ID.trends.icon,
+    title: TOOL_BY_ID.trends.label,
+    value: TOOL_BY_ID.trends.value,
+    sub: TOOL_BY_ID.trends.description,
   },
   {
-    href: '/tools/ratios',
-    icon: ChartPie,
-    title: 'Financial ratios',
-    value: '9 ratios',
-    sub: 'Liquidity, leverage, returns',
+    href: TOOL_BY_ID.ratios.href,
+    icon: TOOL_BY_ID.ratios.icon,
+    title: TOOL_BY_ID.ratios.label,
+    value: TOOL_BY_ID.ratios.value,
+    sub: TOOL_BY_ID.ratios.description,
   },
   {
-    href: '/tools/peer',
-    icon: UsersThree,
-    title: 'Peer comparison',
-    value: '10 peers',
-    sub: 'Relative valuation and operating context',
+    href: TOOL_BY_ID.peer.href,
+    icon: TOOL_BY_ID.peer.icon,
+    title: TOOL_BY_ID.peer.label,
+    value: TOOL_BY_ID.peer.value,
+    sub: TOOL_BY_ID.peer.description,
   },
   {
-    href: '/tools/wc',
-    icon: Gauge,
-    title: 'Cash efficiency',
-    value: 'CCC',
-    sub: 'DSO, DIO, DPO, cash conversion',
+    href: TOOL_BY_ID.wc.href,
+    icon: TOOL_BY_ID.wc.icon,
+    title: TOOL_BY_ID.wc.label,
+    value: TOOL_BY_ID.wc.value,
+    sub: TOOL_BY_ID.wc.description,
   },
 ];
 
@@ -104,6 +99,26 @@ export default function HomePage() {
 
   return (
     <div>
+      {resumeName && (
+        <section className="home-resume">
+          <div>
+            <span className="home-resume-kicker">Continue research</span>
+            <h2>{resumeName}</h2>
+            <p>{activeDataset?.facts.length || 0} accepted facts across {activeDataset?.periods.length || 0} period{activeDataset?.periods.length === 1 ? '' : 's'}.</p>
+          </div>
+          <div className="home-resume-actions">
+            <Link href="/workspace" className="btn-primary home-cta-btn">
+              Open workspace
+              <ArrowRight size={15} weight="bold" />
+            </Link>
+            <button type="button" className="home-command-hint" onClick={() => window.dispatchEvent(new Event('fundalyst:open-palette'))}>
+              <span className="cmdk-kbd">`</span>
+              Type a command
+            </button>
+          </div>
+        </section>
+      )}
+
       <section className="home-hero">
         <div className="home-hero-grid">
           <div className="home-hero-copy">

@@ -7,6 +7,7 @@ import { usePageTitle } from '@/lib/use-page-title';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV } from '@/lib/helpers';
 import { extractRatiosFromModel } from '@/store/financial-model-selectors';
+import { TOOL_BY_ID } from '@/lib/tool-metadata';
 import {
   PageHeader,
   Card,
@@ -240,9 +241,9 @@ export default function RatiosPage() {
   return (
     <div>
       <PageHeader
-        title="Financial Ratios"
+        title={TOOL_BY_ID.ratios.label}
         subtitle="Enter just 6 numbers — get 5 key ratios instantly."
-        answer="What this helps you answer: Is the company financially healthy? Can it cover debts?"
+        answer={TOOL_BY_ID.ratios.answer}
       />
 
       <DataQualityBar source={modelData.companyName || undefined} />

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGlobalDataStore } from '@/store/global-data-store';
 import { generateMemo, downloadMemoMarkdown } from '@/lib/memo-export';
+import { TOOL_METADATA, findToolByAlias } from '@/lib/tool-metadata';
 
 // Public helper: any component can open the palette by dispatching this event.
 export const PALETTE_EVENT = 'fundalyst:open-palette';
@@ -13,7 +14,7 @@ export function openCommandPalette() {
 
 interface Command {
   id: string;
-  section: 'Companies' | 'Navigate' | 'Actions';
+  section: 'Commands' | 'Companies' | 'Navigate' | 'Actions';
   label: string;
   keywords?: string;
   meta?: string;
@@ -23,18 +24,32 @@ interface Command {
 }
 
 const NAV_TARGETS: { label: string; href: string; keywords: string }[] = [
-  { label: 'Home', href: '/', keywords: 'overview start' },
-  { label: 'Filing Comparison', href: '/research/filing', keywords: 'period diff compare statements' },
-  { label: 'Trend Charts', href: '/research/trends', keywords: 'revenue margin chart' },
-  { label: 'Growth Rates', href: '/research/growth', keywords: 'cagr yoy' },
-  { label: 'DCF Valuation', href: '/tools/dcf', keywords: 'intrinsic value discounted cash flow' },
-  { label: 'Cash Efficiency', href: '/tools/wc', keywords: 'working capital' },
-  { label: 'Financial Ratios', href: '/tools/ratios', keywords: 'liquidity leverage profitability' },
-  { label: 'Peer Comparison', href: '/tools/peer', keywords: 'benchmark industry compare' },
-  { label: 'Workspace', href: '/workspace', keywords: 'hub governance audit thesis' },
-  { label: 'Import financials', href: '/import', keywords: 'upload csv excel pdf data' },
-  { label: 'About', href: '/about', keywords: 'methodology info' },
+  ...TOOL_METADATA.map((tool) => ({
+    label: tool.label,
+    href: tool.href,
+    keywords: `${tool.keywords} ${tool.aliases.join(' ')}`,
+  })),
+  { label: 'About', href: '/about', keywords: 'methodology info docs limits privacy' },
 ];
+
+const GO_TO: Record<string, string> = {
+  w: '/workspace',
+  i: '/import',
+  f: '/research/filing',
+  t: '/research/trends',
+  g: '/research/growth',
+  d: '/tools/dcf',
+  r: '/tools/ratios',
+  c: '/tools/wc',
+  p: '/tools/peer',
+};
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  const tag = el.tagName?.toLowerCase();
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
+}
 
 /** Lower score = tighter match. Returns -1 if the query isn't a subsequence. */
 function fuzzyScore(text: string, q: string): number {
@@ -70,8 +85,10 @@ function cycleTheme() {
 export default function CommandPalette() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
+  const [goMode, setGoMode] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -89,6 +106,12 @@ export default function CommandPalette() {
   // Build the command registry from current state.
   const commands = useMemo<Command[]>(() => {
     const cmds: Command[] = [];
+    const hasData = datasets.length > 0;
+    const normalizedQuery = query.trim().toLowerCase();
+    const commandTool = findToolByAlias(normalizedQuery);
+    const openCompanyQuery = normalizedQuery.startsWith('open ')
+      ? normalizedQuery.slice(5).trim()
+      : '';
 
     for (const d of datasets) {
       const name = d.companyName || `${d.facts.length} metrics`;
@@ -104,6 +127,39 @@ export default function CommandPalette() {
       });
     }
 
+    if (commandTool) {
+      cmds.push({
+        id: `cmd-tool-${commandTool.id}`,
+        section: 'Commands',
+        label: `Open ${commandTool.label}`,
+        keywords: `${commandTool.aliases.join(' ')} ${commandTool.keywords}`,
+        meta: commandTool.needsData && !hasData ? 'no data yet' : commandTool.value,
+        glyph: 'action',
+        run: () => router.push(commandTool.href),
+      });
+    }
+
+    if (openCompanyQuery) {
+      const match = datasets.find((d) =>
+        (d.companyName || '').toLowerCase().includes(openCompanyQuery) ||
+        d.id.toLowerCase().includes(openCompanyQuery),
+      );
+      if (match) {
+        cmds.push({
+          id: `cmd-open-${match.id}`,
+          section: 'Commands',
+          label: `Open ${match.companyName || 'selected company'}`,
+          keywords: `open company dataset ${match.companyName || ''}`,
+          meta: `${match.periods.length}p · ${match.facts.length}f`,
+          glyph: 'action',
+          run: () => {
+            setActiveDataset(match.id);
+            router.push('/workspace');
+          },
+        });
+      }
+    }
+
     for (const t of NAV_TARGETS) {
       cmds.push({
         id: `nav-${t.href}`,
@@ -115,7 +171,6 @@ export default function CommandPalette() {
       });
     }
 
-    const hasData = datasets.length > 0;
     cmds.push({
       id: 'act-memo',
       section: 'Actions',
@@ -141,6 +196,14 @@ export default function CommandPalette() {
       glyph: 'action',
       run: cycleTheme,
     });
+    cmds.push({
+      id: 'act-shortcuts',
+      section: 'Actions',
+      label: 'Show keyboard shortcuts',
+      keywords: 'help shortcuts keyboard question mark',
+      glyph: 'action',
+      run: () => setShortcutsOpen(true),
+    });
     if (hasData) {
       cmds.push({
         id: 'act-clear',
@@ -152,7 +215,7 @@ export default function CommandPalette() {
       });
     }
     return cmds;
-  }, [datasets, activeDatasetId, setActiveDataset, clearAllData, router]);
+  }, [datasets, activeDatasetId, setActiveDataset, clearAllData, router, query]);
 
   // Filter + sort by fuzzy score, preserving section grouping order.
   const filtered = useMemo(() => {
@@ -165,7 +228,7 @@ export default function CommandPalette() {
 
   // Group while keeping the (possibly score-sorted) order.
   const groups = useMemo(() => {
-    const order: Command['section'][] = ['Companies', 'Navigate', 'Actions'];
+    const order: Command['section'][] = ['Commands', 'Companies', 'Navigate', 'Actions'];
     const map = new Map<string, Command[]>();
     for (const c of filtered) {
       if (!map.has(c.section)) map.set(c.section, []);
@@ -179,10 +242,45 @@ export default function CommandPalette() {
   // Open via Cmd/Ctrl+K and via the custom event (nav trigger).
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (isEditableTarget(e.target)) return;
+      if (e.key === 'Escape' && shortcutsOpen) {
+        e.preventDefault();
+        setShortcutsOpen(false);
+        setGoMode(false);
+        return;
+      }
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
         setActiveIdx(0);
         setOpen((v) => !v);
+        setGoMode(false);
+        return;
+      }
+      if (e.key === '`' || e.key === '/') {
+        e.preventDefault();
+        setQuery('');
+        setActiveIdx(0);
+        setOpen(true);
+        setGoMode(false);
+        return;
+      }
+      if (e.key === '?') {
+        e.preventDefault();
+        setShortcutsOpen((v) => !v);
+        return;
+      }
+      if (goMode) {
+        const href = GO_TO[e.key.toLowerCase()];
+        if (href) {
+          e.preventDefault();
+          router.push(href);
+        }
+        setGoMode(false);
+        return;
+      }
+      if (e.key.toLowerCase() === 'g') {
+        setGoMode(true);
+        window.setTimeout(() => setGoMode(false), 1200);
       }
     }
     function onOpen() { setActiveIdx(0); setOpen(true); }
@@ -192,7 +290,7 @@ export default function CommandPalette() {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener(PALETTE_EVENT, onOpen);
     };
-  }, []);
+  }, [goMode, router, shortcutsOpen]);
 
   // Focus input + lock scroll while open.
   useEffect(() => {
@@ -211,7 +309,7 @@ export default function CommandPalette() {
     el?.scrollIntoView({ block: 'nearest' });
   }, [activeIdx, open]);
 
-  if (!open) return null;
+  if (!open && !shortcutsOpen && !goMode) return null;
 
   const exec = (c?: Command) => { if (!c) return; c.run(); close(); };
 
@@ -225,6 +323,40 @@ export default function CommandPalette() {
   let runningIdx = -1;
 
   return (
+    <>
+    {goMode && !open && !shortcutsOpen && (
+      <div className="shortcut-toast" role="status">Go to: d DCF · r Ratios · f Filing · w Workspace · i Import</div>
+    )}
+
+    {shortcutsOpen && (
+      <div className="cmdk-backdrop" onMouseDown={() => setShortcutsOpen(false)} role="presentation">
+        <div
+          className="cmdk-panel shortcuts-panel"
+          onMouseDown={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Keyboard shortcuts"
+        >
+          <div className="cmdk-input-row">
+            <span className="cmdk-label">Keyboard shortcuts</span>
+            <button type="button" className="btn-ghost btn-sm ml-auto" onClick={() => setShortcutsOpen(false)}>Close</button>
+          </div>
+          <div className="shortcuts-grid">
+            <Shortcut k="` or /" v="Open command bar" />
+            <Shortcut k="Cmd/Ctrl K" v="Toggle command bar" />
+            <Shortcut k="g d" v="Go to DCF" />
+            <Shortcut k="g r" v="Go to ratios" />
+            <Shortcut k="g f" v="Go to filing comparison" />
+            <Shortcut k="g w" v="Go to workspace" />
+            <Shortcut k="g i" v="Go to import" />
+            <Shortcut k="?" v="Show shortcuts" />
+            <Shortcut k="Esc" v="Close overlays" />
+          </div>
+        </div>
+      </div>
+    )}
+
+    {open && (
     <div className="cmdk-backdrop" onMouseDown={close} role="presentation">
       <div
         className="cmdk-panel"
@@ -240,7 +372,7 @@ export default function CommandPalette() {
           <input
             ref={inputRef}
             className="cmdk-input"
-            placeholder="Jump to a company, tool, or action…"
+            placeholder="Type a command, company, tool, or action..."
             value={query}
             onChange={(e) => { setQuery(e.target.value); setActiveIdx(0); }}
             onKeyDown={onInputKey}
@@ -285,6 +417,17 @@ export default function CommandPalette() {
           ))}
         </div>
       </div>
+    </div>
+    )}
+    </>
+  );
+}
+
+function Shortcut({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="shortcut-row">
+      <span className="cmdk-kbd">{k}</span>
+      <span>{v}</span>
     </div>
   );
 }

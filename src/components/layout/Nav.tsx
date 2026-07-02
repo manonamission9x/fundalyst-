@@ -92,7 +92,7 @@ const desktopSections: NavSection[] = [
   {
     label: 'Data',
     items: [
-      { id: 'import', label: 'Upload Reports', href: '/import', icon: <IconNavImport /> },
+      { id: 'import', label: 'Import Source', href: '/import', icon: <IconNavImport /> },
     ],
   },
 ];
@@ -103,7 +103,7 @@ const mobileSections: NavSection[] = [
   {
     label: 'Data',
     items: [
-      { id: 'import', label: 'Upload Reports', href: '/import', icon: <IconNavImport /> },
+      { id: 'import', label: 'Import Source', href: '/import', icon: <IconNavImport /> },
       workspaceItem,
     ],
   },
