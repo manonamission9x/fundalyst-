@@ -2,6 +2,19 @@
 
 Last updated: 2026-07-02 (v6 "Living Ledger" marketing-surface redesign)
 
+## Latest change (2026-07-02) — Returning-user launchpad redesign ("Mission Control")
+
+The `.lp-resume` banner was replaced with a richer `.lp-launch` card when a dataset exists.
+
+- **Card layout:** Three vertical zones — identity (kicker + document title + meta/tags), command console bar (focal element), verb chips. "Open workspace" demoted to quiet underlined link.
+- **Graphite Depth:** `--gradient-graphite` (surface sheen) + `--glow-launchpad` (top-left radial) + dissolving `--ledger-grid` via `::before`/`::after` pseudo-elements.
+- **Command bar:** Full-width `<button>` styled as input. Opens existing palette via `fundalyst:open-palette`. No second parser created. `aria-label="Open command bar"`.
+- **Verb chips:** Four real routes — Build valuation (`/tools/dcf`), Compare periods (`/research/filing`), Peer set (`/tools/peer`), Ratios (`/tools/ratios`).
+- **Green:** Used only for the `.lp-launch-live` data-ready dot. Slate `--primary` does all wayfinding.
+- **Cleanup:** Removed `.lp-resume`, `.home-resume`, `.home-command-hint`, `.lp-cmd` CSS classes and hero command button. Retired dead Phosphor imports.
+- Updated `DESIGN.md §10` with `.lp-launch` pattern + new tokens.
+- Commits: `3e1d52f`.
+
 ## Latest change (2026-07-02) — T13 DCF scenario manager finished
 
 Completed T13. The pure engine `computeDCFScenarios` and the "Scenario Range" card
@@ -47,12 +60,12 @@ shell mount, so no compiler run was captured here.
 
 ---
 
-Prior update: 2026-07-01 (homepage + workspace institutional design pass)
+Last updated: 2026-07-02 (returning-user launchpad + landing polish)
 
 Repo: `C:\Users\kingo\Desktop\fundalyst-next`  
 GitHub: `https://github.com/manonamission9x/fundalyst-`  
 Branch: `main`  
-Latest code commit: current `HEAD` - Homepage and workspace institutional redesign
+Latest code commit: `3e1d52f` — Returning-user launchpad redesign (Mission Control)
 Push status: pushed to `origin/main`.
 
 ## Current Product State

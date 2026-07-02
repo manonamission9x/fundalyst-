@@ -183,6 +183,10 @@ quiet — nothing here applies inside a tool page. The layer lives at the bottom
   Governed additions to the scale; do not use them on tool pages.
 - **`--ease-out`, `--ledger-grid`** — one shared easing curve and the finance-native grid
   motif (thin `--border-light` lines, radially masked). Reference the tokens, never inline.
+- **`--gradient-graphite`, `--glow-launchpad`** — Graphite Depth for the returning-user
+  launchpad: a neutral surface sheen (`.lp-launch::before`) and a top-left radial glow that
+  sit behind a `z-index:1` content layer. Light-mode variants tint darker
+  (`rgba(22,22,26,…)`) instead of lighter (white sheen is invisible on white).
 
 **Patterns (class prefix `lp-`):**
 
@@ -199,6 +203,14 @@ quiet — nothing here applies inside a tool page. The layer lives at the bottom
 - **Question-first tool cards** (`.lp-tool`) — each card leads with the *question the tool
   answers* (`ToolMetadata.answer`), with a slate left-rail that scales in on hover. Colour
   is still meaning-only; the rail is wayfinding, not brand flair.
+- **Returning-user launchpad** (`.lp-launch`) — "Mission Control" card that replaces the old
+  `.lp-resume` banner when a dataset exists. One focal point: the command console bar
+  (opens existing palette via `fundalyst:open-palette`). **Graphite Depth** via
+  `--gradient-graphite` (surface sheen) + `--glow-launchpad` (top-left radial glow) +
+  dissolving `--ledger-grid`. Green appears *only* as the `.lp-launch-live` data-ready dot
+  (meaningful, not decorative). "Open workspace" is a quiet underlined link. Verb chips
+  (`.lp-quick-btn`) route to four real tools. The `.lp-resume`, `.lp-cmd`, and `.home-resume`
+  classes are retired.
 
 **Rule:** if a v6 element were removed and the page still read as calm and intentional, the
 element is doing its job. Anything that only adds sparkle gets cut. Keep this section in sync
