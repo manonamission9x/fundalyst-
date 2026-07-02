@@ -171,6 +171,7 @@ export default function WCPage() {
   return (
     <div>
       <PageHeader
+        kicker="Valuation"
         title="Cash Efficiency"
         subtitle="See whether cash is trapped in receivables, inventory, or payables — DSO, DIO, DPO, and the Cash Conversion Cycle."
         answer="What this helps you answer: How quickly does the company turn operations into cash?"

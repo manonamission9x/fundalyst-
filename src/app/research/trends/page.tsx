@@ -196,6 +196,7 @@ export default function TrendsPage() {
   return (
     <div>
       <PageHeader
+        kicker="Research"
         title="Trend Charts"
         subtitle="Track revenue, profit, costs, debt, and other metrics across periods."
         answer="What this helps you answer: Which metrics are improving? Which are declining?"

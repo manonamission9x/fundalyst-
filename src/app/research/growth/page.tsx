@@ -242,6 +242,7 @@ export default function YoyPage() {
   return (
     <div>
       <PageHeader
+        kicker="Research"
         title="Growth Rates"
         subtitle="See whether revenue, profit, and other metrics are accelerating or slowing — year over year."
         answer="What this helps you answer: Is the company growing? Are margins improving?"

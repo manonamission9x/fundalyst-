@@ -241,6 +241,7 @@ export default function RatiosPage() {
   return (
     <div>
       <PageHeader
+        kicker="Valuation"
         title={TOOL_BY_ID.ratios.label}
         subtitle="Enter just 6 numbers — get 5 key ratios instantly."
         answer={TOOL_BY_ID.ratios.answer}

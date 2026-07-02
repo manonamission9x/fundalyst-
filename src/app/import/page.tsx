@@ -163,6 +163,7 @@ Price, 185, 210, 230`;
   return (
     <div>
       <PageHeader
+        kicker="Data"
         title="Import"
         subtitle="Upload messy financial files. Fundalyst cleans, maps, and prepares them for analysis."
         answer="Upload messy data. We clean it. Your files stay in your browser."

@@ -252,6 +252,7 @@ export default function FilingPage() {
   return (
     <div>
       <PageHeader
+        kicker="Research"
         title="Filing Comparison"
         subtitle="Enter financial data in the spreadsheet, then see what changed — instantly."
         answer="What this helps you answer: Is revenue growing? Are margins compressing? Is debt rising?"

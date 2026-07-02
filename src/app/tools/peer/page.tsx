@@ -324,6 +324,7 @@ Infosys, 156000, 28700, 172000, 24000`;
   return (
     <div>
       <PageHeader
+        kicker="Valuation"
         title="Peer Comparison"
         subtitle="Compare companies side by side and instantly spot leaders and laggards — revenue, profit, assets, and debt."
         answer="Which company is the strongest? Who is lagging?"

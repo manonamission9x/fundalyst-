@@ -260,6 +260,7 @@ export default function DCFPage() {
   return (
     <div>
       <PageHeader
+        kicker="Valuation"
         title="DCF Valuation"
         subtitle="Estimate intrinsic value using projected free cash flow and terminal value."
         answer="What this helps you answer: Is the stock undervalued or overvalued? What price is fair?"
