@@ -415,6 +415,8 @@ body {
 }
 .nav-mobile-item:hover { background: var(--bg-surface); color: var(--text); }
 .nav-mobile-item.active { color: var(--primary); background: var(--primary-subtle); }
+.nav-mobile-search { width: 100%; text-align: left; background: none; border: none; cursor: pointer; font: inherit; }
+.nav-mobile-kbd { margin-left: auto; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-micro); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px 5px; }
 .nav-mobile-item svg { flex-shrink: 0; width: 16px; height: 16px; }
 .nav-mobile-check {
   margin-left: auto;
@@ -1856,6 +1858,56 @@ details[open] .details-summary::before {
   .nav-tab, .nav-section-trigger { padding: 10px 12px; }
   .num-input, .period-label-input, .spreadsheet-header-input, .spreadsheet-cell { min-height: 44px; font-size: var(--text-base); }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Mobile bottom tab bar — thumb-reachable primary nav (phones only).
+   The full section list still lives in the drawer (<Nav />). Desktop untouched.
+   ══════════════════════════════════════════════════════════════════════════ */
+.mobile-tabbar { display: none; }
+@media (max-width: 640px) {
+  :root { --tabbar-height: 56px; }
+  .mobile-tabbar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 150;
+    height: calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(12,12,14,0.86);
+    -webkit-backdrop-filter: saturate(1.4) blur(16px);
+    backdrop-filter: saturate(1.4) blur(16px);
+    border-top: 1px solid var(--border);
+  }
+  [data-theme="light"] .mobile-tabbar { background: rgba(246,245,243,0.9); }
+  .mobile-tab {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px;
+    text-decoration: none;
+    color: var(--text-tertiary);
+    font-size: var(--text-micro);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--transition-fast);
+    position: relative;
+  }
+  .mobile-tab-icon { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; }
+  .mobile-tab-icon svg { width: 20px; height: 20px; }
+  .mobile-tab-label { line-height: 1; }
+  .mobile-tab.active { color: var(--primary); }
+  .mobile-tab.active::before {
+    content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 26px; height: 2px; border-radius: 0 0 2px 2px; background: var(--primary);
+  }
+  .mobile-tab:active { color: var(--primary-hover); }
+
+  /* Content + footer must clear the fixed bar. */
+  .page { padding-bottom: calc(var(--tabbar-height) + var(--space-6) + env(safe-area-inset-bottom, 0px)); }
+  .site-footer { margin-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px)); }
+}
+@media print { .mobile-tabbar { display: none !important; } }
 
 /* ══════════════════════════════════════════════════════════════════════════
    Fundalyst Design System v6 — "Living Ledger"

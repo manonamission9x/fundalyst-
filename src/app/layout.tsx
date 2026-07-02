@@ -1,7 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import './globals.css';
 import Nav from '@/components/layout/Nav';
+import MobileTabBar from '@/components/layout/MobileTabBar';
 import CommandPalette from '@/components/layout/CommandPalette';
 import RouteTracker from '@/components/layout/RouteTracker';
 import ToastProvider from '@/components/shared/ToastProvider';
@@ -16,6 +17,18 @@ export const metadata: Metadata = {
       { url: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22><rect width=%2220%22 height=%2220%22 rx=%223%22 fill=%22%236F7D8C%22/><path d=%22M5 14V6L10 10L15 6V14%22 stroke=%22%230C0C0E%22 stroke-width=%221.5%22 fill=%22none%22/></svg>', type: 'image/svg+xml' },
     ],
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  // Let content extend under the notch/home indicator so env(safe-area-inset-*)
+  // resolves to real values (the nav, tab bar, and .page all rely on it).
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#0C0C0E' },
+    { media: '(prefers-color-scheme: light)', color: '#F6F5F3' },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -58,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span>&copy; 2026 Fundalyst</span>
             </div>
           </footer>
+          <MobileTabBar />
         </ToastProvider>
       </body>
     </html>

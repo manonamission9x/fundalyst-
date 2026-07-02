@@ -412,6 +412,15 @@ export default function Nav() {
         </div>
 
         <div className="nav-mobile-items">
+          <button
+            type="button"
+            className="nav-mobile-item nav-mobile-search"
+            onClick={() => { setMobileOpen(false); openCommandPalette(); }}
+          >
+            <MagnifyingGlass size={16} weight="regular" />
+            <span>Search & commands</span>
+            <kbd className="nav-mobile-kbd" aria-hidden="true">⌘K</kbd>
+          </button>
           {mobileSections.map((section) => (
             <React.Fragment key={section.label}>
               <span className="nav-mobile-section-label">{section.label}</span>
