@@ -42,6 +42,7 @@ Client-side financial-analysis app. **No backend, no auth, no server, no live ma
 | Reusable prompt templates for recurring work | `AGENT_PLAYBOOKS.md` |
 | How to keep token usage low | `TOKENS.md` |
 | xlsx advisory + mitigation | `docs/xlsx-risk-plan.md` |
+| Environment/config variables (the ONLY place to read env) | `docs/environment.md` (`src/lib/env.ts` is the single source of truth) |
 | Human-facing overview | `README.md` / `PROJECT.md` (PROJECT.md is the canonical intro) |
 
 ## Key files
@@ -57,6 +58,7 @@ Client-side financial-analysis app. **No backend, no auth, no server, no live ma
 - Obey `DESIGN.md`: use tokens, never raw hex/px/font literals in `app/**` or `components/**`.
 - Keep `src/lib/calculations.ts` pure.
 - No fake enterprise/backend claims; never store credentials in frontend/localStorage.
+- All runtime config flows through `src/lib/env.ts` (the only file that may read `process.env`); real secrets go in `.env.local` only. See `docs/environment.md`.
 - Don't blindly `npm audit fix --force` (known `xlsx` advisory).
 - Preserve Playwright route coverage; test affected routes when changing spreadsheet/backup behavior.
 - Verify before done: `npm.cmd exec tsc -- --noEmit` · `npm.cmd run lint` · `npm.cmd run build`.
