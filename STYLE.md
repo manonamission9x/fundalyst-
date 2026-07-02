@@ -63,13 +63,15 @@ Use `type` imports for type-only imports: `import type { ... }`. Inline with val
 
 - **Unit tests:** Vitest in `*.test.ts` / `*.test.tsx`. One file per module.
 - **E2E tests:** Playwright in `tests/`. Name files by route: `homepage.spec.ts`, `workspace.spec.ts`.
-- Run before PR:
+- Run before PR **on a real local checkout** (not the agent sandbox — see `AI_EXECUTION_RULES.md`):
   ```bash
+  npm.cmd install                 # if deps changed
   npm.cmd exec tsc -- --noEmit
   npm.cmd run lint
   npm.cmd run build
   npx playwright test -- <affected_routes>
   ```
+- The agent sandbox can report **false** TypeScript syntax errors from NUL-corrupted file mounts. Treat repo contents (editor view) as the source of truth; **never rewrite working code to satisfy phantom sandbox errors.** Full rules: `AI_EXECUTION_RULES.md`.
 
 ## Commits
 
@@ -86,3 +88,4 @@ Use `type` imports for type-only imports: `import type { ... }`. Inline with val
 5. **Preserve Playwright route coverage.** Test affected routes when changing spreadsheet/backup behavior.
 6. **Provenance stays visible and semantic-coloured.** Colour = meaning, never decoration.
 7. **No network calls from core analysis code.** Privacy promise is non-negotiable.
+8. **Verify on a real checkout; trust the repo over the sandbox.** The sandbox can report phantom syntax errors from corrupted mounts — never rewrite working code to satisfy them. See `AI_EXECUTION_RULES.md`.

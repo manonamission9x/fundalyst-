@@ -1,6 +1,6 @@
 # Fundalyst — Current Status
 
-Last updated: 2026-07-02
+Last updated: 2026-07-02 (env config system + mobile pass — Claude)
 
 > **Quick orientation:** For active tickets with checkbox statuses, see `CODEX_TICKETS.md` (Claude/Codex) and `DEEPSEEK_TASKS.md` (DeepSeek). For the full change log, see `HANDoFF.md`.
 
@@ -31,6 +31,8 @@ Last updated: 2026-07-02
 
 | Date | Change | Tickets |
 |---|---|---|
+| 2026-07-02 | **Environment config system** — `src/lib/env.ts` (only `process.env` reader; typed, Zod-validated, server/client split, `requireEnv` fail-fast), `instrumentation.ts` startup validation, `.env.example`/`.env.local`, `.gitignore` fix, ESLint `no-process-env`, `docs/environment.md` | — |
+| 2026-07-02 | **First-class mobile pass** — bottom tab bar (`MobileTabBar.tsx`), `viewport-fit=cover` + themeColor (activates safe-area insets), mobile drawer search, pinned spreadsheet/`stmt-table`/diff/sens label columns | — |
 | 2026-07-02 | **Spreadsheet & Data-Flow Redesign** — write API on global-data-store, ModelBoundSpreadsheet adapter, WorkspaceGrid (virtualized, overlay-input), workspace-context-store, DCF/WC/Ratios refactored to model-bound | Absorbs T8, T10, T11; lays T14/T17 substrate |
 | 2026-07-02 | DCF scenario manager (persisted bear/base/bull config with editable spread controls) | T13 |
 | 2026-07-02 | Returning-user launchpad (Mission Control card), v6 landing redesign | T3, T4, v6 |

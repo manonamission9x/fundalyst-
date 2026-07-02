@@ -292,6 +292,33 @@ body {
 .nav-badge span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .nav-badge:hover { background: var(--bg-hover); }
 .nav-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+.nav-badge-dot.muted { background: var(--text-muted); }
+
+/* Company switcher (T12) — dataset badge becomes a switcher over datasets[]. */
+.nav-switcher { position: relative; display: inline-flex; }
+.nav-badge-btn { cursor: pointer; }
+.nav-badge-btn.open { background: var(--bg-hover); border-color: var(--border-strong); }
+.nav-switcher-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 120; min-width: 240px; max-width: 300px; background: var(--bg-elevated); border: 1px solid var(--border-light); border-radius: var(--radius-lg); box-shadow: 0 8px 28px rgba(0,0,0,0.35); padding: var(--space-1); }
+.nav-switcher-search { width: 100%; margin-bottom: var(--space-1); padding: 6px 8px; font-family: var(--font-ibm-plex-mono); font-size: var(--text-micro); color: var(--text); background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-sm); }
+.nav-switcher-list { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
+.nav-switcher-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 9px; background: transparent; border: none; border-radius: var(--radius-sm); text-align: left; cursor: pointer; color: var(--text-secondary); font-size: var(--text-2xs); }
+.nav-switcher-item:hover { background: var(--bg-hover); color: var(--text); }
+.nav-switcher-item.active { color: var(--text); }
+.nav-switcher-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-switcher-meta { flex-shrink: 0; font-family: var(--font-ibm-plex-mono); font-size: var(--text-nano); color: var(--text-muted); }
+.nav-switcher-actions { display: flex; gap: var(--space-1); margin-top: var(--space-1); padding-top: var(--space-1); border-top: 1px solid var(--border-light); }
+.nav-switcher-action { flex: 1 1 0; text-align: center; padding: 6px 4px; font-size: var(--text-nano); font-family: var(--font-ibm-plex-mono); color: var(--text-secondary); border-radius: var(--radius-sm); text-decoration: none; }
+.nav-switcher-action:hover { background: var(--bg-hover); color: var(--text); }
+
+/* Peer entity-pivot name button (T9). */
+.peer-name-pivot { background: none; border: none; padding: 0; margin: 0; cursor: pointer; color: var(--primary); font: inherit; text-align: left; min-height: unset; }
+.peer-name-pivot:hover { text-decoration: underline; }
+
+/* Metric → trend pivot focus (T9). */
+.trend-focus-note { margin-top: var(--space-3); padding: 8px 12px; border: 1px solid var(--border-light); border-left: 2px solid var(--primary); border-radius: var(--radius-sm); background: var(--bg-surface); font-size: var(--text-2xs); color: var(--text-secondary); }
+.trend-focus-row td { background: var(--primary-subtle); }
+.metric-pivot-link { color: var(--primary); text-decoration: none; }
+.metric-pivot-link:hover { text-decoration: underline; }
 .nav-section-label { font-size: var(--text-micro); font-family: var(--font-ibm-plex-mono); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 12px 2px; font-weight: 500; align-self: stretch; display: flex; align-items: center; }
 .nav-sep { width: 1px; height: 14px; background: var(--border); flex-shrink: 0; margin: 0 4px; align-self: center; }
 .nav-right { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
@@ -630,6 +657,16 @@ textarea.num-input { resize: vertical; min-height: 72px; line-height: 1.6; }
 .calc-trace-label { font-size: var(--text-xs); color: var(--text); font-weight: 600; }
 .calc-trace-formula { font-size: var(--text-micro); font-family: var(--font-ibm-plex-mono); color: var(--text-muted); margin-top: 2px; }
 .calc-trace-value { font-size: var(--text-sm); font-family: var(--font-ibm-plex-mono); color: var(--primary); white-space: nowrap; }
+.calc-trace-head-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.calc-trace-explain-btn { white-space: nowrap; }
+/* Grounded, local explanation block (T14). */
+.calc-trace-explain { margin: 0 0 var(--space-2); padding: 10px 12px; border: 1px solid var(--border-light); border-left: 2px solid var(--primary); border-radius: var(--radius-sm); background: var(--bg-surface); }
+.calc-trace-explain-tag { display: inline-block; font-family: var(--font-ibm-plex-mono); font-size: var(--text-nano); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+.calc-trace-explain-body { font-size: var(--text-2xs); color: var(--text-secondary); margin: 0 0 6px; line-height: 1.5; }
+.calc-trace-explain-cites { margin: 0; padding-left: 18px; font-size: var(--text-nano); color: var(--text-muted); }
+.calc-trace-explain-cites li { margin: 2px 0; }
+.calc-trace-explain-cite-label { color: var(--text-secondary); }
+.calc-trace-explain-cite-src { color: var(--text-muted); }
 .calc-trace-source-list { display: grid; gap: 6px; }
 .calc-trace-source { padding: 7px 9px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-field); }
 .calc-trace-source.is-clickable { display: block; color: inherit; text-decoration: none; cursor: pointer; transition: border-color 120ms ease, background 120ms ease; }
@@ -694,6 +731,14 @@ textarea.num-input { resize: vertical; min-height: 72px; line-height: 1.6; }
 .stmt-prov { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-left: 8px; vertical-align: middle; }
 .stmt-prov.imported { background: var(--green); }
 .stmt-prov.computed { background: var(--violet); }
+
+/* Inline provenance dot for numeric cells in real tool tables (T5). */
+.prov-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-left: 6px; vertical-align: middle; flex-shrink: 0; background: var(--text-muted); }
+.prov-dot-imported { background: var(--green); }
+.prov-dot-manual { background: var(--primary); }
+.prov-dot-default { background: var(--caution); }
+.prov-dot-inferred { background: var(--violet); }
+.prov-dot-unavailable { background: var(--border-light); }
 .stmt-foot { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-2) var(--space-4); border-top: 1px solid var(--border-light); font-family: var(--font-ibm-plex-mono); font-size: var(--text-micro); color: var(--text-muted); }
 .stmt-foot .k { display: inline-flex; align-items: center; gap: 6px; }
 .stmt-foot .k .d { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
@@ -1527,6 +1572,11 @@ details[open] .details-summary::before {
 .cmdk-input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: var(--text); font-family: var(--font-inter); font-size: var(--text-base); }
 .cmdk-input::placeholder { color: var(--text-muted); }
 .cmdk-kbd { font-family: var(--font-mono); font-size: var(--text-micro); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1px 6px; flex-shrink: 0; }
+/* Parsed-interpretation confirmation line (T16): shows what Enter will do. */
+.cmdk-interpretation { display: flex; align-items: center; gap: var(--space-2); padding: 6px var(--space-4); border-bottom: 1px solid var(--border); background: var(--bg-surface); font-size: var(--text-2xs); color: var(--text-secondary); }
+.cmdk-interpretation-key { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: var(--text-nano); color: var(--text-muted); }
+.cmdk-interpretation-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmdk-interpretation-meta { color: var(--text-muted); }
 .cmdk-list { overflow-y: auto; padding: var(--space-1); }
 .cmdk-section { font-family: var(--font-mono); font-size: var(--text-micro); letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); padding: var(--space-2) var(--space-2) var(--space-1); }
 .cmdk-item { display: flex; align-items: center; gap: 10px; padding: var(--space-2) var(--space-2); border-radius: var(--radius-md); cursor: pointer; color: var(--text-secondary); font-size: var(--text-sm); }
@@ -1906,8 +1956,43 @@ details[open] .details-summary::before {
   /* Content + footer must clear the fixed bar. */
   .page { padding-bottom: calc(var(--tabbar-height) + var(--space-6) + env(safe-area-inset-bottom, 0px)); }
   .site-footer { margin-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px)); }
+  /* Toast sits above the tab bar, not behind it. */
+  #toast { bottom: calc(var(--tabbar-height) + var(--space-3) + env(safe-area-inset-bottom, 0px)); }
 }
 @media print { .mobile-tabbar { display: none !important; } }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Mobile table & spreadsheet polish — pinned label columns (phones).
+   Dense tables/spreadsheets scroll horizontally; the left-most label column
+   stays pinned and reads as "pinned" via a soft edge shadow, so a value is
+   never orphaned from its metric name while scrolling/editing on a phone.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* diff / sensitivity tables already pin col 1 — add the pinned shadow. */
+  .diff-table td:first-child, .diff-table th:first-child,
+  .sens-table td:first-child, .sens-table th:first-child {
+    box-shadow: 1px 0 0 var(--border), 5px 0 8px -6px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Statement preview: pin the line-item column while values scroll. */
+  .stmt-table th:first-child, .stmt-table td:first-child {
+    position: sticky; left: 0; z-index: 2;
+    background: var(--bg-elevated);
+    box-shadow: 1px 0 0 var(--border), 5px 0 8px -6px rgba(0, 0, 0, 0.35);
+  }
+  .stmt-table thead th:first-child { z-index: 3; }
+
+  /* Spreadsheet editor: keep the line-item (metric) column visible while the
+     period columns scroll horizontally — essential for editing on a phone. */
+  .spreadsheet-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .spreadsheet-corner, .spreadsheet-metric-cell {
+    position: sticky; left: 0; z-index: 2;
+  }
+  .spreadsheet-corner { z-index: 4; }
+  .spreadsheet-metric-cell {
+    box-shadow: 1px 0 0 var(--border-light), 5px 0 8px -6px rgba(0, 0, 0, 0.3);
+  }
+}
 
 /* ══════════════════════════════════════════════════════════════════════════
    Fundalyst Design System v6 — "Living Ledger"
@@ -2530,68 +2615,11 @@ input:focus, textarea:focus, select:focus, [contenteditable]:focus,
   .field-group { gap: 1px; }
 }
 
-/* ── Very small screens (≤420) ── */
-@media (max-width: 420px) {
-  .page { padding: 0 var(--space-1) calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); }
-  .nav-tab { padding: 5px 7px; font-size: var(--text-nano); gap: 3px; }
-  .nav-tab svg { width: 10px; height: 10px; }
-  .nav-brand svg { width: 10px; height: 10px; }
-  .nav-cta { padding: 2px 4px; }
-  .nav-cta svg { width: 9px; height: 9px; }
-  .home-hero { padding: var(--space-4) 0 var(--space-1); }
-  .home-hero h1 { font-size: var(--text-2xl); }
-  .home-kicker { font-size: var(--text-micro); }
-  .metric-value { font-size: var(--text-sm); }
-  .metric-cell { padding: 5px 8px; }
-  .diff-table { font-size: var(--text-3xs); }
-  .diff-table th, .diff-table td { padding: 2px 3px; }
-  .card-body { padding: var(--space-3); }
-  .card-header { padding: var(--space-1) var(--space-3); }
-  .card-actions { padding: var(--space-1) var(--space-3); }
-  .insight-card { padding: 5px 7px; }
-  .workspace-step { font-size: var(--text-micro); padding: 3px 5px; }
-  .home-section { margin-bottom: var(--space-2); }
-  .about-card { padding: var(--space-1) var(--space-2); }
-  .workspace-step { font-size: var(--text-nano); padding: 2px 4px; }
-  .workspace-step-icon { width: 14px; }
-  .workspace-upload-icon { width: 22px; height: 22px; }
-  .trust-badge { font-size: var(--text-nano); padding: 0 3px; }
-  .data-quality { font-size: var(--text-nano); }
-  button, .btn { padding: 3px 6px; font-size: var(--text-nano); }
-  .sens-table th, .sens-table td { padding: 2px 3px; font-size: var(--text-3xs); }
-  .sens-table td:first-child { font-size: var(--text-micro); }
-  .diff-table tr td:first-child { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .import-formats { font-size: var(--text-nano); gap: 2px; }
-  .sticky-actions { padding: var(--space-1); padding-bottom: calc(var(--space-1) + env(safe-area-inset-bottom, 0px)); }
-}
+/* Duplicate ≤420px mobile block removed (T7) — identical rules already defined
+   by the primary ≤420px cluster above. */
 
-/* ── Tablet horizontal scroll ── */
-@media (max-width: 820px) {
-  .card:has(.diff-table), .card:has(.sens-table) { overflow-x: auto; }
-}
-
-/* ── v5 §8 — mobile: hero-number floor + sticky-label data tables ── */
-@media (max-width: 768px) {
-  .hero-decision-value { font-size: var(--text-2xl); }
-  .card:has(.diff-table), .card:has(.sens-table) {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .diff-table th:first-child, .diff-table td:first-child,
-  .sens-table th:first-child, .sens-table td:first-child {
-    position: sticky;
-    left: 0;
-    z-index: 2;
-    background: var(--bg-elevated);
-  }
-  .diff-table thead th:first-child,
-  .sens-table thead th:first-child { z-index: 3; }
-  .stmt-table th, .stmt-table td { padding: 7px var(--space-2); }
-  .stmt-line { white-space: normal; min-width: 120px; }
-  .stmt-num, .stmt-yoy { font-size: var(--text-micro); }
-  .stmt-meta { font-size: var(--text-micro); }
-  .stmt-foot { gap: var(--space-2); flex-wrap: wrap; }
-}
+/* Duplicate ≤820px / ≤768px mobile blocks removed (T7) — identical rules already
+   defined by the primary mobile clusters above. */
 
 /* ══════════════════════════════════════════════════════════════════════════
    v6 tool-page chrome — the calm application of the Living Ledger rhythm to

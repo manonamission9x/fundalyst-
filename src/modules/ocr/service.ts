@@ -11,13 +11,21 @@
  *   4. FinancialStatement record created with extracted data
  */
 
-import { createExtractionJob, updateExtractionJobStatus } from "@/services/prisma";
+import {
+  findExtractionJobsForDocumentForUser,
+  insertExtractionJob,
+  updateExtractionJobStatus,
+} from "@/modules/ocr/repository";
 import { documentQueue } from "@/lib/queue";
 import type { DocumentOcrJobPayload } from "@/jobs";
 
+export async function getOcrJobsForDocument(documentId: string, userId: string) {
+  return findExtractionJobsForDocumentForUser(documentId, userId);
+}
+
 export async function enqueueOcrJob(documentId: string) {
   // Create extraction job record (Prisma relation uses connect, not scalar)
-  const job = await createExtractionJob({
+  const job = await insertExtractionJob({
     document: { connect: { id: documentId } },
     type: "ocr",
     status: "queued",
@@ -34,7 +42,7 @@ export async function enqueueOcrJob(documentId: string) {
   );
 
   // Link BullMQ job ID back to the extraction job
-  await updateExtractionJobStatus(job.id, "queued");
+  await updateExtractionJobStatus(job.id, "queued", { queueJobId: queueJob.id });
 
   return {
     extractionJobId: job.id,

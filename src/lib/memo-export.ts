@@ -24,6 +24,7 @@ import type {
   ProvenanceKind,
 } from '@/types/financial';
 import type { FundalystDataset } from '@/lib/importer/types';
+import * as XLSX from 'xlsx';
 
 // ── Helpers ──
 
@@ -770,6 +771,110 @@ export function downloadMemoMarkdown(memo: MemoExport, filename?: string): void 
   const a = document.createElement('a');
   a.href = url;
   a.download = filename || `memo-${memo.companyName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}-${new Date().toISOString().slice(0, 10)}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Excel export with live formulas (T15) ──
+
+export interface DCFExcelInputs {
+  companyName: string;
+  fcf: number;
+  growth: number;
+  years: number;
+  discount: number;
+  terminal: number;
+  netDebt: number;
+  shares: number;
+  price: number;
+  result: DCFResult;
+}
+
+/**
+ * Build a DCF workbook whose result cells are **live Excel formulas** (not just
+ * values) referencing the assumption cells. Editing an assumption in Excel
+ * recomputes the whole model. Cached values mirror the app's `computeDCF` so the
+ * sheet shows correct numbers before Excel recalculates. Pure — returns a workbook.
+ */
+export function buildDCFWorkbook(inp: DCFExcelInputs): XLSX.WorkBook {
+  const { companyName, fcf, growth, years, discount, terminal, netDebt, shares, price, result } = inp;
+  const ws: XLSX.WorkSheet = {};
+  const S = (addr: string, v: string) => { ws[addr] = { t: 's', v }; };
+  const N = (addr: string, v: number) => { ws[addr] = { t: 'n', v: Number.isFinite(v) ? v : 0 }; };
+  const F = (addr: string, f: string, v: number) => { ws[addr] = { t: 'n', f, v: Number.isFinite(v) ? v : 0 }; };
+
+  S('A1', `DCF Valuation — ${companyName || 'Company'}`);
+  S('A3', 'Assumptions');
+  S('A4', 'Base Free Cash Flow'); N('B4', fcf);
+  S('A5', 'Growth Rate (%)'); N('B5', growth);
+  S('A6', 'Projection Years'); N('B6', years);
+  S('A7', 'Discount Rate / WACC (%)'); N('B7', discount);
+  S('A8', 'Terminal Growth (%)'); N('B8', terminal);
+  S('A9', 'Net Debt'); N('B9', netDebt);
+  S('A10', 'Shares Outstanding'); N('B10', shares);
+  S('A11', 'Current Price'); N('B11', price);
+
+  S('A13', 'Year'); S('B13', 'Projected FCF'); S('C13', 'Discount Factor'); S('D13', 'PV of FCF');
+
+  const yrs = Math.max(1, Math.floor(years));
+  for (let y = 1; y <= yrs; y++) {
+    const r = 13 + y;
+    N(`A${r}`, y);
+    const proj = result.projected[y - 1];
+    // Mirror computeDCF: PFCF = FCF·(1+g)^y ; DF = 1/(1+WACC)^y ; PV = PFCF·DF
+    F(`B${r}`, `$B$4*(1+$B$5/100)^A${r}`, proj ? proj.fcf : 0);
+    F(`C${r}`, `1/(1+$B$7/100)^A${r}`, proj ? proj.df : 0);
+    F(`D${r}`, `B${r}*C${r}`, proj ? proj.pv : 0);
+  }
+
+  const lastYearRow = 13 + yrs;
+  const rPvSum = lastYearRow + 2;
+  const rTv = lastYearRow + 3;
+  const rPvTv = lastYearRow + 4;
+  const rEv = lastYearRow + 5;
+  const rEq = lastYearRow + 6;
+  const rIv = lastYearRow + 7;
+  const rMos = lastYearRow + 8;
+
+  S(`A${rPvSum}`, 'Sum of PV (projected FCF)');
+  F(`B${rPvSum}`, `SUM(D14:D${lastYearRow})`, result.pvSum);
+  S(`A${rTv}`, 'Terminal Value (Gordon Growth)');
+  F(`B${rTv}`, `B${lastYearRow}*(1+$B$8/100)/(($B$7-$B$8)/100)`, result.tv);
+  S(`A${rPvTv}`, 'PV of Terminal Value');
+  F(`B${rPvTv}`, `B${rTv}/((1+$B$7/100)^$B$6)`, result.pvTv);
+  S(`A${rEv}`, 'Enterprise Value');
+  F(`B${rEv}`, `B${rPvSum}+B${rPvTv}`, result.ev);
+  S(`A${rEq}`, 'Equity Value');
+  F(`B${rEq}`, `B${rEv}-$B$9`, result.eq);
+  S(`A${rIv}`, 'Intrinsic Value / Share');
+  F(`B${rIv}`, `B${rEq}/$B$10`, result.iv);
+  S(`A${rMos}`, 'Margin of Safety (%)');
+  F(`B${rMos}`, `(B${rIv}-$B$11)/$B$11*100`, result.mos);
+
+  ws['!ref'] = `A1:D${rMos}`;
+  ws['!cols'] = [{ wch: 30 }, { wch: 18 }, { wch: 16 }, { wch: 16 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'DCF Model');
+  return wb;
+}
+
+/**
+ * Download the DCF model as an .xlsx with intact live formulas (T15).
+ */
+export function downloadDCFExcel(inp: DCFExcelInputs, filename?: string): void {
+  if (typeof window === 'undefined') return;
+  const wb = buildDCFWorkbook(inp);
+  const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([out], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download =
+    filename ||
+    `dcf-${(inp.companyName || 'model').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}-${new Date().toISOString().slice(0, 10)}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 }

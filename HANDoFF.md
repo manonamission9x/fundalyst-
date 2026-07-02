@@ -3,7 +3,7 @@
 **The single status doc — current snapshot + rolling changelog.** (Formerly split into
 `CURRENT_STATUS.md`; merged here 2026-07-02. Update *this* file; there is no separate status doc.)
 
-Last updated: 2026-07-02 (backend Phase 1 infrastructure — Hermes)
+Last updated: 2026-07-03 (backend Phase 2 API slice)
 Repo: `C:\Users\kingo\Desktop\fundalyst-next` · GitHub: `https://github.com/manonamission9x/fundalyst-` · Branch: `main`
 Latest code commit: `3e1d52f` — Returning-user launchpad redesign (Mission Control). Pushed to `origin/main`.
 
@@ -83,6 +83,18 @@ Known lint warnings (pre-existing): `import/page.tsx` + `PdfViewer.tsx` `next/no
 ---
 
 ## Changelog (newest first)
+
+### 2026-07-03 — Backend Phase 2 API slice (Codex)
+
+Moved backend work past Phase 1 infrastructure into the first usable account/workspace/document flow.
+
+- **Session helper live** (`src/server/auth/session.ts`): wraps Better Auth `getSession()` for route handlers and returns a small server-safe session shape.
+- **User profile endpoint** (`GET /api/me`): authenticated profile read backed by the users module.
+- **Workspace API** (`/api/workspaces`, `/api/workspaces/:workspaceId`): list/create/read/update/soft-delete with owner scoping.
+- **Document metadata API** (`/api/workspaces/:workspaceId/documents`, `/api/documents/:documentId`): list/create/read/soft-delete. This is metadata only; binary storage is still future R2/S3 work.
+- **OCR orchestration API** (`GET/POST /api/documents/:documentId/ocr`): list extraction jobs and enqueue a document OCR job through BullMQ, gated by document ownership.
+- **Manifest/docs**: `/api/backend`, `BACKEND.md`, and `docs/backend.md` now list the Phase 2 endpoints.
+- **Verification**: `npm.cmd exec tsc -- --noEmit`, `npm.cmd run lint`, and `npm.cmd test` pass on the Windows checkout.
 
 ### 2026-07-02 — Ticket batch: T1/T2/T5/T6/T9/T12/T14/T15 done; T7/T16 partial (Claude)
 

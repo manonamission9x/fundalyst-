@@ -45,7 +45,7 @@ const statementRows: StatementRow[] = [
   { line: 'Profit after tax', fy24: '69,621', fy23: '65,009', yoy: '+7.1%', tone: 'pos', source: 'imported', subtotal: true },
 ];
 
-const toolCards: ToolCard[] = (['dcf', 'filing', 'trends', 'ratios', 'peer', 'wc'] as const).map((id) => ({
+const toolCards: ToolCard[] = (['filing', 'trends', 'ratios', 'wc', 'dcf', 'peer'] as const).map((id) => ({
   href: TOOL_BY_ID[id].href,
   icon: TOOL_BY_ID[id].icon,
   name: TOOL_BY_ID[id].shortLabel,

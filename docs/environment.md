@@ -14,16 +14,18 @@ on `process.env`).
 There is no second env loader, no duplicate validation, and no scattered
 `process.env` access anywhere in the codebase. Do not add any.
 
-## Context: Fundalyst is client-side today
+## Context: Fundalyst is hybrid now
 
-Fundalyst is currently a 100% client-side application (see `BACKEND.md` and
-`DATABASE.md`) — no server, database, auth, or cloud. Its privacy promise is
-that user financial data never leaves the browser.
+Fundalyst is a hybrid local-first application (see `BACKEND.md` and
+`DATABASE.md`). Core financial analysis still runs in the browser by default,
+while optional backend features provide auth, workspace persistence, document
+metadata, queues, and OCR orchestration.
 
-Because of that, **every server variable is optional today**: the app builds and
-runs with an empty environment. This config system is forward-looking
-scaffolding for the planned backend. Values are still format-validated when
-present, and become hard-required at the moment code actually depends on them.
+Server variables stay optional in the schema until a feature imports them with
+`requireEnv()`. Once a backend feature is active, the variables it depends on
+are required at that point of use with a precise error message. For local
+backend work, `.env.local` should include `DATABASE_URL`, `BETTER_AUTH_SECRET`,
+`BETTER_AUTH_URL`, and `REDIS_URL`.
 
 ## Files
 
@@ -48,16 +50,16 @@ Getting started: `cp .env.example .env.local` and fill in the values you need.
 
 ## Variables
 
-Server-only unless marked public. "Required?" reflects the intended backend;
-all are currently optional so the client-only app keeps working.
+Server-only unless marked public. "Required?" reflects the current backend
+feature that needs the value.
 
 | Variable | Scope | Required (at use) | Purpose |
 |---|---|---|---|
 | `NODE_ENV` | server | auto | Runtime mode (`development`/`test`/`production`). |
-| `DATABASE_URL` | server | yes, once DB lands | Postgres connection string. |
-| `BETTER_AUTH_SECRET` | server | yes, once auth lands | Auth signing secret (`openssl rand -base64 32`). |
-| `BETTER_AUTH_URL` | server | yes, once auth lands | Base URL for auth callbacks. |
-| `REDIS_URL` | server | optional | Valkey/Redis connection for BullMQ queues. |
+| `DATABASE_URL` | server | yes, for Prisma/backend routes | Postgres connection string. |
+| `BETTER_AUTH_SECRET` | server | yes, for auth routes | Auth signing secret (`openssl rand -base64 32`). |
+| `BETTER_AUTH_URL` | server | yes, for auth routes | Base URL for auth callbacks. |
+| `REDIS_URL` | server | yes, for BullMQ queue routes/workers | Valkey/Redis connection for BullMQ queues. |
 | `DEEPSEEK_API_KEY` | server | optional | DeepSeek AI provider. |
 | `OPENAI_API_KEY` | server | optional | OpenAI provider. |
 | `ANTHROPIC_API_KEY` | server | optional | Anthropic provider. |
@@ -136,12 +138,12 @@ Follow all five steps, in order:
 
 That's the whole surface area. No new files, no new loaders.
 
-## Making the backend real (when the time comes)
+## Tightening requirements
 
-When Fundalyst gains a server/database (a deliberate architectural change — see
-`BACKEND.md` "Patterns to never introduce"), flip the relevant vars from
-`.optional()` to required in `serverSchema`. Startup validation will then refuse
-to boot the server without them. Nothing else in the config system changes.
+When a backend capability becomes mandatory for all deployments, flip the
+relevant vars from `.optional()` to required in `serverSchema`. Startup
+validation will then refuse to boot the server without them. Nothing else in the
+config system changes.
 
 ## Security checklist
 

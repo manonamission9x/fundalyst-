@@ -16,6 +16,7 @@ import {
   collectFundalystLocalState,
 } from '@/lib/enterprise-backup';
 import { generateMemo, downloadMemoMarkdown } from '@/lib/memo-export';
+import { draftThesisFromEvidence } from '@/lib/grounded-ai';
 import { useActiveDataset } from '@/store/financial-model-selectors';
 import { useDCFStore, useRatiosStore } from '@/store';
 import {
@@ -67,7 +68,8 @@ type SettingsStepId = (typeof settingsSteps)[number]['id'];
 // ── Tool definitions with purpose context ──
 const toolList = (ids: ToolId[]): ToolMetadata[] => ids.map((id) => TOOL_BY_ID[id]);
 const quickAnalysisTools = toolList(['filing', 'trends', 'growth']);
-const deepDiveTools = toolList(['dcf', 'ratios', 'peer', 'wc']);
+// Analyst arc: Ratios/Cash → DCF → Peers (T6).
+const deepDiveTools = toolList(['ratios', 'wc', 'dcf', 'peer']);
 
 const RESTORABLE_WORKSPACE_KEYS = new Set([
   'fundalyst-global-data',
@@ -94,12 +96,14 @@ export default function WorkspacePage() {
   const selectedFactId = searchParams.get('fact');
   const selectedMetric = searchParams.get('metric');
   const selectedLens = searchParams.get('lens') as SettingsStepId | null;
+  const selectedStepParam = searchParams.get('step') as StepId | null;
+  const deepLinkedStep = steps.some((step) => step.id === selectedStepParam) ? selectedStepParam : null;
   const deepLinkedLens = settingsSteps.some((step) => step.id === selectedLens) ? selectedLens : null;
   const isEvidencePivot = Boolean(selectedFactId || selectedMetric);
   const hasWorkspaceQuery = Boolean(selectedFactId || selectedMetric || deepLinkedLens);
   const visibleSettingsOpen = settingsOpen || isEvidencePivot || Boolean(deepLinkedLens);
   const visibleActiveSettingsStep = isEvidencePivot ? 'evidence' : deepLinkedLens || activeSettingsStep;
-  const visibleActiveStep = visibleActiveSettingsStep ? 'overview' : activeStep;
+  const visibleActiveStep = visibleActiveSettingsStep ? 'overview' : deepLinkedStep || activeStep;
   const datasets = useGlobalDataStore((s) => s.datasets);
   const activeDatasetId = useGlobalDataStore((s) => s.activeDatasetId);
   const activeDataset = useActiveDataset();
@@ -115,6 +119,7 @@ export default function WorkspacePage() {
   const activeProjectCompanyName = activeProject?.companyName;
   const activeProjectDatasetId = activeProject?.activeDatasetId ?? null;
 
+  // Deep-link a main workflow step via ?step=… (e.g. the `thesis` command verb).
   useEffect(() => {
     if (!activeProjectSyncId || !hasData) return;
     const shouldUpdateCompany =
@@ -1043,6 +1048,8 @@ function ThesisPanel() {
   const [notes, setNotes] = useState('');
   const [verdict, setVerdict] = useState<'positive' | 'negative' | 'neutral' | ''>('');
   const addAuditEvent = useEnterpriseStore((s) => s.addAuditEvent);
+  const activeDataset = useActiveDataset();
+  const dcfSummary = useDCFStore((s) => s.summary);
   const saved = typeof window !== 'undefined' ? localStorage.getItem('fundalyst-thesis') : null;
   const [savedStatus, setSavedStatus] = useState<string | null>(() => {
     if (saved) {
@@ -1073,6 +1080,38 @@ function ThesisPanel() {
       setVerdict(data.verdict || '');
       setSavedStatus(null);
     } catch {}
+  }
+
+  // Draft a thesis locally from accepted evidence (T14). Pre-fills the editable
+  // notes; never auto-saves and never mutates the model.
+  function handleDraftFromEvidence() {
+    const ds = activeDataset;
+    const headline = ['Revenue', 'Net Profit', 'Free Cash Flow', 'Total Debt', 'Net Debt', 'Shares Outstanding'];
+    const traces = ds
+      ? headline.flatMap((metric) => {
+          const facts = ds.facts.filter((f) => f.metric === metric);
+          if (facts.length === 0) return [];
+          const fact = facts[facts.length - 1];
+          return [{
+            label: metric,
+            value: String(fact.value),
+            formula: '',
+            sources: [{
+              label: metric,
+              value: String(fact.value),
+              source: `${ds.companyName || 'Imported dataset'} (${fact.sourceType})`,
+              period: fact.periodLabel,
+            }],
+          }];
+        })
+      : [];
+    const draft = draftThesisFromEvidence({
+      companyName: ds?.companyName || 'Company',
+      traces,
+      marginOfSafety: dcfSummary?.mos ?? null,
+    });
+    setNotes(draft);
+    setSavedStatus('Draft generated locally — edit, then Save.');
   }
 
   return (
@@ -1113,9 +1152,17 @@ function ThesisPanel() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button type="button" className="btn-primary btn-sm" onClick={handleSave}>
                 Save Thesis
+              </button>
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                onClick={handleDraftFromEvidence}
+                title="Generate a cited first draft locally from your accepted evidence"
+              >
+                Draft from evidence
               </button>
               {saved && (
                 <button type="button" className="btn-secondary btn-sm" onClick={handleLoad}>

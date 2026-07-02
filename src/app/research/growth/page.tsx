@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { useYoyStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
@@ -10,7 +11,7 @@ import {
   UploadBar,
   Toolbar,
   HeroDecision,
-  NextLinks,
+  ArcNextLinks,
   Disclaimer,
   CalcTimestamp,
   EmptyState,
@@ -65,8 +66,7 @@ export default function YoyPage() {
   const applyEdits = useGlobalDataStore((s) => s.applyEdits);
   const activeDatasetId = useGlobalDataStore((s) => s.activeDatasetId);
 
-  // parseWithText: plain function (not useCallback) so it can be used before the effect
-  function parseWithText(text: string) {
+  const parseWithText = useCallback((text: string) => {
     const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
     const dataLines = lines[0] && /^metric\s*,/i.test(lines[0]) ? lines.slice(1) : lines;
     setRows(dataLines.map((l) => {
@@ -75,7 +75,7 @@ export default function YoyPage() {
       const growth = vals.map((v, i) => i > 0 && vals[i - 1] ? ((v - vals[i - 1]) / Math.abs(vals[i - 1])) * 100 : null);
       return { label: cols[0], vals, growth };
     }));
-  }
+  }, [setRows]);
 
   // Pre-fill from canonical model when available
   const prefilledRef = useRef(false);
@@ -104,7 +104,7 @@ export default function YoyPage() {
     }, 0);
     prefilledRef.current = true;
     return () => clearTimeout(timer);
-  }, [activeDataset, modelData.data, modelData.isLoaded, dataInfo.dataSource, setCsv, setRows, setYears]);
+  }, [activeDataset, modelData.data, modelData.isLoaded, dataInfo.dataSource, parseWithText, setCsv, setRows, setYears]);
 
   const handleDataChange = (newRows: SpreadsheetRow[], newPeriods: string[]) => {
     setSheetRows(newRows);
@@ -312,7 +312,11 @@ export default function YoyPage() {
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i}>
-                    <td><strong>{r.label}</strong></td>
+                    <td>
+                      <Link href={`/research/trends?metric=${encodeURIComponent(r.label)}`} className="metric-pivot-link" title={`Open ${r.label} trend`}>
+                        <strong>{r.label}</strong>
+                      </Link>
+                    </td>
                     {r.growth.slice(1).map((g, j) => (
                       <td key={j} style={{ color: g !== null && g > 0 ? 'var(--green)' : g !== null && g < 0 ? 'var(--red)' : 'var(--text)' }}>
                         {g !== null ? (g > 0 ? '+' : '') + g.toFixed(1) + '%' : '—'}
@@ -339,7 +343,7 @@ export default function YoyPage() {
           <CalculationTracePanel traces={traceItems} />
 
           <div className="mt-4">
-            <NextLinks links={[{ label: 'Trend charts', href: '/research/trends' }, { label: 'Review filings', href: '/research/filing' }]} />
+            <ArcNextLinks current="growth" />
             <CalcTimestamp />
             <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label={`Values from: ${isSampleLoaded ? 'Sample data' : getDataSourceLabel(dataInfo.dataSource, dataInfo.companyName)}`} variant="source" /><TrustBadge label="₹ Indian Market" /></div>
             <Disclaimer />

@@ -16,7 +16,7 @@ import {
   InsightCard,
   FormulaDisclosure,
   SectionTitle,
-  NextLinks,
+  ArcNextLinks,
   CalcTimestamp,
   Disclaimer,
   EmptyState,
@@ -335,7 +335,7 @@ export default function RatiosPage() {
             <button className="btn-secondary btn-sm" onClick={() => downloadCSV('ratios.csv', [['Section', 'Metric', 'Value'], ...res.map((r) => [r.section, r.label, r.value])])}>Download CSV</button>
           </div>
           <div className="mt-4">
-            <NextLinks links={[{ label: 'Cash efficiency', href: '/tools/wc' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
+            <ArcNextLinks current="ratios" />
             <CalcTimestamp />
             <div className="flex gap-2 flex-wrap mt-2">
               <TrustBadge label={`Values from: ${dataset?.companyName || 'User entry'}`} variant="source" />

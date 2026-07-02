@@ -1,6 +1,6 @@
 # Fundalyst — Architecture
 
-For the full rationale behind the spreadsheet/data-flow design, see `HANDOFF_SPREADSHEET_DATAFLOW.md`. This file is the durable reference.
+For the full rationale behind the spreadsheet/data-flow design, see `docs/archive/HANDOFF_SPREADSHEET_DATAFLOW.md`. This file (ARCHITECTURE.md) is the durable reference.
 
 ## Core principle
 
@@ -141,7 +141,7 @@ layout.tsx
 
 ## Migrations / key decisions
 
-See `HANDOFF_SPREADSHEET_DATAFLOW.md` for the full architectural plan behind the spreadsheet & data-flow redesign. Key decisions:
+See `docs/archive/HANDOFF_SPREADSHEET_DATAFLOW.md` for the full architectural plan behind the spreadsheet & data-flow redesign. Key decisions:
 
 - **glide-data-grid skipped** (React 19 incompatibility — peer dep requires React 18). Built Option B: virtualized DOM grid with single floating `<input>` overlay.
 - **Assumptions pseudo-sheet** — tool inputs that aren't source facts (DCF growth/WACC/terminal) now live in the model with `statement: 'assumptions'`.

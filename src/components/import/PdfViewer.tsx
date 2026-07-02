@@ -143,8 +143,15 @@ export default function PdfViewer({
       canvas.height = viewport.height;
 
       const ctx = canvas.getContext('2d')!;
-      ctx.fillStyle = '#1a1a2e';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Read the canvas backdrop from the design tokens instead of a raw hex
+      // literal (DESIGN §9 / T7) so it tracks the active theme.
+      const tokenBg = getComputedStyle(document.documentElement)
+        .getPropertyValue('--bg-elevated')
+        .trim();
+      if (tokenBg) {
+        ctx.fillStyle = tokenBg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
 
       const renderTask = page.render({
         canvas,
@@ -339,6 +346,8 @@ export default function PdfViewer({
                 }}
               >
                 {thumb ? (
+                  <>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- Canvas data URL thumbnail generated in-browser. */}
                   <img
                     src={thumb}
                     alt={`Page ${i + 1}`}
@@ -347,6 +356,7 @@ export default function PdfViewer({
                       border: pageNum === i + 1 ? '2px solid var(--primary)' : '2px solid transparent',
                     }}
                   />
+                  </>
                 ) : (
                   <div
                     style={{

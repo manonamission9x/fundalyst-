@@ -30,8 +30,10 @@ Two deliverables, one philosophy:
 
 ## 2. Honest reality check (read before you design — it changes what you build)
 
-Fundalyst is **100% client-side: no backend, no server, no account, nothing leaves the device**
-(`AGENTS.md`). That constrains three things in the brief, and I want them explicit so you don't
+At the time this archived handoff was written, Fundalyst was fully client-side and local-only
+(`AGENTS.md`). The current app is now hybrid;
+keep this section as historical context for the spreadsheet/data-flow redesign, not as current
+backend status. That constrained three things in the brief, and I want them explicit so you don't
 build on sand:
 
 1. **"AI understands the spreadsheet / instant explanations / AI memory."** There is **no live

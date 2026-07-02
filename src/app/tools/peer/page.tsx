@@ -15,7 +15,7 @@ import {
   InsightCard,
   EmptyState,
   Disclaimer,
-  NextLinks,
+  ArcNextLinks,
   DataQualityBar,
   CalcTimestamp,
   TrustBadge,
@@ -85,6 +85,17 @@ export default function PeerPage() {
   const dsCount = useGlobalDataStore((s) => s.datasets.length);
   const activeDataset = useActiveDataset();
   const datasets = useGlobalDataStore((s) => s.datasets);
+  const setActiveDataset = useGlobalDataStore((s) => s.setActiveDataset);
+
+  // Entity pivot (T9): if a peer row matches an imported dataset, clicking its
+  // name loads that company as the active dataset.
+  const pivotToCompany = useCallback((name: string) => {
+    const match = datasets.find((d) => (d.companyName || '').toLowerCase() === name.toLowerCase());
+    if (match) {
+      setActiveDataset(match.id);
+      showToast(`Switched to ${match.companyName || 'selected company'}`);
+    }
+  }, [datasets, setActiveDataset, showToast]);
 
   const modelData = useModelData((ds) => extractPeersFromModel(ds));
 
@@ -405,7 +416,24 @@ Infosys, 156000, 28700, 172000, 24000`;
                   });
                   return peerResults.map((r, i) => (
                     <tr key={i}>
-                      <td><strong>{r.name}</strong></td>
+                      <td>
+                        {(() => {
+                          const match = datasets.find((d) => (d.companyName || '').toLowerCase() === r.name.toLowerCase());
+                          const isActivePeer = match && match.id === activeDataset?.id;
+                          return match && !isActivePeer ? (
+                            <button
+                              type="button"
+                              className="peer-name-pivot"
+                              onClick={() => pivotToCompany(r.name)}
+                              title={`Load ${r.name} as the active company`}
+                            >
+                              <strong>{r.name}</strong>
+                            </button>
+                          ) : (
+                            <strong>{r.name}</strong>
+                          );
+                        })()}
+                      </td>
                       {r.vals.map((v, j) => {
                         const b = bestOrWorst(peerResults, j);
                         const w = worst(peerResults, j);
@@ -494,7 +522,7 @@ Infosys, 156000, 28700, 172000, 24000`;
           </div>
 
           <div className="mt-4">
-            <NextLinks links={[{ label: 'Cash efficiency', href: '/tools/wc' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
+            <ArcNextLinks current="peer" />
             <CalcTimestamp />
             <CalculationTracePanel traces={traceItems} />
             <div className="flex gap-2 flex-wrap mt-2">

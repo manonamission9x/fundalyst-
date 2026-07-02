@@ -1,7 +1,9 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { computeDCF, computeDCFSensitivity, computeDCFScenarios, validateDCFInputs, fmtNum } from '@/lib/calculations';
+import { downloadDCFExcel } from '@/lib/memo-export';
 import { useDCFStore, DEFAULT_DCF_SCENARIO_CONFIG, type DCFScenarioConfig } from '@/store';
 import { useActiveDataset } from '@/store/financial-model-selectors';
 import { useGlobalDataStore } from '@/store/global-data-store';
@@ -19,7 +21,7 @@ import {
   InsightCard,
   EmptyState,
   Disclaimer,
-  NextLinks,
+  ArcNextLinks,
   DataQualityBar,
   CalcTimestamp,
   TrustBadge,
@@ -211,6 +213,36 @@ export default function DCFPage() {
 
   const companyName = dataset?.companyName || '';
 
+  // Export the model to Excel with live formulas (T15).
+  const handleExportExcel = useCallback(() => {
+    if (!summary) { showToast('Calculate the valuation first'); return; }
+    const m = readDCFInputs(dataset);
+    downloadDCFExcel({
+      companyName: dataset?.companyName || 'Company',
+      fcf: Number(m.fcf) || 0,
+      growth: Number(m.growth) || 0,
+      years: Number(m.years) || 5,
+      discount: Number(m.discount) || 0,
+      terminal: Number(m.terminal) || 0,
+      netDebt: m.netDebt === '' || m.netDebt === undefined ? 0 : Number(m.netDebt),
+      shares: Number(m.shares) || 0,
+      price: Number(m.price) || 0,
+      result: summary,
+    });
+    showToast('DCF exported to Excel with live formulas');
+  }, [dataset, summary, showToast]);
+
+  // Deep-link export: `/tools/dcf?export=1` (palette "Export DCF") fires once the
+  // valuation is available.
+  const searchParams = useSearchParams();
+  const exportedRef = useRef(false);
+  useEffect(() => {
+    if (searchParams.get('export') !== '1' || exportedRef.current) return;
+    if (!summary) return;
+    exportedRef.current = true;
+    handleExportExcel();
+  }, [searchParams, summary, handleExportExcel]);
+
   // Build calculation traces from model data
   const traceItems = useMemo<CalculationTrace[]>(() => {
     if (!dataset) return [];
@@ -383,20 +415,27 @@ export default function DCFPage() {
       </Card>
 
       {show && summary && (
-        <DCFResults
-          summary={summary}
-          sens={sens}
-          priceVal={priceVal}
-          discount={Number(inputs.discount) || 10}
-          years={Number(inputs.years) || 5}
-          companyName={companyName}
-          traceItems={traceItems}
-          scenarios={scenarios}
-          priceStr={'₹' + fmtNum(priceVal)}
-          scenarioConfig={scenarioConfig}
-          setScenarioConfig={setScenarioConfig}
-          resetScenarioConfig={resetScenarioConfig}
-        />
+        <>
+          <DCFResults
+            summary={summary}
+            sens={sens}
+            priceVal={priceVal}
+            discount={Number(inputs.discount) || 10}
+            years={Number(inputs.years) || 5}
+            companyName={companyName}
+            traceItems={traceItems}
+            scenarios={scenarios}
+            priceStr={'₹' + fmtNum(priceVal)}
+            scenarioConfig={scenarioConfig}
+            setScenarioConfig={setScenarioConfig}
+            resetScenarioConfig={resetScenarioConfig}
+          />
+          <div className="flex justify-end mt-3">
+            <button type="button" className="btn-ghost btn-sm" onClick={handleExportExcel}>
+              Export Excel (live formulas)
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
@@ -635,7 +674,7 @@ function DCFResults({
         <TrustBadge label="₹ Indian Market" />
       </div>
       <Disclaimer extra="Method: DCF with Gordon Growth terminal value" />
-      <NextLinks links={[{ label: 'Compare peers', href: '/tools/peer' }, { label: 'Review filings', href: '/research/filing' }]} />
+      <ArcNextLinks current="dcf" />
     </ResultPanel>
   );
 }

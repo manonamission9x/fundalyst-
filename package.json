@@ -13,8 +13,14 @@
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "better-auth": "^1.6.23",
+    "bullmq": "^5.79.2",
+    "ioredis": "^5.11.1",
     "next": "16.2.9",
     "pdfjs-dist": "^5.4.149",
+    "pg": "^8.22.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "recharts": "^3.9.0",
@@ -29,10 +35,20 @@
     "@types/node": "^20.19.43",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "prisma": "^7.8.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.9"
+  },
+  "allowScripts": {
+    "msgpackr-extract@3.0.4": true,
+    "prisma@7.8.0": true,
+    "@prisma/engines@7.8.0": true,
+    "sharp@0.34.5": true,
+    "tesseract.js@7.0.0": true,
+    "unrs-resolver@1.12.2": true
   }
 }

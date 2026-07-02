@@ -118,17 +118,21 @@ export const TOOL_METADATA: ToolMetadata[] = [
     answer: 'How fast are the important numbers compounding?',
     needsData: true,
   },
+  // Analyst arc: Ratios/Cash → DCF → Peers (see T6). Keep this order canonical;
+  // NAV_TARGETS + ANALYSIS_TOOLS derive their order from this array.
   {
-    id: 'dcf',
-    label: 'DCF Valuation',
-    shortLabel: 'DCF',
-    href: '/tools/dcf',
-    icon: Calculator,
-    aliases: ['dcf', 'valuation', 'value', 'intrinsic'],
-    keywords: 'intrinsic value discounted cash flow wacc terminal growth margin of safety',
-    value: 'Intrinsic value',
-    description: 'Estimate intrinsic value from free cash flow assumptions.',
-    answer: 'Is the stock undervalued or overvalued? What price is fair?',
+    id: 'ratios',
+    label: 'Financial Ratios',
+    shortLabel: 'Ratios',
+    href: '/tools/ratios',
+    icon: ChartPie,
+    aliases: ['ratios', 'ratio', 'health'],
+    keywords: 'liquidity leverage profitability roe debt equity margin asset turnover',
+    value: '5 core ratios',
+    count: '5 core ratios',
+    inputs: '6 inputs',
+    description: 'Calculate 5 core ratios from 6 financial inputs.',
+    answer: 'Is the company financially healthy? Can it cover debts?',
     needsData: true,
   },
   {
@@ -145,18 +149,16 @@ export const TOOL_METADATA: ToolMetadata[] = [
     needsData: true,
   },
   {
-    id: 'ratios',
-    label: 'Financial Ratios',
-    shortLabel: 'Ratios',
-    href: '/tools/ratios',
-    icon: ChartPie,
-    aliases: ['ratios', 'ratio', 'health'],
-    keywords: 'liquidity leverage profitability roe debt equity margin asset turnover',
-    value: '5 core ratios',
-    count: '5 core ratios',
-    inputs: '6 inputs',
-    description: 'Calculate 5 core ratios from 6 financial inputs.',
-    answer: 'Is the company financially healthy? Can it cover debts?',
+    id: 'dcf',
+    label: 'DCF Valuation',
+    shortLabel: 'DCF',
+    href: '/tools/dcf',
+    icon: Calculator,
+    aliases: ['dcf', 'valuation', 'value', 'intrinsic'],
+    keywords: 'intrinsic value discounted cash flow wacc terminal growth margin of safety',
+    value: 'Intrinsic value',
+    description: 'Estimate intrinsic value from free cash flow assumptions.',
+    answer: 'Is the stock undervalued or overvalued? What price is fair?',
     needsData: true,
   },
   {
@@ -176,9 +178,14 @@ export const TOOL_METADATA: ToolMetadata[] = [
 
 export const TOOL_BY_ID = Object.fromEntries(TOOL_METADATA.map((tool) => [tool.id, tool])) as Record<ToolId, ToolMetadata>;
 
+// Order follows TOOL_METADATA (the analyst arc): filing → trends → growth →
+// ratios → wc → dcf → peer.
 export const ANALYSIS_TOOLS = TOOL_METADATA.filter((tool) =>
-  ['filing', 'trends', 'growth', 'dcf', 'wc', 'ratios', 'peer'].includes(tool.id),
+  ['filing', 'trends', 'growth', 'ratios', 'wc', 'dcf', 'peer'].includes(tool.id),
 );
+
+/** Canonical analyst-arc order of analysis lenses (T6). Drives NextLinks. */
+export const ANALYST_ARC: ToolId[] = ['filing', 'trends', 'growth', 'ratios', 'wc', 'dcf', 'peer'];
 
 export function findToolByAlias(input: string): ToolMetadata | null {
   const q = input.trim().toLowerCase();

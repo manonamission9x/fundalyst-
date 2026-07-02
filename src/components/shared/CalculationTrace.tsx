@@ -2,7 +2,18 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import type { CalculationTrace } from '@/lib/calculation-trace';
+import type { CalculationTrace, CalculationSource } from '@/lib/calculation-trace';
+import type { ProvenanceKind } from '@/types/financial';
+import { ProvenanceDot } from '@/components/ui';
+import { explainTrace } from '@/lib/grounded-ai';
+
+/** Derive a provenance kind from a trace source's origin metadata. */
+function sourceKind(source: CalculationSource): ProvenanceKind {
+  if (source.overridden) return 'manual';
+  if (source.source.toLowerCase().startsWith('manual')) return 'manual';
+  if (!source.factId) return 'default';
+  return 'imported';
+}
 
 function formatConfidence(confidence?: number): string {
   if (confidence === undefined) return 'Manual';
@@ -18,6 +29,7 @@ function formatDate(value?: string): string {
 
 export default function CalculationTracePanel({ traces }: { traces: CalculationTrace[] }) {
   const [open, setOpen] = useState(false);
+  const [explained, setExplained] = useState<Record<string, boolean>>({});
   if (traces.length === 0) return null;
 
   return (
@@ -40,15 +52,47 @@ export default function CalculationTracePanel({ traces }: { traces: CalculationT
                   <div className="calc-trace-label">{trace.label}</div>
                   <div className="calc-trace-formula">{trace.formula}</div>
                 </div>
-                <div className="calc-trace-value">{trace.value}</div>
+                <div className="calc-trace-head-right">
+                  <div className="calc-trace-value">{trace.value}</div>
+                  <button
+                    type="button"
+                    className="btn-ghost btn-sm calc-trace-explain-btn"
+                    aria-expanded={!!explained[trace.label]}
+                    onClick={() => setExplained((prev) => ({ ...prev, [trace.label]: !prev[trace.label] }))}
+                  >
+                    {explained[trace.label] ? 'Hide explanation' : 'Explain'}
+                  </button>
+                </div>
               </div>
+              {explained[trace.label] && (() => {
+                const ex = explainTrace(trace);
+                return (
+                  <div className="calc-trace-explain" role="note">
+                    <span className="calc-trace-explain-tag">Generated locally from your sources</span>
+                    <p className="calc-trace-explain-body">{ex.summary}</p>
+                    {ex.citations.length > 0 && (
+                      <ol className="calc-trace-explain-cites">
+                        {ex.citations.map((c) => (
+                          <li key={c.ref}>
+                            <span className="calc-trace-explain-cite-label">{c.label}:</span> {c.value}
+                            <span className="calc-trace-explain-cite-src"> — {c.source}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="calc-trace-source-list" role="list">
                 {trace.sources.map((source, index) => {
                   const content = (
                     <>
                       <div className="calc-trace-source-main">
                         <span className="calc-trace-source-label" aria-label={`Source: ${source.label}`}>{source.label}</span>
-                        <span className="calc-trace-source-value" aria-label={`Value: ${source.value}`}>{source.value}</span>
+                        <span className="calc-trace-source-value" aria-label={`Value: ${source.value}`}>
+                          {source.value}
+                          <ProvenanceDot kind={sourceKind(source)} />
+                        </span>
                         <span className={`confidence-badge ${source.confidence !== undefined && source.confidence >= 0.9 ? 'good' : source.confidence !== undefined && source.confidence < 0.7 ? 'warn' : ''}`}>
                           {formatConfidence(source.confidence)}
                         </span>

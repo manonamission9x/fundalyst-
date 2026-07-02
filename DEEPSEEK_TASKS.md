@@ -1,10 +1,14 @@
 # Fundalyst — Fix Queue (implementer spec)
 
+> **Default bootstrap:** read `AGENTS.md`, `HANDoFF.md`, and this file, then open only the exact target files for the claimed task. Use `rg` for targeted search. Do not scan the whole repo or read large audits unless a specific checklist item requires them. Before editing, state which files you will touch.
+
 > **Read `AGENTS.md` first** for shared project context, stack, rules, verify commands, and ownership lanes (include it alongside this file in your context). This file is DeepSeek's task queue only — it does not restate project context.
 
 > Most of this is already implemented (first pass done). Treat this as the canonical spec for your **second-pass verification** — re-check each item against the live code and tick the box when confirmed. Don't redesign.
 
 Implement, don't redesign. One token = one place. Preserve: tabular-nums+mono numerics, ghost-only buttons, muted semantic colors, single accent (gold) for interactivity only, static charts (`isAnimationActive={false}`), provenance/confidence/data-quality system, a11y (focus-visible, reduced-motion, hover:none, 44px touch, 16px mobile inputs).
+
+> **Heads-up (Claude, 2026-07-02) — new mobile infra, don't fight it.** Phones now have a **bottom tab bar** (`src/components/layout/MobileTabBar.tsx`, `.mobile-tabbar` in `globals.css`, ≤640px, `z-index:150`); the top-nav hamburger drawer remains for the full section list + search. A `viewport` export in `layout.tsx` sets `viewport-fit=cover`, so `env(safe-area-inset-*)` is now live — any bottom-anchored element needs `env(safe-area-inset-bottom)` in its offset, and must clear the 56px tab bar. Dense tables/spreadsheets pin their first (label) column on mobile. Coordinate visual tweaks with these; don't restyle the command palette.
 
 ## P0 — silent failures
 - [x] **F-01** `--shadow-md` used (context-menu + suggestions) but never defined → no shadow. Define `--shadow-md` in `:root` + elevation scale (sm/base/md/lg).

@@ -30,7 +30,7 @@ src/
 │   └── exports/
 ├── server/             Legacy server utilities (migrating to modules/)
 │   ├── api/response.ts     Standard API response envelope
-│   ├── auth/session.ts     Auth placeholder (being replaced by Better Auth)
+│   ├── auth/session.ts     Better Auth session helper for route handlers
 │   ├── backend-status.ts   Capability reporting
 │   ├── documents/pipeline.ts
 │   ├── jobs/types.ts
@@ -84,6 +84,25 @@ Better Auth is mounted at `/api/auth/*` and provides:
 | GET | `/api/auth/list-sessions` | List active sessions |
 | POST | `/api/auth/revoke-session` | Revoke a session |
 | POST | `/api/auth/revoke-other-sessions` | Revoke all other sessions |
+
+## Phase 2 application endpoints
+
+These endpoints are authenticated and use the standard response envelope.
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/api/me` | Current user profile |
+| GET | `/api/workspaces` | List the signed-in user's workspaces |
+| POST | `/api/workspaces` | Create a workspace |
+| GET | `/api/workspaces/:workspaceId` | Fetch a workspace owned by the signed-in user |
+| PATCH | `/api/workspaces/:workspaceId` | Rename/update a workspace |
+| DELETE | `/api/workspaces/:workspaceId` | Soft-delete a workspace |
+| GET | `/api/workspaces/:workspaceId/documents` | List workspace documents |
+| POST | `/api/workspaces/:workspaceId/documents` | Create a document metadata record |
+| GET | `/api/documents/:documentId` | Fetch a document owned by the signed-in user |
+| DELETE | `/api/documents/:documentId` | Soft-delete a document |
+| GET | `/api/documents/:documentId/ocr` | List OCR/extraction jobs for a document |
+| POST | `/api/documents/:documentId/ocr` | Enqueue OCR for a document |
 
 ## Queue endpoints
 

@@ -6,7 +6,7 @@ import { downloadCSV } from '@/lib/helpers';
 import { useFilingStore, useAnalysisStore } from '@/store';
 import { useToast } from '@/components/shared/ToastProvider';
 import {
-  PageHeader, Card, Toolbar, NextLinks, Disclaimer,
+  PageHeader, Card, Toolbar, ArcNextLinks, Disclaimer,
   EmptyState, InsightCard, WarningCard, SectionTitle,
   DataQualityBar, CalcTimestamp, TrustBadge,
   DataSourceBadge, HeroDecision,
@@ -458,10 +458,7 @@ export default function FilingPage() {
             <TrustBadge label={`Values from: ${isSampleLoaded ? 'Sample data' : dataInfo.companyName || 'User entry'}`} variant="source" />
             <TrustBadge label="₹ Indian Market" />
           </div>
-          <NextLinks links={[
-            { label: 'Plot trends over time', href: '/research/trends' },
-            { label: 'Estimate intrinsic value', href: '/tools/dcf' },
-          ]} />
+          <ArcNextLinks current="filing" />
           <Disclaimer extra="Pct change = ((B−A)/|A|)×100 · Paste tabular data from Excel or Sheets" />
         </div>
       )}

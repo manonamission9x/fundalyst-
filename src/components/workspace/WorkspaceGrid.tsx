@@ -397,7 +397,7 @@ export default function WorkspaceGrid({
   }, [
     editing, activeRow, activeCol, totalRows, totalCols,
     commitEdit, cancelEdit, navigate, scrollCellIntoView,
-    clearSelectionCells, startEditing, setActiveCell, grid.rows, grid.periods,
+    clearSelectionCells, startEditing,
   ]);
 
   // ── Ctrl shortcuts ──

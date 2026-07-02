@@ -70,6 +70,31 @@ function fuzzyScore(text: string, q: string): number {
   return score + last * 0.01; // mild preference for earlier completion
 }
 
+/** Best dataset match for a free-text company arg (direct-substring beats fuzzy). */
+function matchDataset<T extends { id: string; companyName?: string; sourceType?: string; periods: string[] }>(
+  datasets: T[],
+  q: string,
+): T | null {
+  const needle = q.trim().toLowerCase();
+  if (!needle) return null;
+  return (
+    datasets
+      .map((d) => {
+        const haystack = `${d.companyName || ''} ${d.id} ${d.sourceType || ''} ${d.periods.join(' ')}`;
+        const directScore = haystack.toLowerCase().includes(needle) ? 0 : Number.POSITIVE_INFINITY;
+        const fuzzy = fuzzyScore(haystack, needle);
+        const score = Math.min(directScore, fuzzy >= 0 ? fuzzy + 1 : Number.POSITIVE_INFINITY);
+        return { dataset: d, score };
+      })
+      .filter(({ score }) => Number.isFinite(score))
+      .sort((a, b) => a.score - b.score)[0]?.dataset ?? null
+  );
+}
+
+// Verbs that resolve to an action rather than a tool route. Tool verbs come from
+// TOOL_METADATA aliases; these are the extra ones from the command language (T1).
+const SPECIAL_VERBS = new Set(['memo', 'thesis', 'evidence', 'theme', 'clear', 'help']);
+
 function sourceMetricQuery(input: string): string | null {
   const q = input.trim().toLowerCase();
   if (!q) return null;
@@ -141,16 +166,99 @@ export default function CommandPalette() {
       });
     }
 
-    if (commandTool) {
+    // Command language (T1): parse `<verb> <company?>`. First token is the verb;
+    // the remainder is an optional entity that switches the active dataset.
+    const firstToken = normalizedQuery.split(/\s+/)[0] || '';
+    const restArg = normalizedQuery.slice(firstToken.length).trim();
+    const isSpecialVerb = SPECIAL_VERBS.has(firstToken);
+
+    // Tool verb (dcf, ratios, filing, trends, growth, peer, wc, import, …), with an
+    // optional company arg. Skip when a workspace-lens special verb owns the token.
+    if (commandTool && !(isSpecialVerb && commandTool.id === 'workspace')) {
+      // Strip the longest matching alias to get the entity portion (e.g. "ratios reliance").
+      const matchedAlias = commandTool.aliases
+        .filter((a) => normalizedQuery === a || normalizedQuery.startsWith(`${a} `))
+        .sort((a, b) => b.length - a.length)[0];
+      const entityArg = matchedAlias ? normalizedQuery.slice(matchedAlias.length).trim() : '';
+      const entity = entityArg ? matchDataset(datasets, entityArg) : null;
       cmds.push({
         id: `cmd-tool-${commandTool.id}`,
         section: 'Commands',
-        label: `Open ${commandTool.label}`,
-        keywords: `${commandTool.aliases.join(' ')} ${commandTool.keywords}`,
-        meta: commandTool.needsData && !hasData ? 'no data yet' : commandTool.value,
+        label: entity
+          ? `${commandTool.label} · ${entity.companyName || 'company'}`
+          : `Open ${commandTool.label}`,
+        keywords: `${commandTool.aliases.join(' ')} ${commandTool.keywords} ${entityArg}`,
+        meta: entity
+          ? 'switch + open'
+          : entityArg && hasData
+            ? `no match: ${entityArg}`
+            : commandTool.needsData && !hasData
+              ? 'no data yet'
+              : commandTool.value,
         glyph: 'action',
-        run: () => router.push(commandTool.href),
+        run: () => {
+          if (entity) setActiveDataset(entity.id);
+          router.push(commandTool.href);
+        },
       });
+    }
+
+    // Special verbs (memo, thesis, evidence, theme, clear, help), each with an
+    // optional company arg where a dataset switch makes sense.
+    if (isSpecialVerb) {
+      const entity = restArg ? matchDataset(datasets, restArg) : null;
+      const entitySuffix = entity ? ` · ${entity.companyName || 'company'}` : '';
+      const switchFirst = () => { if (entity) setActiveDataset(entity.id); };
+      if (firstToken === 'memo') {
+        cmds.push({
+          id: 'verb-memo', section: 'Commands', glyph: 'action',
+          label: `Export investment memo${entitySuffix}`,
+          keywords: 'memo investment export download tearsheet report markdown',
+          meta: hasData ? undefined : 'no data',
+          run: () => {
+            switchFirst();
+            const ds = entity ?? useGlobalDataStore.getState().getActiveDataset();
+            if (!ds) { router.push('/import'); return; }
+            downloadMemoMarkdown(generateMemo({ companyName: ds.companyName || 'Company', dataset: ds }));
+          },
+        });
+      } else if (firstToken === 'thesis') {
+        cmds.push({
+          id: 'verb-thesis', section: 'Commands', glyph: 'action',
+          label: `Open investment thesis${entitySuffix}`,
+          keywords: 'thesis conclusion memo notes verdict',
+          run: () => { switchFirst(); router.push('/workspace?step=thesis'); },
+        });
+      } else if (firstToken === 'evidence') {
+        cmds.push({
+          id: 'verb-evidence', section: 'Commands', glyph: 'action',
+          label: `Open evidence & assumptions${entitySuffix}`,
+          keywords: 'evidence source accepted facts assumptions audit provenance',
+          run: () => { switchFirst(); router.push('/workspace?lens=evidence'); },
+        });
+      } else if (firstToken === 'theme') {
+        cmds.push({
+          id: 'verb-theme', section: 'Commands', glyph: 'action',
+          label: 'Toggle theme (light / dark / auto)',
+          keywords: 'theme dark light appearance',
+          run: cycleTheme,
+        });
+      } else if (firstToken === 'clear') {
+        cmds.push({
+          id: 'verb-clear', section: 'Commands', glyph: 'action',
+          label: 'Clear all data',
+          keywords: 'clear reset delete wipe',
+          meta: hasData ? undefined : 'nothing to clear',
+          run: () => clearAllData(),
+        });
+      } else if (firstToken === 'help') {
+        cmds.push({
+          id: 'verb-help', section: 'Commands', glyph: 'action',
+          label: 'Show keyboard shortcuts',
+          keywords: 'help shortcuts keyboard cheat sheet',
+          run: () => setShortcutsOpen(true),
+        });
+      }
     }
 
     if (openCompanyQuery) {
@@ -356,6 +464,13 @@ export default function CommandPalette() {
         setShortcutsOpen((v) => !v);
         return;
       }
+      if (!goMode && (e.key === 'e' || e.key === 'E') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        const ds = useGlobalDataStore.getState().getActiveDataset();
+        if (!ds) { router.push('/import'); return; }
+        downloadMemoMarkdown(generateMemo({ companyName: ds.companyName || 'Company', dataset: ds }));
+        return;
+      }
       if (goMode) {
         const href = GO_TO[e.key.toLowerCase()];
         if (href) {
@@ -412,7 +527,7 @@ export default function CommandPalette() {
   return (
     <>
     {goMode && !open && !shortcutsOpen && (
-      <div className="shortcut-toast" role="status">Go to: d DCF · r Ratios · f Filing · w Workspace · i Import</div>
+      <div className="shortcut-toast" role="status">Go to: d DCF · r Ratios · f Filing · t Trends · p Peers · w Workspace · i Import</div>
     )}
 
     {shortcutsOpen && (
@@ -434,8 +549,11 @@ export default function CommandPalette() {
             <Shortcut k="g d" v="Go to DCF" />
             <Shortcut k="g r" v="Go to ratios" />
             <Shortcut k="g f" v="Go to filing comparison" />
+            <Shortcut k="g t" v="Go to trends" />
+            <Shortcut k="g p" v="Go to peers" />
             <Shortcut k="g w" v="Go to workspace" />
             <Shortcut k="g i" v="Go to import" />
+            <Shortcut k="e" v="Export investment memo" />
             <Shortcut k="?" v="Show shortcuts" />
             <Shortcut k="Esc" v="Close overlays" />
           </div>
@@ -467,6 +585,16 @@ export default function CommandPalette() {
           />
           <span className="cmdk-kbd">esc</span>
         </div>
+
+        {query.trim() && flat[activeIdx] && (
+          <div className="cmdk-interpretation" role="status" aria-live="polite">
+            <span className="cmdk-interpretation-key">↵</span>
+            <span className="cmdk-interpretation-text">
+              {flat[activeIdx].label}
+              {flat[activeIdx].meta ? <span className="cmdk-interpretation-meta"> · {flat[activeIdx].meta}</span> : null}
+            </span>
+          </div>
+        )}
 
         <div className="cmdk-list" ref={listRef}>
           {flat.length === 0 && (

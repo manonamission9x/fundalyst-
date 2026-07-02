@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { fmtNum } from '@/lib/calculations';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV, readFile } from '@/lib/helpers';
-import { PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer, EmptyState, DataQualityBar, CalcTimestamp, TrustBadge, DataSourceBadge, ChartState } from '@/components/ui';
+import { PageHeader, Card, UploadBar, Toolbar, ArcNextLinks, Disclaimer, EmptyState, DataQualityBar, CalcTimestamp, TrustBadge, DataSourceBadge, ChartState } from '@/components/ui';
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import dynamic from 'next/dynamic';
@@ -34,6 +35,9 @@ export default function TrendsPage() {
   usePageTitle('Trend Charts');
   const modelData = useModelData((ds) => extractTrendData(ds));
   const activeDataset = useActiveDataset();
+  // Metric pivot target (T9): `/research/trends?metric=…` focuses one series.
+  const searchParams = useSearchParams();
+  const focusMetric = searchParams.get('metric');
   const applyEdits = useGlobalDataStore((s) => s.applyEdits);
   const activeDatasetId = useGlobalDataStore((s) => s.activeDatasetId);
 
@@ -90,6 +94,13 @@ export default function TrendsPage() {
     }, 0);
     return () => clearTimeout(timer);
   }, [activeDataset?.id, defaultRows, modelData.data]);
+
+  // Scroll to the focused metric when arriving via a `?metric=` pivot link (T9).
+  useEffect(() => {
+    if (focusMetric && showResults) {
+      document.getElementById('trends-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [focusMetric, showResults]);
 
   // Build trace items for the CalculationTracePanel
   const traceItems = useMemo<CalculationTrace[]>(() => {
@@ -260,6 +271,11 @@ export default function TrendsPage() {
 
       {showResults && trendRows.length > 0 && (
         <div id="trends-results">
+          {focusMetric && (
+            <div className="trend-focus-note" role="status">
+              Focused on “{focusMetric}” — highlighted in the data table below.
+            </div>
+          )}
           <Card label="Chart" className="mt-4">
             <div className="chart-wrap">
               <TrendsChart rows={trendRows} headers={['Metric', ...sheetPeriods]} />
@@ -277,12 +293,15 @@ export default function TrendsPage() {
                 </tr>
               </thead>
               <tbody>
-                {trendRows.map((r, i) => (
-                  <tr key={i}>
-                    <td><strong>{r.label}</strong></td>
-                    {r.vals.map((v, j) => <td key={j}>{isNaN(v) ? '—' : fmtNum(v)}</td>)}
-                  </tr>
-                ))}
+                {trendRows.map((r, i) => {
+                  const isFocus = !!focusMetric && r.label.toLowerCase().includes(focusMetric.toLowerCase());
+                  return (
+                    <tr key={i} className={isFocus ? 'trend-focus-row' : undefined}>
+                      <td><strong>{r.label}</strong></td>
+                      {r.vals.map((v, j) => <td key={j}>{isNaN(v) ? '—' : fmtNum(v)}</td>)}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             <div className="flex justify-center py-3">
@@ -294,7 +313,7 @@ export default function TrendsPage() {
             </div>
           </Card>
 
-          <NextLinks links={[{ label: 'Growth rates', href: '/research/growth' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
+          <ArcNextLinks current="trends" />
           <CalcTimestamp />
           <div className="flex gap-2 flex-wrap mt-2"><TrustBadge label={`Values from: ${isSampleLoaded ? 'Sample data' : activeDataset?.companyName || 'User entry'}`} variant="source" /><TrustBadge label="₹ Indian Market" /></div>
           <Disclaimer />

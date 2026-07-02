@@ -10,13 +10,12 @@
  * provably unreachable from the browser bundle.
  *
  * ----------------------------------------------------------------------------
- * IMPORTANT — Fundalyst is currently a 100% client-side app (see BACKEND.md).
- * There is no server/database/auth yet. So every SERVER variable below is
- * OPTIONAL: the app boots fine with an empty `.env`. Values are still
- * *format-validated* when present, and `requireEnv()` fails fast with a clear
- * message the moment backend code actually depends on a missing value.
- * When you make the backend real, flip a var from `.optional()` to required
- * in the schema — nothing else changes.
+ * IMPORTANT — Fundalyst is now hybrid and local-first (see BACKEND.md).
+ * Server variables stay optional in the schema until a feature imports them
+ * with `requireEnv()`. Active backend paths fail fast with a clear message
+ * when their required local infrastructure values are missing.
+ * If a backend capability becomes mandatory for every deployment, flip that
+ * variable from `.optional()` to required in the schema — nothing else changes.
  * ----------------------------------------------------------------------------
  *
  * HOW TO ADD A NEW VARIABLE (the permanent convention):
@@ -51,6 +50,7 @@ const nonEmpty = z.string().min(1);
 const serverSchema = z.object({
   // Runtime metadata
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NEXT_PHASE: z.string().optional(),
 
   // Database
   DATABASE_URL: z.string().url().optional(),
@@ -172,6 +172,11 @@ export const clientEnv: ClientEnv = {
   NEXT_PUBLIC_APP_URL: parsed.NEXT_PUBLIC_APP_URL,
   NEXT_PUBLIC_SENTRY_DSN: parsed.NEXT_PUBLIC_SENTRY_DSN,
 };
+
+export const nodeEnv: ServerEnv["NODE_ENV"] =
+  isServer && "NODE_ENV" in parsed ? parsed.NODE_ENV : "development";
+export const nextPhase = isServer && "NEXT_PHASE" in parsed ? parsed.NEXT_PHASE : undefined;
+export const isProductionBuild = nextPhase === "phase-production-build";
 
 /**
  * Fail-fast accessor for OPTIONAL server vars at their point of use.

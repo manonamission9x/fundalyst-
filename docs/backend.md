@@ -90,6 +90,12 @@ file-based routing convention. Responses use a standard envelope:
 | `GET /api/health` | Server health + capability report | No |
 | `GET /api/backend` | Backend manifest | No |
 | `POST/GET /api/auth/*` | Better Auth endpoints | Varies |
+| `GET /api/me` | Current user profile | Yes |
+| `GET/POST /api/workspaces` | Workspace list/create | Yes |
+| `GET/PATCH/DELETE /api/workspaces/:workspaceId` | Workspace read/update/delete | Yes |
+| `GET/POST /api/workspaces/:workspaceId/documents` | Document metadata list/create | Yes |
+| `GET/DELETE /api/documents/:documentId` | Document read/delete | Yes |
+| `GET/POST /api/documents/:documentId/ocr` | OCR job status/enqueue | Yes |
 | `POST/GET /api/queue/example` | Queue smoke test | No |
 
 ## Auth architecture
@@ -103,7 +109,23 @@ Better Auth is **optional** — the app works without it. Only features that
 require authentication (account sync, server-side processing) depend on it.
 
 The auth library is initialized in `src/lib/auth.ts` using the Prisma adapter.
-Route handlers access sessions via `auth.api.getSession()`.
+Route handlers access sessions through `src/server/auth/session.ts`, which wraps
+`auth.api.getSession()` and returns a small server-safe session shape.
+
+## Phase 2 API slice
+
+The first Phase 2 backend slice connects the application domain modules to real
+HTTP routes:
+
+| Domain | Files | Status |
+|---|---|---|
+| User profile | `src/app/api/me/route.ts` | Authenticated profile read |
+| Workspaces | `src/app/api/workspaces/**` | List, create, read, update, soft-delete |
+| Documents | `src/app/api/workspaces/[workspaceId]/documents/route.ts`, `src/app/api/documents/[documentId]/route.ts` | Metadata list/create/read/soft-delete |
+| OCR orchestration | `src/app/api/documents/[documentId]/ocr/route.ts` | Job list + BullMQ enqueue |
+
+All workspace/document queries enforce ownership by joining through the
+workspace owner and excluding soft-deleted records.
 
 ## Queue architecture
 
@@ -146,14 +168,12 @@ Every other file imports typed values from it.
 
 ## Future considerations
 
-Before starting Phase 2 (User Accounts → Workspaces → Uploads → OCR):
+After the first Phase 2 API slice (User Accounts -> Workspaces -> Uploads -> OCR):
 
 1. **Run Prisma migration**: `npx prisma migrate dev --name init`
 2. **Set BETTER_AUTH_SECRET**: Generate with `openssl rand -base64 32`
 3. **Docker must be running**: `docker compose up -d` for Postgres + Valkey
 4. **Worker separation**: In production, extract workers to a separate
    process or container — don't run them inside Next.js
-5. **Add remaining API routes**: Workspaces, documents, uploads endpoints
-   to match the module stubs
-6. **R2 integration**: Real object storage for document uploads
-7. **OCR provider integration**: Wire Mistral/tesseract to OCR module
+5. **R2 integration**: Real object storage for document uploads
+6. **OCR provider integration**: Wire Mistral/tesseract to OCR module

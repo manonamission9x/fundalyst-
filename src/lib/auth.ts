@@ -18,7 +18,10 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/db";
-import { requireEnv } from "@/lib/env";
+import { env, isProductionBuild, requireEnv } from "@/lib/env";
+
+const buildTimeAuthSecret = "bld_4f9bc4a7417e4fd4b56460dbb5a1e9959d34e2c2a8e44f7d9e830dc79e0b7b0a";
+const buildTimeAuthUrl = "http://localhost:3000";
 
 export const auth = betterAuth({
   appName: "Fundalyst",
@@ -33,8 +36,8 @@ export const auth = betterAuth({
     maxPasswordLength: 128,
   },
   /** Environment config — validated once by env.ts */
-  secret: requireEnv("BETTER_AUTH_SECRET"),
-  baseURL: requireEnv("BETTER_AUTH_URL"),
+  secret: env.BETTER_AUTH_SECRET || (isProductionBuild ? buildTimeAuthSecret : requireEnv("BETTER_AUTH_SECRET")),
+  baseURL: env.BETTER_AUTH_URL || (isProductionBuild ? buildTimeAuthUrl : requireEnv("BETTER_AUTH_URL")),
 });
 
 /**

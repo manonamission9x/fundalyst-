@@ -8,7 +8,7 @@
  */
 
 import type { Worker } from "bullmq";
-import { nodeEnv } from "@/lib/env";
+import { env, nodeEnv } from "@/lib/env";
 
 const activeWorkers: Worker[] = [];
 
@@ -26,6 +26,11 @@ export function registerWorker(worker: Worker): void {
  * Called once at server startup from instrumentation.ts.
  */
 export async function startWorkers(): Promise<void> {
+  if (!env.REDIS_URL) {
+    console.log("[workers] Skipping background workers: REDIS_URL is not configured");
+    return;
+  }
+
   if (nodeEnv === "production") {
     console.log(
       "[workers] Skipping in-process workers in production — " +

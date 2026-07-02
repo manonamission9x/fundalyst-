@@ -4,13 +4,14 @@
  * A workspace is the top-level organizational unit. Every document,
  * spreadsheet, DCF model, and audit log belongs to a workspace.
  *
- * Phase 1: basic CRUD (via prisma service).
+ * Phase 1: basic CRUD.
  * Phase 2+: sharing, permissions, invitations.
  */
 
 export {
   findWorkspaceById,
   findUserWorkspaces,
-  createWorkspace,
+  insertWorkspace as createWorkspace,
   softDeleteWorkspace,
-} from "@/services/prisma";
+  updateWorkspace,
+} from "@/modules/workspaces/repository";

@@ -67,6 +67,16 @@ Each tool page follows the same layout pattern: `PageHeader` → `DataQualityBar
 - **Monospace for data.** `--font-ibm-plex-mono` for all numbers, labels, codes. `--font-inter` (system sans) for prose and headings.
 - **Provenance badges** use semantic colour: imported=green, manual=slate, default=caution, unavailable=muted.
 
+## Configuration (environment variables)
+
+`src/lib/env.ts` is the **single source of truth** for runtime config and the **only** file allowed to read `process.env` (enforced by ESLint `no-restricted-properties`). Import typed values from it (`env`, `clientEnv`, `requireEnv`) — never touch `process.env` directly, never add a second loader. Server secrets live in `.env.local` (gitignored); the committed `.env.example` holds placeholders only. To add a variable: `.env.example` → schema in `env.ts` → export → `docs/environment.md`. Full guide: `docs/environment.md`.
+
+## Mobile navigation
+
+- **Bottom tab bar** (`MobileTabBar.tsx`) is the primary mobile nav, shown only ≤640px: Home / Research / Tools / Import / Workspace. Thumb-reachable, `z-index:150` (tucks under drawer `200` + command palette `300`). The top-nav hamburger **drawer** still holds the full section list + mobile search. Desktop is unaffected.
+- The **`viewport`** export in `layout.tsx` sets `viewport-fit=cover` — required for `env(safe-area-inset-*)` to resolve to real values. Bottom-anchored elements (nav, tab bar, toast, `.page`, sticky action bars) must include `env(safe-area-inset-bottom)` in their bottom padding/offset.
+- Dense tables/spreadsheets pin their left-most label column on mobile (`.diff-table`/`.sens-table`/`.stmt-table` first child, `.spreadsheet-corner`/`.spreadsheet-metric-cell`) so a value is never orphaned from its metric name while scrolling.
+
 ## Accessibility
 
 - Grid is keyboard-complete: arrows, Tab, Enter, F2, Esc, Ctrl shortcuts.
@@ -96,7 +106,10 @@ npx playwright test  # affected routes
 | `src/store/workspace-context-store.ts` | AI context substrate |
 | `src/lib/calculations.ts` | Pure financial engine |
 | `src/components/ui/index.tsx` | UI primitives (Card, PageHeader, etc.) |
-| `src/components/layout/Nav.tsx` | Nav bar, theme toggle, command palette |
+| `src/components/layout/Nav.tsx` | Top nav bar + drawer, theme toggle, command-palette + mobile search |
+| `src/components/layout/MobileTabBar.tsx` | Bottom tab bar — primary mobile nav (≤640px) |
+| `src/lib/env.ts` | **Only** reader of `process.env` — typed, validated config |
+| `src/instrumentation.ts` | Runs env validation at server startup |
 | `src/components/input/SpreadsheetInput.tsx` | Legacy contentEditable grid (being replaced) |
 | `src/components/input/ModelBoundSpreadsheet.tsx` | Adapter: grid reads/writes canonical model |
 | `src/components/workspace/WorkspaceGrid.tsx` | Virtualized, overlay-input grid |

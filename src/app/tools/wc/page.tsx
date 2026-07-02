@@ -14,7 +14,7 @@ import {
   InsightCard,
   WarningCard,
   EmptyState,
-  NextLinks,
+  ArcNextLinks,
   Disclaimer,
   DataQualityBar,
   CalcTimestamp,
@@ -243,7 +243,7 @@ export default function WCPage() {
 
           <CalculationTracePanel traces={traceItems} />
 
-          <NextLinks links={[{ label: 'Financial ratios', href: '/tools/ratios' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
+          <ArcNextLinks current="wc" />
           <CalcTimestamp />
           <div className="flex gap-2 flex-wrap mt-2">
             <TrustBadge label={`Values from: ${dataset?.companyName || 'User entry'}`} variant="source" />

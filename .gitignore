@@ -5,6 +5,8 @@
 
 # dependencies
 /node_modules
+/.prisma
+/generated/prisma
 /.pnp
 .pnp.*
 .yarn/*

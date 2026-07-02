@@ -2,6 +2,10 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import type { ProvenanceKind } from '@/types/financial';
+import { provenanceKindLabel } from '@/lib/calculation-trace';
+import { ANALYST_ARC, TOOL_BY_ID, type ToolId } from '@/lib/tool-metadata';
+import { useGlobalDataStore } from '@/store/global-data-store';
 import {
   ArrowFatDown,
   Files,
@@ -70,6 +74,21 @@ export function IconInsightPositive() { return <Smiley size={18} weight="regular
 export function IconInsightRisk() { return <SmileySad size={18} weight="regular" />; }
 export function IconInsightWarning() { return <SmileyMeh size={18} weight="regular" />; }
 export function IconInsightInfo() { return <Info size={18} weight="regular" />; }
+
+// ── ProvenanceDot ──
+// Inline per-value source marker for numeric cells (T5). Mirrors the homepage
+// `stmt-prov` dot and stays consistent with ProvenanceBadge kinds. Tokens only.
+export function ProvenanceDot({ kind, className }: { kind: ProvenanceKind; className?: string }) {
+  const label = provenanceKindLabel(kind);
+  return (
+    <span
+      className={`prov-dot prov-dot-${kind}${className ? ` ${className}` : ''}`}
+      title={label}
+      aria-label={label}
+      role="img"
+    />
+  );
+}
 
 // ── PageHeader ──
 interface PageHeaderProps {
@@ -391,6 +410,40 @@ export function NextLinks({ links }: { links: NextLink[] }) {
   return (
     <div className="next-links">
       <span className="next-label">Next:</span>
+      {links.map((l, i) => (
+        <span key={i}>
+          <Link href={l.href}><IconArrowRight /> {l.label}</Link>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ── ArcNextLinks (entity-aware) ──
+// Derives the next steps along the canonical analyst arc (T6) and carries the
+// active company: navigating keeps the active dataset, and the label names it.
+export function ArcNextLinks({ current }: { current: ToolId }) {
+  const activeDataset = useGlobalDataStore((s) => {
+    if (!s.activeDatasetId && s.datasets.length === 0) return null;
+    return s.datasets.find((d) => d.id === s.activeDatasetId) || s.datasets[0] || null;
+  });
+  const company =
+    activeDataset?.companyName && activeDataset.companyName !== 'Unnamed Company'
+      ? activeDataset.companyName
+      : null;
+
+  const idx = ANALYST_ARC.indexOf(current);
+  const nextTools = idx >= 0 ? ANALYST_ARC.slice(idx + 1, idx + 3) : [];
+  const links: NextLink[] = nextTools.map((id) => ({
+    label: TOOL_BY_ID[id].shortLabel,
+    href: TOOL_BY_ID[id].href,
+  }));
+  // Capstone: conclude the arc in the thesis.
+  links.push({ label: 'Write thesis', href: '/workspace?step=thesis' });
+
+  return (
+    <div className="next-links">
+      <span className="next-label">{company ? `Next for ${company}:` : 'Next:'}</span>
       {links.map((l, i) => (
         <span key={i}>
           <Link href={l.href}><IconArrowRight /> {l.label}</Link>

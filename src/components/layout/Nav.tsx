@@ -82,9 +82,10 @@ const desktopSections: NavSection[] = [
   {
     label: 'Valuation',
     items: [
-      { id: 'dcf', label: 'DCF Valuation', href: '/tools/dcf', icon: <IconNavDCF /> },
-      { id: 'wc', label: 'Cash Efficiency', href: '/tools/wc', icon: <IconNavCash /> },
+      // Analyst arc: Ratios/Cash → DCF → Peers (T6).
       { id: 'ratios', label: 'Financial Ratios', href: '/tools/ratios', icon: <IconNavRatios /> },
+      { id: 'wc', label: 'Cash Efficiency', href: '/tools/wc', icon: <IconNavCash /> },
+      { id: 'dcf', label: 'DCF Valuation', href: '/tools/dcf', icon: <IconNavDCF /> },
       { id: 'peer', label: 'Peer Comparison', href: '/tools/peer', icon: <IconNavPeer /> },
     ],
   },
@@ -122,7 +123,12 @@ export default function Nav() {
     const active = s.datasets.find((d) => d.id === s.activeDatasetId);
     return active || s.datasets[0] || null;
   });
+  const datasets = useGlobalDataStore((s) => s.datasets);
+  const setActiveDataset = useGlobalDataStore((s) => s.setActiveDataset);
   const clearAllData = useGlobalDataStore((s) => s.clearAllData);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [switcherQuery, setSwitcherQuery] = useState('');
+  const switcherRef = useRef<HTMLDivElement>(null);
   const datasetLabel =
     activeDataset && activeDataset.facts.length > 0
       ? activeDataset.companyName && activeDataset.companyName !== 'Unnamed Company'
@@ -191,6 +197,25 @@ export default function Nav() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [openSection]);
+
+  // Close the company switcher on outside click / Escape.
+  useEffect(() => {
+    if (!switcherOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) {
+        setSwitcherOpen(false);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setSwitcherOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [switcherOpen]);
 
   function handleSectionKeyDown(e: React.KeyboardEvent, section: NavSection) {
     const isOpen = openSection === section.label;
@@ -330,13 +355,63 @@ export default function Nav() {
 
         <div className="nav-right">
           {datasetLabel && (
-            <span
-              className="nav-badge"
-              title={`${activeDataset?.companyName || 'Imported data'} - ${activeDataset?.facts.length || 0} facts, ${activeDataset?.periods.length || 0} periods`}
-            >
-              <span className="nav-badge-dot" />
-              <span>{datasetLabel}</span>
-            </span>
+            <div className="nav-switcher" ref={switcherRef}>
+              <button
+                type="button"
+                className={`nav-badge nav-badge-btn${switcherOpen ? ' open' : ''}`}
+                onClick={() => setSwitcherOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={switcherOpen}
+                title={`${activeDataset?.companyName || 'Imported data'} — switch company (${datasets.length} in coverage)`}
+              >
+                <span className="nav-badge-dot" />
+                <span>{datasetLabel}</span>
+                <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M2.5 3.75L5 6.25l2.5-2.5" />
+                </svg>
+              </button>
+              {switcherOpen && (
+                <div className="nav-switcher-menu" role="menu">
+                  {datasets.length > 5 && (
+                    <input
+                      className="nav-switcher-search"
+                      placeholder="Filter companies…"
+                      value={switcherQuery}
+                      onChange={(e) => setSwitcherQuery(e.target.value)}
+                      aria-label="Filter companies"
+                      autoFocus
+                    />
+                  )}
+                  <div className="nav-switcher-list">
+                    {datasets
+                      .filter((d) => {
+                        const q = switcherQuery.trim().toLowerCase();
+                        if (!q) return true;
+                        return `${d.companyName || ''} ${d.sourceType || ''} ${d.periods.join(' ')}`.toLowerCase().includes(q);
+                      })
+                      .map((d) => (
+                        <button
+                          key={d.id}
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={d.id === activeDataset?.id}
+                          className={`nav-switcher-item${d.id === activeDataset?.id ? ' active' : ''}`}
+                          onClick={() => { setActiveDataset(d.id); setSwitcherOpen(false); setSwitcherQuery(''); }}
+                        >
+                          <span className={`nav-badge-dot${d.id === activeDataset?.id ? '' : ' muted'}`} />
+                          <span className="nav-switcher-name">{d.companyName || `${d.facts.length} facts`}</span>
+                          <span className="nav-switcher-meta">{d.periods.length}p · {d.facts.length}f</span>
+                        </button>
+                      ))}
+                  </div>
+                  <div className="nav-switcher-actions">
+                    <Link href="/import" className="nav-switcher-action" onClick={() => setSwitcherOpen(false)}>Add company</Link>
+                    <Link href="/workspace?lens=coverage" className="nav-switcher-action" onClick={() => setSwitcherOpen(false)}>Coverage</Link>
+                    <Link href="/tools/peer" className="nav-switcher-action" onClick={() => setSwitcherOpen(false)}>Compare</Link>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
           <button
             type="button"

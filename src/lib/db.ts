@@ -16,21 +16,18 @@
  */
 
 import { PrismaClient } from "@gen/prisma/client";
-import { nodeEnv } from "@/lib/env";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { nodeEnv, requireEnv } from "@/lib/env";
 
 const globalForPrisma = globalThis as unknown as {
   __prisma?: PrismaClient;
 };
 
-const prismaOptions = {
-  log:
-    nodeEnv === "development"
-      ? (["query", "error", "warn"] as const)
-      : (["error"] as const),
-} satisfies ConstructorParameters<typeof PrismaClient>[0];
+const adapter = new PrismaPg({
+  connectionString: requireEnv("DATABASE_URL"),
+});
 
-export const prisma =
-  globalForPrisma.__prisma ?? new PrismaClient(prismaOptions);
+export const prisma = globalForPrisma.__prisma ?? new PrismaClient({ adapter });
 
 if (nodeEnv !== "production") {
   globalForPrisma.__prisma = prisma;

@@ -382,6 +382,7 @@ function ImportReview({
             <div style={{
               marginBottom: 14, display: 'flex', gap: 14, alignItems: 'flex-start',
             }}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- Local object URL preview; Next image optimization is not useful here. */}
               <img
                 src={sourceImageUrl}
                 alt="Uploaded screenshot"

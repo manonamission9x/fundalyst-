@@ -18,9 +18,9 @@ Hybrid architecture: core financial analysis is still local-first (browser-only,
 
 **Routes:** `/` · `/workspace` · `/import` · `/research/{filing,trends,growth}` · `/tools/{dcf,wc,ratios,peer}` · `/about` · `/debug-import` (dev-only, unlinked).
 
-## Default context policy
+## Mandatory startup protocol
 
-Keep every session narrow by default. Do **not** read the whole repo, large audits, or broad docs unless the task clearly needs them.
+This is the default bootstrap for Claude, Codex, DeepSeek, and any future agent. Follow it at the start of every new task unless the user explicitly gives a narrower file list. Keep every session narrow by default. Do **not** read the whole repo, large audits, or broad docs unless the task clearly needs them.
 
 Default bootstrap for new tasks:
 
@@ -30,6 +30,8 @@ Default bootstrap for new tasks:
 4. Use `rg` for targeted search instead of opening folders/files broadly.
 5. Before editing, state which files will be touched.
 6. Verify with the smallest relevant command first.
+
+Default refusal: if a prompt asks to "scan the repo", "audit everything", or "read all docs", first narrow with `rg` and the doc map below. Only expand context when the first pass proves it is necessary.
 
 Add task-specific docs only when needed:
 
@@ -72,6 +74,8 @@ Add task-specific docs only when needed:
 | xlsx advisory + mitigation | `docs/xlsx-risk-plan.md` |
 | Environment/config variables (the ONLY place to read env) | `docs/environment.md` (`src/lib/env.ts` is the single source of truth) |
 | Backend architecture (deep reference) | `docs/backend.md` (`BACKEND.md` is the summary) |
+
+**Archived (`docs/archive/`) — do NOT read to orient.** Superseded/completed docs kept only for history: `CURRENT_STATUS.md` (merged into `HANDoFF.md`), `HANDOFF_DEEPSEEK_LAUNCHPAD.md` + `HANDOFF_SPREADSHEET_DATAFLOW.md` (shipped-feature specs; open only for deep rationale, linked from `ARCHITECTURE.md`), `PRODUCT_DESIGN_AUDIT_GODEL_FUNDALYST.md` (folded into `FUNDALYST_DESIGN_AUDIT.md`).
 
 ## Key files
 - Command palette (Cmd/Ctrl+K; nav + 3 actions today): `src/components/layout/CommandPalette.tsx`
