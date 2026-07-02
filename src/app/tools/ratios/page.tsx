@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { computeRatios } from '@/lib/calculations';
 import { useRatiosStore } from '@/store';
 import { usePageTitle } from '@/lib/use-page-title';
 import { useToast } from '@/components/shared/ToastProvider';
 import { downloadCSV } from '@/lib/helpers';
-import { extractRatiosFromModel } from '@/store/financial-model-selectors';
 import { TOOL_BY_ID } from '@/lib/tool-metadata';
 import {
   PageHeader,
@@ -25,19 +24,28 @@ import {
   TrustBadge,
   DataSourceBadge,
 } from '@/components/ui';
-import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
-import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
-import { useModelData } from '@/store/use-model-data';
+import ModelBoundSpreadsheet from '@/components/input/ModelBoundSpreadsheet';
 import type { RatioInputs, RatioResult } from '@/types/financial';
+import { useActiveDataset } from '@/store/financial-model-selectors';
+import { useGlobalDataStore } from '@/store/global-data-store';
 import { useEnterpriseStore } from '@/store/enterprise-store';
 import CalculationTracePanel from '@/components/shared/CalculationTrace';
-import { useActiveDataset } from '@/store/financial-model-selectors';
-import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
+import { makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
 import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
 
 const RATIOS_TOOL = TOOL_BY_ID.ratios;
 const RATIOS_COUNT = RATIOS_TOOL.count ?? RATIOS_TOOL.value;
 const RATIOS_INPUTS = RATIOS_TOOL.inputs ?? '6 inputs';
+
+/** Ratio metric keys as stored in the model */
+const RATIO_METRICS = [
+  'Revenue',
+  'Net Profit',
+  'EBIT',
+  'Total Assets',
+  'Total Equity',
+  'Total Debt',
+] as const;
 
 const unlockedFormulas: Record<string, string> = {
   'Net Profit Margin': 'Net Profit ÷ Revenue',
@@ -134,20 +142,21 @@ function groupBySection(results: RatioResult[]): { section: string; ratios: Rati
   return sections.map((s) => ({ section: s, ratios: results.filter((r) => r.section === s) }));
 }
 
-function rowsToRatioData(rows: SpreadsheetRow[]): RatioInputs {
-  const map: Record<string, number | null> = {};
-  for (const row of rows) {
-    const val = row.values[0]?.trim();
-    const parsed = val ? Number(val.replace(/,/g, '')) : null;
-    map[row.metric] = parsed !== null && Number.isFinite(parsed) ? parsed : null;
-  }
+/** Read ratio inputs from the canonical model */
+function readRatioData(dataset: NonNullable<ReturnType<typeof useActiveDataset>>): RatioInputs {
+  const latestPeriod = dataset.periods[dataset.periods.length - 1] || 'Value';
+  const find = (metric: string): number | null => {
+    const f = dataset.facts.find((f) => f.metric === metric && f.periodLabel === latestPeriod);
+    return f && isFinite(f.value) ? f.value : null;
+  };
+
   return {
-    revenue: map['Revenue'] ?? null,
-    netProfit: map['Net Profit'] ?? null,
-    ebit: map['EBIT'] ?? null,
-    totalAssets: map['Total Assets'] ?? null,
-    totalEquity: map['Total Equity'] ?? null,
-    totalDebt: map['Total Debt'] ?? null,
+    revenue: find('Revenue') ?? null,
+    netProfit: find('Net Profit') ?? null,
+    ebit: find('EBIT') ?? null,
+    totalAssets: find('Total Assets') ?? null,
+    totalEquity: find('Total Equity') ?? null,
+    totalDebt: find('Total Debt') ?? null,
     cogs: null, currentAssets: null, currentLiab: null, inventory: null, interest: null,
   };
 }
@@ -157,44 +166,17 @@ export default function RatiosPage() {
   const showToast = useToast();
   const addAuditEvent = useEnterpriseStore((s) => s.addAuditEvent);
   const { res, setRes, clear: clearStore } = useRatiosStore();
-  const [clearVersion, setClearVersion] = useState<number | undefined>(undefined);
-  const clearedRef = useRef(false);
-  const [cleared, setCleared] = useState(false);
-  const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
+  const dataset = useActiveDataset();
+  const hasData = dataset && dataset.facts.length > 0;
+
   const [showResults, setShowResults] = useState(false);
 
-  const modelData = useModelData((ds) => extractRatiosFromModel(ds));
-  const activeDataset = useActiveDataset();
-
-  const prefilledRef = useRef(false);
-  const loadedDatasetIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (clearedRef.current) return;
-    if (!modelData.data) return;
-    if (activeDataset?.id && loadedDatasetIdRef.current === activeDataset.id) return;
-    const { revenue, netProfit, totalAssets, totalEquity, totalDebt, ebit } = modelData.data;
-    if (revenue !== null || netProfit !== null || totalAssets !== null) {
-      const timer = setTimeout(() => {
-        setClearVersion(v => (v ?? 0) + 1);
-        setSheetRows([
-          { metric: 'Revenue', values: [revenue !== null ? String(revenue) : ''] },
-          { metric: 'Net Profit', values: [netProfit !== null ? String(netProfit) : ''] },
-          { metric: 'EBIT', values: [ebit !== null ? String(ebit) : ''] },
-          { metric: 'Total Assets', values: [totalAssets !== null ? String(totalAssets) : ''] },
-          { metric: 'Total Equity', values: [totalEquity !== null ? String(totalEquity) : ''] },
-          { metric: 'Total Debt', values: [totalDebt !== null ? String(totalDebt) : ''] },
-        ]);
-        setRes(null);
-        setShowResults(false);
-        loadedDatasetIdRef.current = activeDataset?.id ?? null;
-      }, 0);
-      prefilledRef.current = true;
-      return () => clearTimeout(timer);
-    }
-  }, [activeDataset?.id, modelData.data, setRes]);
-
   function analyze() {
-    const data = rowsToRatioData(sheetRows);
+    if (!hasData) {
+      showToast('No data available. Import a financial report first.');
+      return;
+    }
+    const data = readRatioData(dataset);
     const next = computeRatios(data);
     if (next.length === 0) {
       setRes(null);
@@ -208,39 +190,72 @@ export default function RatiosPage() {
       category: 'calculation',
       severity: 'info',
       action: 'Ratios calculated',
-      target: modelData.companyName || 'Manual ratios',
+      target: dataset?.companyName || 'Manual ratios',
       details: `${next.length} ratio(s)`,
     });
     showToast('Ratios calculated');
   }
 
   const handleClear = useCallback(() => {
-    clearedRef.current = true;
-    setCleared(true);
-    setClearVersion(v => (v ?? 0) + 1);
+    if (!dataset) return;
+    const store = useGlobalDataStore.getState();
+    for (const metric of RATIO_METRICS) {
+      const fact = dataset.facts.find((f) => f.metric === metric);
+      if (fact) {
+        store.deleteFact(dataset.id, metric, fact.periodLabel);
+      }
+    }
     clearStore();
-    setSheetRows([]);
     setShowResults(false);
-  }, [clearStore]);
+  }, [dataset, clearStore]);
+
+  // ── Traces ──
+  const traceItems = useMemo(() => {
+    if (!res || !dataset) return [];
+    const latestPeriod = dataset.periods[dataset.periods.length - 1] || 'Value';
+
+    const findRowData = (metric: string) => {
+      const f = dataset.facts.find((f) => f.metric === metric && f.periodLabel === latestPeriod);
+      return f ? { metric: f.metric, values: [String(f.value)] } : undefined;
+    };
+
+    return res.map((ratio): CalculationTrace | null => {
+      const config = ratioTraceConfig[ratio.label];
+      if (!config) return null;
+      return {
+        label: ratio.label,
+        value: ratio.value,
+        formula: config.formula,
+        sources: config.sources.map((source) => makeTraceSource(
+          source.label,
+          dataset,
+          source.metricKeys,
+          findRowData(source.rowLabels[0]),
+        )),
+      };
+    }).filter((item): item is CalculationTrace => item !== null);
+  }, [res, dataset]);
 
   const grouped = res ? groupBySection(res) : [];
-  const traceItems = res
-    ? res.map((ratio): CalculationTrace | null => {
-        const config = ratioTraceConfig[ratio.label];
-        if (!config) return null;
-        return {
-          label: ratio.label,
-          value: ratio.value,
-          formula: config.formula,
-          sources: config.sources.map((source) => makeTraceSource(
-            source.label,
-            activeDataset,
-            source.metricKeys,
-            findRow(sheetRows, source.rowLabels),
-          )),
-        };
-      }).filter((item): item is CalculationTrace => item !== null)
-    : [];
+
+  // Empty state — only when no dataset exists
+  if (!hasData) {
+    return (
+      <div>
+        <PageHeader
+          kicker="Valuation"
+          title={RATIOS_TOOL.label}
+          subtitle={`${RATIOS_INPUTS} unlock ${RATIOS_COUNT}.`}
+          answer={RATIOS_TOOL.answer}
+        />
+        <EmptyState
+          title="No financial data"
+          desc="Import a financial report to see pre-filled ratio inputs and calculate financial ratios."
+          action={{ label: 'Import data', href: '/import' }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -251,33 +266,24 @@ export default function RatiosPage() {
         answer={RATIOS_TOOL.answer}
       />
 
-      <DataQualityBar source={modelData.companyName || undefined} />
+      <DataQualityBar source={dataset?.companyName || undefined} />
       <div className="flex items-center gap-2 mb-2 mt-1">
-        <DataSourceBadge variant={modelData.companyName ? 'imported' : 'none'} />
-        <ProvenanceBadge kind={modelData.companyName ? 'imported' : 'unavailable'} />
+        <DataSourceBadge variant="imported" />
+        <ProvenanceBadge kind="imported" />
       </div>
-      {modelData.companyName && (
-        <p className="text-2xs text-muted mb-3">
-          ✓ Ratios sourced from imported dataset ({modelData.companyName}). Clear the form to enter values manually.
-        </p>
-      )}
 
       <Card label={`Required (${RATIOS_INPUTS})`}>
         <div className="card-body">
-          <ToolSpreadsheet
-            tool="ratios"
+          <ModelBoundSpreadsheet
+            statement="all"
             singleColumnLabel="₹ Cr"
-            initialData={cleared ? undefined : (sheetRows.length > 0 ? sheetRows : undefined)}
-            resetKey={clearVersion}
-            onDataChange={(rows) => setSheetRows(rows)}
-            hint={`${RATIOS_INPUTS} unlock: Net Profit Margin, ROE, Debt/Equity, Debt/Assets, Asset Turnover.`}
+            hint={`${RATIOS_INPUTS} unlock: Net Profit Margin, ROE, Debt/Equity, Debt/Assets, Asset Turnover. Edits write back to the model.`}
           />
         </div>
         <Toolbar onClear={handleClear} onAction={analyze} actionLabel="Calculate" hint={`Add the ${RATIOS_INPUTS} to calculate ${RATIOS_COUNT}.`} />
       </Card>
 
       {res && showResults && (() => {
-        // Hero decision (§2): the one ratio most out of range.
         const flagged = res.find((r) => r.cls === 'warn');
         return flagged ? (
           <HeroDecision
@@ -332,16 +338,12 @@ export default function RatiosPage() {
             <NextLinks links={[{ label: 'Cash efficiency', href: '/tools/wc' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
             <CalcTimestamp />
             <div className="flex gap-2 flex-wrap mt-2">
-              <TrustBadge label={`Values from: ${modelData.companyName || 'User entry'}`} variant="source" />
+              <TrustBadge label={`Values from: ${dataset?.companyName || 'User entry'}`} variant="source" />
               <TrustBadge label="₹ Indian Market" />
             </div>
             <Disclaimer />
           </div>
         </>
-      )}
-
-      {!showResults && (
-        <EmptyState title={RATIOS_TOOL.label} desc={RATIOS_TOOL.description} action={{ label: 'Import data', href: '/import' }} />
       )}
     </div>
   );

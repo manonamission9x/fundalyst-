@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { computeWC } from '@/lib/calculations';
 import { useWCStore } from '@/store';
 import { usePageTitle } from '@/lib/use-page-title';
@@ -21,30 +21,40 @@ import {
   TrustBadge,
   DataSourceBadge,
 } from '@/components/ui';
-import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
-import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
-import { extractWCFromModel } from '@/store/financial-model-selectors';
-import { useModelData } from '@/store/use-model-data';
+import ModelBoundSpreadsheet from '@/components/input/ModelBoundSpreadsheet';
+import { useActiveDataset } from '@/store/financial-model-selectors';
+import { useGlobalDataStore } from '@/store/global-data-store';
 import { useEnterpriseStore } from '@/store/enterprise-store';
 import CalculationTracePanel from '@/components/shared/CalculationTrace';
 import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
-import { useActiveDataset } from '@/store/financial-model-selectors';
-import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
+import { makeTraceSource } from '@/lib/calculation-trace';
+import type { CalculationTrace } from '@/lib/calculation-trace';
 
-function rowsToWCInputs(rows: SpreadsheetRow[]) {
-  const result: Record<string, number | null> = {};
-  for (const row of rows) {
-    const val = row.values[0]?.trim();
-    const parsed = val ? Number(val.replace(/,/g, '')) : null;
-    result[row.metric] = parsed !== null && Number.isFinite(parsed) ? parsed : null;
-  }
+/** WC metric keys as stored in the model */
+const WC_METRICS = [
+  'Revenue (annual)',
+  'Cost of Goods Sold',
+  'Trade Receivables',
+  'Inventory',
+  'Payables',
+  'Cash & Equivalents',
+] as const;
+
+/** Read WC inputs from the canonical model */
+function readWCInputs(dataset: NonNullable<ReturnType<typeof useActiveDataset>>) {
+  const latestPeriod = dataset.periods[dataset.periods.length - 1] || 'Value';
+  const find = (metric: string): number | null => {
+    const f = dataset.facts.find((f) => f.metric === metric && f.periodLabel === latestPeriod);
+    return f && isFinite(f.value) ? f.value : null;
+  };
+
   return {
-    revenue: result['Revenue (annual)'],
-    cogs: result['Cost of Goods Sold'],
-    receivables: result['Trade Receivables'],
-    inventory: result['Inventory'],
-    payables: result['Payables'],
-    cash: result['Cash & Equivalents'],
+    revenue: find('Revenue (annual)'),
+    cogs: find('Cost of Goods Sold'),
+    receivables: find('Trade Receivables'),
+    inventory: find('Inventory'),
+    payables: find('Payables'),
+    cash: find('Cash & Equivalents'),
   };
 }
 
@@ -53,44 +63,17 @@ export default function WCPage() {
   const showToast = useToast();
   const addAuditEvent = useEnterpriseStore((s) => s.addAuditEvent);
   const { res, setRes, clear: clearStore } = useWCStore();
-  const [clearVersion, setClearVersion] = useState<number | undefined>(undefined);
-  const clearedRef = useRef(false);
-  const [cleared, setCleared] = useState(false);
-  const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
+  const dataset = useActiveDataset();
+  const hasData = dataset && dataset.facts.length > 0;
+
   const [showResults, setShowResults] = useState(false);
 
-  const modelData = useModelData((ds) => extractWCFromModel(ds));
-  const activeDataset = useActiveDataset();
-
-  const prefilledRef = useRef(false);
-  const loadedDatasetIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (clearedRef.current) return;
-    if (!modelData.data) return;
-    if (activeDataset?.id && loadedDatasetIdRef.current === activeDataset.id) return;
-    const { revenue, cogs, receivables, inventory, payables, cash } = modelData.data;
-    if (revenue !== null || cogs !== null || receivables !== null) {
-      const timer = setTimeout(() => {
-        setClearVersion(v => (v ?? 0) + 1);
-        setSheetRows([
-          { metric: 'Revenue (annual)', values: [revenue !== null ? String(revenue) : ''] },
-          { metric: 'Cost of Goods Sold', values: [cogs !== null ? String(cogs) : ''] },
-          { metric: 'Trade Receivables', values: [receivables !== null ? String(receivables) : ''] },
-          { metric: 'Inventory', values: [inventory !== null ? String(inventory) : ''] },
-          { metric: 'Payables', values: [payables !== null ? String(payables) : ''] },
-          { metric: 'Cash & Equivalents', values: [cash !== null ? String(cash) : ''] },
-        ]);
-        setRes(null);
-        setShowResults(false);
-        loadedDatasetIdRef.current = activeDataset?.id ?? null;
-      }, 0);
-      prefilledRef.current = true;
-      return () => clearTimeout(timer);
-    }
-  }, [activeDataset?.id, modelData.data, setRes]);
-
   function analyze() {
-    const inputs = rowsToWCInputs(sheetRows);
+    if (!hasData) {
+      showToast('No data available. Import a financial report first.');
+      return;
+    }
+    const inputs = readWCInputs(dataset);
     if (inputs.revenue === null && inputs.cogs === null) {
       setRes(null);
       setShowResults(false);
@@ -103,70 +86,103 @@ export default function WCPage() {
       category: 'calculation',
       severity: 'info',
       action: 'Cash efficiency analyzed',
-      target: modelData.companyName || 'Manual working capital',
+      target: dataset?.companyName || 'Manual working capital',
     });
     showToast('Analysis complete');
   }
 
   const handleClear = useCallback(() => {
-    clearedRef.current = true;
-    setCleared(true);
-    setClearVersion(v => (v ?? 0) + 1);
+    if (!dataset) return;
+    const store = useGlobalDataStore.getState();
+    for (const metric of WC_METRICS) {
+      const fact = dataset.facts.find((f) => f.metric === metric);
+      if (fact) {
+        store.deleteFact(dataset.id, metric, fact.periodLabel);
+      }
+    }
     clearStore();
-    setSheetRows([]);
     setShowResults(false);
-  }, [clearStore]);
+  }, [dataset, clearStore]);
 
-  const traceItems: CalculationTrace[] = res ? [
-    {
-      label: 'DSO',
-      value: res.dso !== null ? `${Math.round(res.dso)}d` : 'not available',
-      formula: '(Trade Receivables / Revenue) x 365',
-      sources: [
-        makeTraceSource('Trade Receivables', activeDataset, ['receivables', 'tradeReceivables'], findRow(sheetRows, ['Trade Receivables'])),
-        makeTraceSource('Revenue', activeDataset, ['revenue'], findRow(sheetRows, ['Revenue (annual)', 'Revenue'])),
-      ],
-    },
-    {
-      label: 'DIO',
-      value: res.dio !== null ? `${Math.round(res.dio)}d` : 'not available',
-      formula: '(Inventory / COGS) x 365',
-      sources: [
-        makeTraceSource('Inventory', activeDataset, ['inventory'], findRow(sheetRows, ['Inventory'])),
-        makeTraceSource('COGS', activeDataset, ['cogs', 'costOfGoodsSold'], findRow(sheetRows, ['Cost of Goods Sold'])),
-      ],
-    },
-    {
-      label: 'DPO',
-      value: res.dpo !== null ? `${Math.round(res.dpo)}d` : 'not available',
-      formula: '(Payables / COGS) x 365',
-      sources: [
-        makeTraceSource('Payables', activeDataset, ['payables', 'tradePayables'], findRow(sheetRows, ['Payables'])),
-        makeTraceSource('COGS', activeDataset, ['cogs', 'costOfGoodsSold'], findRow(sheetRows, ['Cost of Goods Sold'])),
-      ],
-    },
-    {
-      label: 'CCC',
-      value: `${Math.round(res.ccc)}d`,
-      formula: 'DSO + DIO - DPO',
-      sources: [
-        makeTraceSource('DSO', null, [], undefined, res.dso !== null ? `${Math.round(res.dso)}d` : '0d'),
-        makeTraceSource('DIO', null, [], undefined, res.dio !== null ? `${Math.round(res.dio)}d` : '0d'),
-        makeTraceSource('DPO', null, [], undefined, res.dpo !== null ? `${Math.round(res.dpo)}d` : '0d'),
-      ],
-    },
-    {
-      label: 'Net Working Capital',
-      value: String(Math.round(res.nwc)),
-      formula: 'Receivables + Inventory + Cash - Payables',
-      sources: [
-        makeTraceSource('Trade Receivables', activeDataset, ['receivables', 'tradeReceivables'], findRow(sheetRows, ['Trade Receivables'])),
-        makeTraceSource('Inventory', activeDataset, ['inventory'], findRow(sheetRows, ['Inventory'])),
-        makeTraceSource('Cash & Equivalents', activeDataset, ['cash', 'cashAndEquivalents'], findRow(sheetRows, ['Cash & Equivalents'])),
-        makeTraceSource('Payables', activeDataset, ['payables', 'tradePayables'], findRow(sheetRows, ['Payables'])),
-      ],
-    },
-  ] : [];
+  const traceItems: CalculationTrace[] = useMemo(() => {
+    if (!res || !dataset) return [];
+    const latestPeriod = dataset.periods[dataset.periods.length - 1] || 'Value';
+
+    const findRowData = (metric: string) => {
+      const f = dataset.facts.find((f) => f.metric === metric && f.periodLabel === latestPeriod);
+      return f ? { metric: f.metric, values: [String(f.value)] } : undefined;
+    };
+
+    return [
+      {
+        label: 'DSO',
+        value: res.dso !== null ? `${Math.round(res.dso)}d` : 'not available',
+        formula: '(Trade Receivables / Revenue) x 365',
+        sources: [
+          makeTraceSource('Trade Receivables', dataset, ['receivables', 'tradeReceivables'], findRowData('Trade Receivables')),
+          makeTraceSource('Revenue', dataset, ['revenue'], findRowData('Revenue (annual)')),
+        ],
+      },
+      {
+        label: 'DIO',
+        value: res.dio !== null ? `${Math.round(res.dio)}d` : 'not available',
+        formula: '(Inventory / COGS) x 365',
+        sources: [
+          makeTraceSource('Inventory', dataset, ['inventory'], findRowData('Inventory')),
+          makeTraceSource('COGS', dataset, ['cogs', 'costOfGoodsSold'], findRowData('Cost of Goods Sold')),
+        ],
+      },
+      {
+        label: 'DPO',
+        value: res.dpo !== null ? `${Math.round(res.dpo)}d` : 'not available',
+        formula: '(Payables / COGS) x 365',
+        sources: [
+          makeTraceSource('Payables', dataset, ['payables', 'tradePayables'], findRowData('Payables')),
+          makeTraceSource('COGS', dataset, ['cogs', 'costOfGoodsSold'], findRowData('Cost of Goods Sold')),
+        ],
+      },
+      {
+        label: 'CCC',
+        value: `${Math.round(res.ccc)}d`,
+        formula: 'DSO + DIO - DPO',
+        sources: [
+          makeTraceSource('DSO', null, [], undefined, res.dso !== null ? `${Math.round(res.dso)}d` : '0d'),
+          makeTraceSource('DIO', null, [], undefined, res.dio !== null ? `${Math.round(res.dio)}d` : '0d'),
+          makeTraceSource('DPO', null, [], undefined, res.dpo !== null ? `${Math.round(res.dpo)}d` : '0d'),
+        ],
+      },
+      {
+        label: 'Net Working Capital',
+        value: String(Math.round(res.nwc)),
+        formula: 'Receivables + Inventory + Cash - Payables',
+        sources: [
+          makeTraceSource('Trade Receivables', dataset, ['receivables', 'tradeReceivables'], findRowData('Trade Receivables')),
+          makeTraceSource('Inventory', dataset, ['inventory'], findRowData('Inventory')),
+          makeTraceSource('Cash & Equivalents', dataset, ['cash', 'cashAndEquivalents'], findRowData('Cash & Equivalents')),
+          makeTraceSource('Payables', dataset, ['payables', 'tradePayables'], findRowData('Payables')),
+        ],
+      },
+    ];
+  }, [res, dataset]);
+
+  // Empty state — only when no dataset exists
+  if (!hasData) {
+    return (
+      <div>
+        <PageHeader
+          kicker="Valuation"
+          title="Cash Efficiency"
+          subtitle="See whether cash is trapped in receivables, inventory, or payables — DSO, DIO, DPO, and the Cash Conversion Cycle."
+          answer="What this helps you answer: How quickly does the company turn operations into cash?"
+        />
+        <EmptyState
+          title="No financial data"
+          desc="Import a financial report to see pre-filled cash efficiency inputs and analyze working capital."
+          action={{ label: 'Import data', href: '/import' }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -177,25 +193,18 @@ export default function WCPage() {
         answer="What this helps you answer: How quickly does the company turn operations into cash?"
       />
 
-      <DataQualityBar
-        source={modelData.companyName || undefined}
-        periods={modelData.companyName ? `Company: ${modelData.companyName}` : undefined}
-      />
+      <DataQualityBar source={dataset?.companyName || undefined} />
       <div className="flex items-center gap-2 mb-2 mt-1">
-        <DataSourceBadge variant={modelData.companyName ? 'imported' : 'none'} />
-        <ProvenanceBadge kind={modelData.companyName ? 'imported' : 'unavailable'} />
+        <DataSourceBadge variant="imported" />
+        <ProvenanceBadge kind="imported" />
       </div>
-
 
       <Card label="Cash Efficiency Inputs">
         <div className="card-body">
-          <ToolSpreadsheet
-            tool="wc"
+          <ModelBoundSpreadsheet
+            statement="all"
             singleColumnLabel="₹ Crores"
-            initialData={cleared ? undefined : (sheetRows.length > 0 ? sheetRows : undefined)}
-            resetKey={clearVersion}
-            onDataChange={(rows) => setSheetRows(rows)}
-            hint="Enter annual values in ₹ Cr. Tab to navigate."
+            hint="Enter annual values in ₹ Cr. Tab to navigate. Edits write back to the model — every surface updates live."
           />
         </div>
         <Toolbar onClear={handleClear} onAction={analyze} actionLabel="Analyze" />
@@ -237,19 +246,11 @@ export default function WCPage() {
           <NextLinks links={[{ label: 'Financial ratios', href: '/tools/ratios' }, { label: 'Estimate value', href: '/tools/dcf' }]} />
           <CalcTimestamp />
           <div className="flex gap-2 flex-wrap mt-2">
-            <TrustBadge label={`Values from: ${modelData.companyName || 'User entry'}`} variant="source" />
+            <TrustBadge label={`Values from: ${dataset?.companyName || 'User entry'}`} variant="source" />
             <TrustBadge label="₹ Indian Market" />
           </div>
           <Disclaimer extra="CCC = DSO + DIO − DPO" />
         </div>
-      )}
-
-      {!showResults && (
-        <EmptyState
-          title="Cash Efficiency"
-          desc="Enter revenue, COGS, receivables, inventory, payables, and cash to calculate the cash conversion cycle."
-          action={{ label: 'Import data', href: '/import' }}
-        />
       )}
     </div>
   );

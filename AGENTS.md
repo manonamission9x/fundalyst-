@@ -15,6 +15,23 @@ Client-side financial-analysis app. **No backend, no auth, no server, no live ma
 **Routes:** `/` · `/workspace` · `/import` · `/research/{filing,trends,growth}` · `/tools/{dcf,wc,ratios,peer}` · `/about` · `/debug-import` (dev-only, unlinked).
 
 ## Doc map — one source of truth per topic (don't restate, link)
+
+**New agent? Read in this order:**
+
+| Order | File | What it tells you |
+|---|---|---|
+| 1 | `PROJECT.md` | What this project is, who it's for, what's real vs not |
+| 2 | `ARCHITECTURE.md` | Data flow, stores, component tree, key decisions |
+| 3 | `CURRENT_STATUS.md` | What works, what's in progress, known risks |
+| 4 | `FRONTEND.md` | Stack, routing, component conventions, CSS rules |
+| 5 | `DESIGN.md` | Visual language, tokens, colour/typography rules |
+| 6 | `BACKEND.md` | No backend — privacy promise, localStorage |
+| 7 | `DATABASE.md` | Persistence schema, localStorage keys, backup/restore |
+| 8 | `STYLE.md` | Code style, naming, lint rules, PR checklist |
+| 9 | `HANDoFF.md` | Change log (last 3 changes + product state) |
+| 10 | `CODEX_TICKETS.md` | Active tickets — claim one before starting |
+| 11 | `DEEPSEEK_TASKS.md` | Visual/theme fix queue — DeepSeek lane only |
+
 | Topic | Canonical file |
 |---|---|
 | Design language / tokens (read before any UI change) | `DESIGN.md` |
@@ -26,7 +43,7 @@ Client-side financial-analysis app. **No backend, no auth, no server, no live ma
 | Reusable prompt templates for recurring work | `AGENT_PLAYBOOKS.md` |
 | How to keep token usage low | `TOKENS.md` |
 | xlsx advisory + mitigation | `docs/xlsx-risk-plan.md` |
-| Human-facing overview | `README.md` |
+| Human-facing overview | `README.md` / `PROJECT.md` (PROJECT.md is the canonical intro) |
 
 ## Key files
 - Command palette (Cmd/Ctrl+K; nav + 3 actions today): `src/components/layout/CommandPalette.tsx`

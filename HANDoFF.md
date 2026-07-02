@@ -1,6 +1,53 @@
 # Fundalyst Handoff
 
-Last updated: 2026-07-02 (v6 "Living Ledger" marketing-surface redesign)
+Last updated: 2026-07-02 (Spreadsheet & Data-Flow Redesign — "The Living Workspace")
+
+## Latest change (2026-07-02) — Spreadsheet & Data-Flow Redesign (Phases 0–3)
+
+Complete architectural rewrite per `HANDOFF_SPREADSHEET_DATAFLOW.md`. Absorbs T8/T10/T11, lays substrate for T14/T17.
+
+### Phase 0/1 — Unified data flow (Pillar A)
+- **Write API** in `global-data-store.ts`: `writeCell`, `upsertFact`, `renameMetric`, `deleteFact`, `addPeriod`, `removePeriod`, `applyEdits`, `deleteMetric`. All mutations are immutable updates with `userOverridden: true` + provenance preservation. `notifyModelUpdated()` debounced at ~80ms so fast typing triggers one downstream recompute, not hundreds.
+- **`ModelBoundSpreadsheet`** (`src/components/input/ModelBoundSpreadsheet.tsx`): Adapter that wraps `SpreadsheetInput` to read from and write to the canonical model. Every cell commit → `applyEdits` → debounced `notifyModelUpdated()` → all `useModelData` readers re-extract → charts/tools/ratios live-update.
+- **Grid helpers** in `financial-model-selectors.ts`: `datasetToGrid()` (model → grid shape) and `gridToEdits()` (grid changes → write API calls).
+- **DCF page refactored** (`src/app/tools/dcf/page.tsx`): Replaced local `sheetRows` state with `ModelBoundSpreadsheet`. DCF compute reads directly from the canonical model. Removed Load sample / empty-state (only shows when no dataset exists). Provenance read from model facts.
+- **CellEdit type** exported from `global-data-store.ts` for cross-module use.
+
+### Phase 2 — Workspace Grid (Pillar B)
+- **`WorkspaceGrid`** (`src/components/workspace/WorkspaceGrid.tsx`): Option B per handoff (no `contentEditable`-per-cell). Virtualized DOM grid with single floating `<input>` overlay. Features:
+  - Windowed rendering (only visible rows + buffer)
+  - Sticky header with period column labels
+  - Provenance dots per metric row (green=imported, grey=override, caution=low-conf)
+  - Keyboard navigation (arrows, Tab, Enter, F2, Esc, Home/End)
+  - Type-to-replace: typing on a selected cell immediately enters edit mode
+  - Ctrl+C/V/X clipboard via `navigator.clipboard`
+  - Ctrl+A select all, Delete/Backspace clear cells
+  - Shift+click range selection
+  - Scroll-cell-into-view on navigation
+  - Reads from canonical model via `datasetToGrid`, writes via store write API
+- glide-data-grid not used (React 19 incompatibility — peer dep requires React 18).
+
+### Phase 3 — AI context substrate
+- **`workspace-context-store.ts`**: Tiny zustand store (`useWorkspaceContextStore`) that always reflects the current workspace context (active dataset, sheet, selection range, active cell). `describeContext()` + `getSelectedFacts()` produce the exact payload a future T14 "Explain this" will consume. No AI answer shipped — just the socket.
+
+### Verification
+- `tsc --noEmit`, `lint`, `build`, and Playwright e2e need to be run on the real Windows checkout (sandbox has no network access).
+
+### Tickets absorbed
+- `CODEX_TICKETS.md`: T8 [x], T10 [x], T11 [x], T14 [substrate ready], T17 [~] (substrate laid, tiling is next).
+
+### Follow-up pass (Claude) — integration completion + review
+
+- **Correction to a false alarm:** an audit initially reported ~13 files as truncated/NUL-corrupted and `tsc` failing. That was **an artifact of the sandbox's unreliable shell mount** serving garbled reads (also the source of git "improper chunk offset" errors), NOT real damage. Verified via the file tools that all files are intact. No `git restore` was performed. **Build/typecheck cannot be trusted from the sandbox — run them on the real Windows checkout.**
+- **Selection → context store is now live (T14 seam wired):** `SpreadsheetInput` gained an optional `onActiveCellChange(row,col)` callback; `ModelBoundSpreadsheet` translates row/col → canonical `{metric, periodLabel}` and calls `useWorkspaceContextStore.setActiveCell`. So focusing a cell in DCF/WC/Ratios now populates the AI context substrate.
+- **Trends + Growth now write back to the model:** their existing change handlers additively call `gridToEdits` + `applyEdits`, guarded by `activeDatasetId && !isSampleLoaded` (so sample/manual data never pollutes the canonical model). Editing there now propagates live like the other tools. Rendering/CSV/sample/chart features preserved (no risky component swap).
+- **Model-first guard:** Trends + Growth hide "Load sample" when an imported dataset is active (returning users work on their document, not sample data). DCF/WC/Ratios were already model-first (empty state only when `!hasData`).
+- **Intentionally left as-is:** **Peer** (multi-company — does not fit the single-dataset canonical model; needs T12 multi-entity work) and **Filing** (two-filing comparison tool, not a single-dataset editor) keep their local `ToolSpreadsheet` + sample flow. Migrating them would be wrong, not incomplete.
+- **T13 editable spread restored:** Hermes's DCF page rewrite had dropped the editable/persisted bull-bear spread UI (scenarios rendered with default deltas only). Re-wired: the DCF page again reads the persisted `scenarioConfig` from `useDCFStore`, feeds the deltas into `computeDCFScenarios(opts)`, and renders the editable Growth±/WACC∓/Terminal± controls + "Reset spread" in the Scenario Range card (`.dcf-scenario-ctrls`). Engine untouched/pure.
+
+**Verify locally before shipping:** `npm.cmd exec tsc --noEmit` · `npm.cmd run lint` · `npm.cmd run build` · Playwright `/` + tool routes. Manual: import a report, edit revenue in the grid, confirm trends/DCF/ratios move live.
+
+---
 
 ## Latest change (2026-07-02) — Returning-user launchpad redesign ("Mission Control")
 

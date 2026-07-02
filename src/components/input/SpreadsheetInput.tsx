@@ -29,6 +29,8 @@ interface SpreadsheetInputProps {
   initialPeriods?: string[];
   initialData?: SpreadsheetRow[];
   onDataChange?: (rows: SpreadsheetRow[], periods: string[]) => void;
+  /** Fired when the active cell changes (focus/nav). col 0 = metric column. */
+  onActiveCellChange?: (row: number, col: number) => void;
   className?: string;
   resetKey?: number;
 }
@@ -45,6 +47,7 @@ export default function SpreadsheetInput({
   initialPeriods = ['Q1', 'Q2', 'Q3', 'Q4'],
   initialData,
   onDataChange,
+  onActiveCellChange,
   className = '',
   resetKey,
 }: SpreadsheetInputProps) {
@@ -87,10 +90,15 @@ export default function SpreadsheetInput({
   const cellRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   const onDataChangeRef = useRef(onDataChange);
+  const onActiveCellChangeRef = useRef(onActiveCellChange);
 
   useEffect(() => {
     onDataChangeRef.current = onDataChange;
   }, [onDataChange]);
+
+  useEffect(() => {
+    onActiveCellChangeRef.current = onActiveCellChange;
+  }, [onActiveCellChange]);
 
   const notifyChange = useCallback((newRows: SpreadsheetRow[], newPeriods: string[]) => {
     onDataChangeRef.current?.(newRows, newPeriods);
@@ -815,7 +823,7 @@ export default function SpreadsheetInput({
                     onInput={(e) => handleMetricInput((e.target as HTMLElement).textContent ?? '')}
                     onKeyDown={(e) => handleKeyDown(e, ri, METRIC_COL)}
                     onBlur={(e) => handleBlur(e, ri, METRIC_COL)}
-                    onFocus={() => { setActiveRow(ri); setActiveCol(METRIC_COL); setShowSuggestions(false); }}
+                    onFocus={() => { setActiveRow(ri); setActiveCol(METRIC_COL); setShowSuggestions(false); onActiveCellChangeRef.current?.(ri, METRIC_COL); }}
                     onPaste={(e) => handlePaste(e, ri, METRIC_COL)}
                     onContextMenu={(e) => handleContextMenu(e, ri, METRIC_COL)}
                     onMouseDown={(e) => handleCellMouseDown(e, ri, METRIC_COL)}
@@ -863,7 +871,7 @@ export default function SpreadsheetInput({
                         }
                       }}
                       onBlur={(e) => handleBlur(e, ri, colIdx)}
-                      onFocus={() => { setActiveRow(ri); setActiveCol(colIdx); setShowSuggestions(false); }}
+                      onFocus={() => { setActiveRow(ri); setActiveCol(colIdx); setShowSuggestions(false); onActiveCellChangeRef.current?.(ri, colIdx); }}
                       onPaste={(e) => handlePaste(e, ri, colIdx)}
                       onContextMenu={(e) => handleContextMenu(e, ri, colIdx)}
                       onMouseDown={(e) => handleCellMouseDown(e, ri, colIdx)}

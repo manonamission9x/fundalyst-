@@ -23,8 +23,9 @@ import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import { useGlobalImportFill, extractYoYInputs, getDataSourceLabel } from '@/lib/importer/import-hooks';
 import { useModelData } from '@/store/use-model-data';
-import { extractTrendData } from '@/store/financial-model-selectors';
+import { extractTrendData, gridToEdits } from '@/store/financial-model-selectors';
 import { useActiveDataset } from '@/store/financial-model-selectors';
+import { useGlobalDataStore } from '@/store/global-data-store';
 import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
 import CalculationTracePanel from '@/components/shared/CalculationTrace';
 import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
@@ -61,6 +62,8 @@ export default function YoyPage() {
 
   const modelData = useModelData((ds) => extractTrendData(ds));
   const activeDataset = useActiveDataset();
+  const applyEdits = useGlobalDataStore((s) => s.applyEdits);
+  const activeDatasetId = useGlobalDataStore((s) => s.activeDatasetId);
 
   // parseWithText: plain function (not useCallback) so it can be used before the effect
   function parseWithText(text: string) {
@@ -114,6 +117,22 @@ export default function YoyPage() {
       return;
     }
     parseWithText(csvText);
+    // Unified data flow: write edits back to the canonical model when working
+    // on an imported dataset, so every other tool updates live (Pillar A).
+    if (activeDatasetId && !isSampleLoaded) {
+      const edits = gridToEdits(
+        newRows.map((r) => ({
+          metric: r.metric,
+          values: r.values.map((v) => {
+            if (v === '' || v === null || v === undefined) return null;
+            const n = Number(String(v).replace(/,/g, ''));
+            return isFinite(n) ? n : null;
+          }),
+        })),
+        newPeriods,
+      );
+      if (edits.length > 0) applyEdits(activeDatasetId, edits);
+    }
   };
 
   async function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -267,11 +286,13 @@ export default function YoyPage() {
             hint="Add rows for each metric. Tab to navigate between cells."
           />
           <Toolbar onClear={handleClear} onAction={parse} actionLabel="Calculate growth" />
-          <div className="card-actions" style={{ borderTop: 0 }}>
-            <button type="button" className="btn-ghost btn-sm" onClick={loadSample}>
-              Load sample
-            </button>
-          </div>
+          {!activeDataset && (
+            <div className="card-actions" style={{ borderTop: 0 }}>
+              <button type="button" className="btn-ghost btn-sm" onClick={loadSample}>
+                Load sample
+              </button>
+            </div>
+          )}
         </div>
       </Card>
 

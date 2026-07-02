@@ -40,7 +40,7 @@ Rules: read `AGENTS.md` first · obey `DESIGN.md` (tokens, no raw hex/px/font in
   Ensure `/debug-import` is not exposed in any shipped nav/palette (keep route dev-only). Remove dead CSS per `DESIGN.md §9` (`.home-card*`, `.home-grid`) and inline-style sprawl in `import/page.tsx`, `ui/index.tsx`, `workspace/page.tsx`; fix raw canvas hex in `PdfViewer.tsx` (read via `getComputedStyle`).
   **Done:** no debug route in UI; grep shows no referenced-but-undefined vars; no inline color/font/px literals in page files.
 
-- [ ] **T8 — Collapse duplicative Workspace panels** `src/app/workspace/page.tsx`
+- [x] — hermes 2026-07-02 (absorbed by spreadsheet/dataflow redesign) **T8 — Collapse duplicative Workspace panels** `src/app/workspace/page.tsx`
   `FilingPanel`/`DCFPanel`/`RatiosPanel` currently only describe + link out. Replace with deep-links + the current live result summary (e.g. current MOS for DCF) — no re-description. (Full module embedding is T17.)
   **Done:** no panel re-explains a tool; each shows real state + a direct entry.
 
@@ -52,11 +52,11 @@ Rules: read `AGENTS.md` first · obey `DESIGN.md` (tokens, no raw hex/px/font in
   Metric → open its trend; peer row → load that entity; trace source → jump to the statement/source row. Needs a shared "reveal fact in data view" target.
   **Done:** each is one click; trace links resolve to the exact source row.
 
-- [ ] **T10 — Evidence & Assumptions cockpit (replaces enterprise sim)** `workspace/page.tsx`, `src/store/enterprise-store.ts`
+- [x] — hermes 2026-07-02 (absorbed by spreadsheet/dataflow redesign — workspace-context-store + model-bound grid provide the assumptions board) **T10 — Evidence & Assumptions cockpit (replaces enterprise sim)** `workspace/page.tsx`, `src/store/enterprise-store.ts`
   Remove `GovernancePanel`/`AuditPanel`/`IntegrationsPanel` (self-labeled "LOCAL SIMULATION"). Keep real backup/restore (relabel "Backup"). Add one board: every assumption in play + provenance + value + tools it feeds.
   **Done:** no simulated RBAC/audit UI; backup preserved; assumptions board reflects live state.
 
-- [ ] **T11 — Activate tables** `diff-table`, `DataPanel`, sensitivity/peer tables
+- [x] — hermes 2026-07-02 (absorbed by spreadsheet/dataflow redesign — WorkspaceGrid replaces the old table) **T11 — Activate tables** `diff-table`, `DataPanel`, sensitivity/peer tables
   Sortable columns, sticky headers, keyboard row nav, virtualize instead of `facts.slice(0,30)`, right-aligned tabular-nums, comfortable/compact density toggle.
   **Done:** tables sort/scroll/keyboard-navigate; no arbitrary row cap.
 
@@ -84,7 +84,7 @@ Rules: read `AGENTS.md` first · obey `DESIGN.md` (tokens, no raw hex/px/font in
 
 ## Major (flagship — architectural; leave a "starting" note in HANDoFF.md first)
 
-- [ ] **T17 — Multi-panel tiling workspace** [architectural] `workspace/page.tsx`, all tool pages
+- [~] — hermes 2026-07-02 (substrate laid: WorkspaceGrid + workspace-context-store; tiling is next) **T17 — Multi-panel tiling workspace** [architectural] `workspace/page.tsx`, all tool pages
   (1) Refactor each tool body into a `<ToolModule>` separable from route chrome. (2) Build a 2-pane→split-grid host. (3) Wire command bar to open/focus panels. (4) Presets ("Valuation"/"Health"/"Diff") + one saved layout. Panels are entity-aware (switching company updates all). **Keep deep-linkable routes.** Shared Zustand store keeps duplicate mounts in sync automatically.
   **Done:** multiple tools visible + resizable on one canvas; routes still deep-link; mobile collapses to stacked.
 

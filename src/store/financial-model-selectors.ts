@@ -10,6 +10,7 @@
 
 import { useGlobalDataStore } from './global-data-store';
 import type { FundalystDataset, CanonicalFact } from '@/lib/importer/types';
+import type { CellEdit } from './global-data-store';
 import { findBestMetricMatch } from '@/lib/importer/metric-aliases';
 
 // ── Utilities ──
@@ -252,6 +253,100 @@ export function extractTrendData(dataset: FundalystDataset): {
   }
 
   return { periods, metrics };
+}
+
+// ── Grid helpers (Pillar A: model ↔ spreadsheet view) ──
+
+/** Statements for grouping into worksheet tabs */
+export const STATEMENT_ORDER = [
+  'income_statement',
+  'balance_sheet',
+  'cash_flow',
+  'market_data',
+  'quarterly_results',
+  'mixed',
+  'unknown',
+] as const;
+
+/** Get the statement label for display */
+export function getStatementLabel(st: string): string {
+  const labels: Record<string, string> = {
+    income_statement: 'Income Statement',
+    balance_sheet: 'Balance Sheet',
+    cash_flow: 'Cash Flow',
+    market_data: 'Market Data',
+    quarterly_results: 'Quarterly Results',
+    mixed: 'Other',
+    unknown: 'Other',
+  };
+  return labels[st] || st;
+}
+
+/**
+ * Convert a dataset (optionally filtered by statement) to a grid shape:
+ * columns = periods, rows = metrics with values per period.
+ *
+ * Used by the workspace grid and any tool that needs a tabular view.
+ */
+export function datasetToGrid(
+  dataset: FundalystDataset,
+  statement?: string,
+): {
+  periods: string[];
+  rows: { metric: string; values: (number | null)[]; confidence: number; userOverridden: boolean }[];
+} {
+  const periods = getPeriods(dataset);
+  let facts = dataset.facts;
+
+  if (statement && statement !== '' && statement !== 'all') {
+    facts = facts.filter((f) => f.statement === statement);
+  }
+
+  // Group facts by metric
+  const byMetric: Record<string, { values: (number | null)[]; confidences: number[]; overridden: boolean }> = {};
+  for (const f of facts) {
+    if (!byMetric[f.metric]) {
+      byMetric[f.metric] = { values: [], confidences: [], overridden: false };
+    }
+  }
+
+  // Build 2D array: rows = metrics, cols = periods
+  const rows = Object.entries(
+    facts.reduce<Record<string, Record<string, CanonicalFact>>>((acc, f) => {
+      if (!acc[f.metric]) acc[f.metric] = {};
+      acc[f.metric][f.periodLabel] = f;
+      return acc;
+    }, {})
+  ).map(([metric, periodMap]) => {
+    const values = periods.map((p) => periodMap[p]?.value ?? null);
+    const cf = periodMap[periods[0]] || facts.find((f) => f.metric === metric);
+    const confidence = cf?.confidence ?? 1;
+    const userOverridden = Object.values(periodMap).some((f) => f.userOverridden);
+    return { metric, values, confidence, userOverridden };
+  });
+
+  return { periods, rows };
+}
+
+/** Convert grid changes into CellEdit[] for the store write API */
+export function gridToEdits(
+  rows: { metric: string; values: (number | null)[] }[],
+  periods: string[],
+): CellEdit[] {
+  const edits: CellEdit[] = [];
+  for (const row of rows) {
+    for (let pi = 0; pi < periods.length; pi++) {
+      if (row.values[pi] !== undefined && row.values[pi] !== null) {
+        edits.push({
+          metric: row.metric,
+          periodLabel: periods[pi],
+          value: row.values[pi],
+          userEdit: true,
+        });
+      }
+    }
+  }
+  return edits;
 }
 
 /** Convert canonical facts to SpreadsheetInput format */

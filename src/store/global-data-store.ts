@@ -9,6 +9,25 @@ import { useEnterpriseStore } from './enterprise-store';
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
+/** Debounce notifyModelUpdated so a fast typist or big paste triggers one recompute */
+let _notifyTimer: ReturnType<typeof setTimeout> | null = null;
+function debouncedNotify(ms = 80) {
+  if (_notifyTimer) clearTimeout(_notifyTimer);
+  _notifyTimer = setTimeout(() => {
+    _notifyTimer = null;
+    usePipelineStore.getState().notifyModelUpdated();
+  }, ms);
+}
+
+/** A single cell edit (paste, single-cell, fill) */
+export interface CellEdit {
+  metric: string;
+  periodLabel: string;
+  value: number | null;
+  /** True if this was a user edit (as opposed to paste from import) */
+  userEdit?: boolean;
+}
+
 interface GlobalDataState {
   /** All imported datasets (multi-file support) */
   datasets: FundalystDataset[];
@@ -29,6 +48,25 @@ interface GlobalDataState {
   getToolReadiness: (toolId: string) => ToolReadiness;
   /** Run validation checks on the active dataset */
   getValidations: () => ValidationCheck[];
+
+  // ── Write API (Pillar A: unified data flow) ──
+
+  /** Write a single cell value for (metric, period); marks userOverridden; preserves provenance */
+  writeCell: (datasetId: string, metric: string, periodLabel: string, value: number | null) => void;
+  /** Upsert (create or update) a fact by metric + periodLabel */
+  upsertFact: (datasetId: string, fact: { metric: string; periodLabel: string; value: number | null; statement?: string; unit?: string; currency?: string }) => void;
+  /** Rename a metric across all periods */
+  renameMetric: (datasetId: string, from: string, to: string) => void;
+  /** Delete a specific fact */
+  deleteFact: (datasetId: string, metric: string, periodLabel: string) => void;
+  /** Add a new empty period column */
+  addPeriod: (datasetId: string, periodLabel: string) => void;
+  /** Remove a period column and all facts within it */
+  removePeriod: (datasetId: string, periodLabel: string) => void;
+  /** Batch apply edits (paste, fill, multi-cell); one notify at end */
+  applyEdits: (datasetId: string, edits: CellEdit[]) => void;
+  /** Delete a metric row entirely (all periods) */
+  deleteMetric: (datasetId: string, metric: string) => void;
 }
 
 export const useGlobalDataStore = create<GlobalDataState>()(
@@ -66,7 +104,7 @@ export const useGlobalDataStore = create<GlobalDataState>()(
           details: `${dataset.facts.length} fact(s), ${dataset.periods.length} period(s)`,
         });
         // Notify all tools that the canonical model has been updated
-        setTimeout(() => usePipelineStore.getState().notifyModelUpdated(), 0);
+        debouncedNotify(0);
       },
 
       removeDataset: (id: string) => {
@@ -142,6 +180,226 @@ export const useGlobalDataStore = create<GlobalDataState>()(
         const dataset = get().getActiveDataset();
         if (!dataset) return [];
         return runValidationChecks(dataset);
+      },
+
+      // ── Write API ──
+
+      writeCell: (datasetId: string, metric: string, periodLabel: string, value: number | null) => {
+        set((state) => {
+          const dsIdx = state.datasets.findIndex((d) => d.id === datasetId);
+          if (dsIdx < 0) return state;
+
+          const ds = state.datasets[dsIdx];
+          const existingIdx = ds.facts.findIndex(
+            (f) => f.metric === metric && f.periodLabel === periodLabel
+          );
+
+          let newFacts = [...ds.facts];
+
+          if (value === null || value === undefined) {
+            // Delete the fact if value is null
+            if (existingIdx >= 0) {
+              newFacts = newFacts.filter((_, i) => i !== existingIdx);
+            }
+          } else if (existingIdx >= 0) {
+            // Update existing fact — preserve provenance, mark as overridden
+            const existing = newFacts[existingIdx];
+            newFacts[existingIdx] = {
+              ...existing,
+              value,
+              userOverridden: true,
+            };
+          } else {
+            // Create new fact
+            newFacts.push({
+              metric,
+              periodLabel,
+              value,
+              userOverridden: true,
+              // Inherit from dataset defaults if available
+              sourceType: ds.sourceType || 'manual',
+              statement: 'mixed',
+              labelOriginal: metric,
+              currency: ds.currency || 'INR',
+              unit: ds.unit || 'crores',
+              confidence: 1.0,
+              sourceRow: 0,
+              sourceColumn: 0,
+            });
+          }
+
+          // Ensure periods list includes this period label
+          const newPeriods = ds.periods.includes(periodLabel) || !periodLabel
+            ? ds.periods
+            : [...ds.periods, periodLabel].sort();
+
+          return {
+            datasets: state.datasets.map((d, i) =>
+              i === dsIdx
+                ? { ...d, facts: newFacts, periods: newPeriods }
+                : d
+            ),
+          };
+        });
+        debouncedNotify();
+      },
+
+      upsertFact: (datasetId: string, fact) => {
+        const { writeCell } = get();
+        writeCell(datasetId, fact.metric, fact.periodLabel, fact.value);
+        // Statement/unit/currency are set via the existing fact or default; fine for now
+      },
+
+      renameMetric: (datasetId: string, from: string, to: string) => {
+        if (!from || !to || from === to) return;
+        set((state) => {
+          const dsIdx = state.datasets.findIndex((d) => d.id === datasetId);
+          if (dsIdx < 0) return state;
+          return {
+            datasets: state.datasets.map((d, i) =>
+              i === dsIdx
+                ? { ...d, facts: d.facts.map((f) => f.metric === from ? { ...f, metric: to } : f) }
+                : d
+            ),
+          };
+        });
+        useEnterpriseStore.getState().addAuditEvent({
+          category: 'data',
+          severity: 'info',
+          action: 'Metric renamed',
+          target: `${from} → ${to}`,
+        });
+        debouncedNotify();
+      },
+
+      deleteFact: (datasetId: string, metric: string, periodLabel: string) => {
+        set((state) => {
+          const dsIdx = state.datasets.findIndex((d) => d.id === datasetId);
+          if (dsIdx < 0) return state;
+          return {
+            datasets: state.datasets.map((d, i) =>
+              i === dsIdx
+                ? { ...d, facts: d.facts.filter((f) => !(f.metric === metric && f.periodLabel === periodLabel)) }
+                : d
+            ),
+          };
+        });
+        debouncedNotify();
+      },
+
+      addPeriod: (datasetId: string, periodLabel: string) => {
+        set((state) => {
+          const dsIdx = state.datasets.findIndex((d) => d.id === datasetId);
+          if (dsIdx < 0) return state;
+          const ds = state.datasets[dsIdx];
+          if (ds.periods.includes(periodLabel)) return state;
+          return {
+            datasets: state.datasets.map((d, i) =>
+              i === dsIdx
+                ? { ...d, periods: [...d.periods, periodLabel] }
+                : d
+            ),
+          };
+        });
+        debouncedNotify();
+      },
+
+      removePeriod: (datasetId: string, periodLabel: string) => {
+        set((state) => {
+          const dsIdx = state.datasets.findIndex((d) => d.id === datasetId);
+          if (dsIdx < 0) return state;
+          return {
+            datasets: state.datasets.map((d, i) =>
+              i === dsIdx
+                ? {
+                    ...d,
+                    periods: d.periods.filter((p) => p !== periodLabel),
+                    facts: d.facts.filter((f) => f.periodLabel !== periodLabel),
+                  }
+                : d
+            ),
+          };
+        });
+        debouncedNotify();
+      },
+
+      applyEdits: (datasetId: string, edits: CellEdit[]) => {
+        // Batch apply — avoids re-render per cell
+        set((state) => {
+          const dsIdx = state.datasets.findIndex((d) => d.id === datasetId);
+          if (dsIdx < 0) return state;
+
+          const dataset = state.datasets[dsIdx];
+          let newFacts = [...dataset.facts];
+          const newPeriodsSet = new Set<string>(dataset.periods);
+
+          for (const edit of edits) {
+            const existingIdx = newFacts.findIndex(
+              (f) => f.metric === edit.metric && f.periodLabel === edit.periodLabel
+            );
+
+            if (edit.periodLabel) newPeriodsSet.add(edit.periodLabel);
+
+            if (edit.value === null || edit.value === undefined) {
+              if (existingIdx >= 0) {
+                newFacts = newFacts.filter((_, i) => i !== existingIdx);
+              }
+            } else if (existingIdx >= 0) {
+              const existing = newFacts[existingIdx];
+              newFacts[existingIdx] = {
+                ...existing,
+                value: edit.value,
+                userOverridden: existing.userOverridden || (edit.userEdit ?? true),
+              };
+            } else {
+              newFacts.push({
+                metric: edit.metric,
+                periodLabel: edit.periodLabel,
+                value: edit.value,
+                userOverridden: edit.userEdit ?? true,
+                sourceType: dataset.sourceType || 'manual',
+                statement: 'mixed',
+                labelOriginal: edit.metric,
+                currency: dataset.currency || 'INR',
+                unit: dataset.unit || 'crores',
+                confidence: 1.0,
+                sourceRow: 0,
+                sourceColumn: 0,
+              });
+            }
+          }
+
+          return {
+            datasets: state.datasets.map((d, i) =>
+              i === dsIdx
+                ? { ...d, facts: newFacts, periods: [...newPeriodsSet].sort() }
+                : d
+            ),
+          };
+        });
+        useEnterpriseStore.getState().addAuditEvent({
+          category: 'data',
+          severity: 'info',
+          action: 'Batch cell edits applied',
+          target: datasetId,
+          details: `${edits.length} cell(s)`,
+        });
+        debouncedNotify();
+      },
+
+      deleteMetric: (datasetId: string, metric: string) => {
+        set((state) => {
+          const dsIdx = state.datasets.findIndex((d) => d.id === datasetId);
+          if (dsIdx < 0) return state;
+          return {
+            datasets: state.datasets.map((d, i) =>
+              i === dsIdx
+                ? { ...d, facts: d.facts.filter((f) => f.metric !== metric) }
+                : d
+            ),
+          };
+        });
+        debouncedNotify();
       },
     }),
     {

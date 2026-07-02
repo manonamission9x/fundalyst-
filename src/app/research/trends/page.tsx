@@ -8,7 +8,8 @@ import { PageHeader, Card, UploadBar, Toolbar, NextLinks, Disclaimer, EmptyState
 import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
 import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
 import dynamic from 'next/dynamic';
-import { extractTrendData, useActiveDataset } from '@/store/financial-model-selectors';
+import { extractTrendData, useActiveDataset, gridToEdits } from '@/store/financial-model-selectors';
+import { useGlobalDataStore } from '@/store/global-data-store';
 import { useModelData } from '@/store/use-model-data';
 import type { TrendRow } from '@/types/financial';
 import { usePageTitle } from '@/lib/use-page-title';
@@ -33,6 +34,8 @@ export default function TrendsPage() {
   usePageTitle('Trend Charts');
   const modelData = useModelData((ds) => extractTrendData(ds));
   const activeDataset = useActiveDataset();
+  const applyEdits = useGlobalDataStore((s) => s.applyEdits);
+  const activeDatasetId = useGlobalDataStore((s) => s.activeDatasetId);
 
   const [clearVersion, setClearVersion] = useState<number | undefined>(undefined);
   const clearedRef = useRef(false);
@@ -126,7 +129,23 @@ export default function TrendsPage() {
     }));
     setTrendRows(trendData);
     setShowResults(hasValues);
-  }, []);
+    // Unified data flow: when working on an imported dataset, write edits back
+    // to the canonical model so every other tool updates live (Pillar A).
+    if (activeDatasetId && !isSampleLoaded) {
+      const edits = gridToEdits(
+        newRows.map((r) => ({
+          metric: r.metric,
+          values: r.values.map((v) => {
+            if (v === '' || v === null || v === undefined) return null;
+            const n = Number(String(v).replace(/,/g, ''));
+            return isFinite(n) ? n : null;
+          }),
+        })),
+        periods,
+      );
+      if (edits.length > 0) applyEdits(activeDatasetId, edits);
+    }
+  }, [activeDatasetId, isSampleLoaded, applyEdits]);
 
   async function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -229,11 +248,13 @@ export default function TrendsPage() {
             hint="First row = period labels. Each row below = one metric. Values update the chart instantly."
           />
           <Toolbar onClear={handleClear} onAction={parse} actionLabel="Plot" />
-          <div className="card-actions" style={{ borderTop: 0 }}>
-            <button type="button" className="btn-ghost btn-sm" onClick={loadSample}>
-              Load sample
-            </button>
-          </div>
+          {!activeDataset && (
+            <div className="card-actions" style={{ borderTop: 0 }}>
+              <button type="button" className="btn-ghost btn-sm" onClick={loadSample}>
+                Load sample
+              </button>
+            </div>
+          )}
         </div>
       </Card>
 

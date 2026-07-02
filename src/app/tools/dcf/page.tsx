@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useMemo, useCallback } from 'react';
 import { computeDCF, computeDCFSensitivity, computeDCFScenarios, validateDCFInputs, fmtNum } from '@/lib/calculations';
-import { useDCFStore } from '@/store';
-import { extractDCFInputsFromModel } from '@/store/financial-model-selectors';
+import { useDCFStore, DEFAULT_DCF_SCENARIO_CONFIG, type DCFScenarioConfig } from '@/store';
+import { useActiveDataset } from '@/store/financial-model-selectors';
+import { useGlobalDataStore } from '@/store/global-data-store';
+import { usePageTitle } from '@/lib/use-page-title';
+import { useEnterpriseStore } from '@/store/enterprise-store';
 import { useToast } from '@/components/shared/ToastProvider';
 import {
   PageHeader,
@@ -22,16 +25,13 @@ import {
   TrustBadge,
   DataSourceBadge,
 } from '@/components/ui';
-import ToolSpreadsheet from '@/components/input/ToolSpreadsheet';
-import type { SpreadsheetRow } from '@/components/input/SpreadsheetInput';
+import ModelBoundSpreadsheet from '@/components/input/ModelBoundSpreadsheet';
 import CalculationTracePanel from '@/components/shared/CalculationTrace';
 import ProvenanceBadge from '@/components/shared/ProvenanceBadge';
 import dynamic from 'next/dynamic';
-import { useModelData } from '@/store/use-model-data';
-import { usePageTitle } from '@/lib/use-page-title';
-import { useEnterpriseStore } from '@/store/enterprise-store';
-import { useActiveDataset } from '@/store/financial-model-selectors';
-import { findRow, makeTraceSource, type CalculationTrace } from '@/lib/calculation-trace';
+import { findRow, makeTraceSource } from '@/lib/calculation-trace';
+import { getPeriods } from '@/store/financial-model-selectors';
+import type { CalculationTrace } from '@/lib/calculation-trace';
 import type { FundalystDataset } from '@/lib/importer/types';
 
 const DCFChart = dynamic(() => import('@/components/tools/dcf/DCFChart'), {
@@ -39,28 +39,16 @@ const DCFChart = dynamic(() => import('@/components/tools/dcf/DCFChart'), {
   loading: () => <div className="skeleton" style={{ width: '100%', height: 300 }} />,
 });
 
-const EMPTY_DCF_ROWS: SpreadsheetRow[] = [
-  { metric: 'Free Cash Flow', values: [''] },
-  { metric: 'Growth Rate (%)', values: [''] },
-  { metric: 'Projection Years', values: [''] },
-  { metric: 'WACC (%)', values: [''] },
-  { metric: 'Terminal Growth (%)', values: [''] },
-  { metric: 'Net Debt', values: [''] },
-  { metric: 'Shares Outstanding', values: [''] },
-  { metric: 'Current Price (₹)', values: [''] },
-];
+/** DCF assumption metric keys stored in the model with statement='assumptions' */
+const DCF_ASSUMPTION_METRICS = [
+  'Growth Rate (%)',
+  'Projection Years',
+  'WACC (%)',
+  'Terminal Growth (%)',
+  'Current Price (₹)',
+] as const;
 
-const SAMPLE_DCF_ROWS: SpreadsheetRow[] = [
-  { metric: 'Free Cash Flow', values: ['1240'] },
-  { metric: 'Growth Rate (%)', values: ['8'] },
-  { metric: 'Projection Years', values: ['5'] },
-  { metric: 'WACC (%)', values: ['10'] },
-  { metric: 'Terminal Growth (%)', values: ['3'] },
-  { metric: 'Net Debt', values: ['180'] },
-  { metric: 'Shares Outstanding', values: ['100'] },
-  { metric: 'Current Price (₹)', values: ['450'] },
-];
-const METRIC_TO_FIELD: Record<string, keyof import('@/types/financial').DCFInputs> = {
+const METRIC_TO_FIELD: Record<string, string> = {
   'Free Cash Flow': 'fcf',
   'Growth Rate (%)': 'growth',
   'Growth Rate': 'growth',
@@ -71,77 +59,74 @@ const METRIC_TO_FIELD: Record<string, keyof import('@/types/financial').DCFInput
   'Terminal Growth': 'terminal',
   'Net Debt': 'netDebt',
   'Shares Outstanding': 'shares',
+  'Current Price (₹)': 'price',
   'Current Price (?)': 'price',
   'Current Price': 'price',
 };
 
-function normalizeMetricLabel(label: string): string {
-  return label
-    .replace(/\s+/g, ' ')
-    .replace(/\s*\([^)]*\)\s*/g, ' ')
-    .trim();
-}
-
-function rowsToDCFInputs(rows: SpreadsheetRow[]): Record<string, number | ''> {
+/** Read DCF input values from the model */
+function readDCFInputs(dataset: FundalystDataset | null): Record<string, number | ''> {
   const result: Record<string, number | ''> = {};
-  for (const row of rows) {
-    const normalized = normalizeMetricLabel(row.metric);
-    const field = METRIC_TO_FIELD[row.metric] || METRIC_TO_FIELD[normalized] || normalized.toLowerCase().replace(/[^a-z]/g, '');
-    const val = row.values[0]?.trim() || '';
-    const parsed = val === '' ? '' : Number(val.replace(/,/g, ''));
-    result[field] = parsed === '' ? '' : Number.isFinite(parsed) ? parsed : '';
+  if (!dataset) return result;
+
+  const periods = getPeriods(dataset);
+  const latestPeriod = periods.length > 0 ? periods[periods.length - 1] : 'Value';
+
+  // Map each DCF metric to its value from the model
+  for (const [metricLabel, field] of Object.entries(METRIC_TO_FIELD)) {
+    const fact = dataset.facts.find(
+      (f: { metric: string; periodLabel: string; value: number }) => f.metric === metricLabel && f.periodLabel === latestPeriod
+    );
+    if (fact) {
+      result[field] = isFinite(fact.value) ? fact.value : '';
+    } else {
+      result[field] = '';
+    }
   }
+
   return result;
 }
+
 export default function DCFPage() {
   const showToast = useToast();
   const addAuditEvent = useEnterpriseStore((s) => s.addAuditEvent);
   usePageTitle('DCF Valuation');
   const { show, summary, sens, setShow, setSummary, setSens } = useDCFStore();
-  const [clearVersion, setClearVersion] = useState<number | undefined>(undefined);
-  const clearedRef = useRef(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [sheetRows, setSheetRows] = useState<SpreadsheetRow[]>([]);
-  const [isSampleLoaded, setIsSampleLoaded] = useState(false);
+  const scenarioConfig = useDCFStore((s) => s.scenarioConfig);
+  const setScenarioConfig = useDCFStore((s) => s.setScenarioConfig);
+  const resetScenarioConfig = useDCFStore((s) => s.resetScenarioConfig);
+  const dataset = useActiveDataset();
+  const hasData = dataset && dataset.facts.length > 0;
 
-  // Model pre-fill via universal hook
-  const modelData = useModelData((ds) => extractDCFInputsFromModel(ds));
-  const activeDataset = useActiveDataset();
+  // Read DCF inputs from the canonical model
+  const inputs = useMemo(() => readDCFInputs(dataset), [dataset]);
 
-  // Pre-fill from canonical model when available
-  const prefilledRef = useRef(false);
-  const loadedDatasetIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!modelData.data) return;
-    if (activeDataset?.id && loadedDatasetIdRef.current === activeDataset.id) return;
-    const { fcf, shares, netDebt } = modelData.data;
-    if (fcf !== null || shares !== null || netDebt !== null) {
-      const timer = setTimeout(() => {
-        setClearVersion(v => (v ?? 0) + 1);
-        setSheetRows([
-          { metric: 'Free Cash Flow', values: [fcf !== null ? String(fcf) : ''] },
-          { metric: 'Growth Rate (%)', values: ['8'] },
-          { metric: 'Projection Years', values: ['5'] },
-          { metric: 'WACC (%)', values: ['10'] },
-          { metric: 'Terminal Growth (%)', values: ['3'] },
-          { metric: 'Net Debt', values: [netDebt !== null ? String(netDebt) : ''] },
-          { metric: 'Shares Outstanding', values: [shares !== null ? String(shares) : ''] },
-          { metric: 'Current Price (₹)', values: [''] },
-        ]);
-        setShow(false);
-        setSummary(null);
-        setSens([]);
-        setErrors({});
-        setIsSampleLoaded(false);
-      }, 0);
-      loadedDatasetIdRef.current = activeDataset?.id ?? null;
-      prefilledRef.current = true;
-      return () => clearTimeout(timer);
-    }
-  }, [activeDataset?.id, modelData.data, setSens, setShow, setSummary]);
+  // Determine provenance for each DCF assumption
+  const metricProvenance = useMemo(() => {
+    if (!dataset) return {};
+    const fcf = dataset.facts.find((f) => f.metric === 'Free Cash Flow');
+    const shares = dataset.facts.find((f) => f.metric === 'Shares Outstanding');
+    const netDebt = dataset.facts.find((f) => f.metric === 'Net Debt');
+    const price = dataset.facts.find((f) => f.metric === 'Current Price (₹)');
+    return {
+      freeCashFlow: fcf ? (fcf.userOverridden ? 'manual' as const : 'imported' as const) : 'manual' as const,
+      sharesOutstanding: shares ? (shares.userOverridden ? 'manual' as const : 'imported' as const) : 'manual' as const,
+      netDebt: netDebt ? (netDebt.userOverridden ? 'manual' as const : 'imported' as const) : 'manual' as const,
+      currentPrice: price ? (price.userOverridden ? 'manual' as const : 'imported' as const) : 'manual' as const,
+      growthRate: dataset.facts.find((f) => f.metric === 'Growth Rate (%)')?.userOverridden ? 'manual' as const : 'default' as const,
+      wacc: dataset.facts.find((f) => f.metric === 'WACC (%)')?.userOverridden ? 'manual' as const : 'default' as const,
+      terminalGrowth: dataset.facts.find((f) => f.metric === 'Terminal Growth (%)')?.userOverridden ? 'manual' as const : 'default' as const,
+      projectionYears: dataset.facts.find((f) => f.metric === 'Projection Years')?.userOverridden ? 'manual' as const : 'default' as const,
+    };
+  }, [dataset]);
 
   function runDCF() {
-    const mapped = rowsToDCFInputs(sheetRows);
+    if (!hasData) {
+      showToast('No data available. Import a financial report first.');
+      return;
+    }
+
+    const mapped = readDCFInputs(dataset);
     const fcf = mapped.fcf;
     const growth = mapped.growth;
     const years = mapped.years;
@@ -152,12 +137,6 @@ export default function DCFPage() {
     const price = mapped.price;
 
     const validationErrors = validateDCFInputs(fcf, growth, years, discount, terminal, netDebt, shares, price);
-    const errorMap: Record<string, string> = {};
-    for (const e of validationErrors) {
-      errorMap[e.field] = e.message;
-    }
-    setErrors(errorMap);
-
     if (validationErrors.length > 0) {
       setShow(false);
       setSummary(null);
@@ -209,53 +188,157 @@ export default function DCFPage() {
       category: 'calculation',
       severity: 'info',
       action: 'DCF valuation calculated',
-      target: modelData.companyName || 'Manual DCF',
+      target: dataset?.companyName || 'Manual DCF',
       details: `Intrinsic value/share ${Math.round(r.iv * 100) / 100}`,
     });
     showToast('Valuation calculated');
   }
 
   const handleClear = useCallback(() => {
-    clearedRef.current = true;
-    setClearVersion(v => (v ?? 0) + 1);
-    setSheetRows([]);
+    if (!dataset) return;
+    // Clear all DCF assumption values
+    const store = useGlobalDataStore.getState();
+    for (const metric of DCF_ASSUMPTION_METRICS) {
+      const fact = dataset.facts.find((f) => f.metric === metric);
+      if (fact) {
+        store.deleteFact(dataset.id, metric, fact.periodLabel);
+      }
+    }
     setShow(false);
     setSummary(null);
     setSens([]);
-    setErrors({});
-    setIsSampleLoaded(false);
-  }, [setShow, setSummary, setSens]);
+  }, [dataset, setShow, setSummary, setSens]);
 
-  function loadSample() {
-    clearedRef.current = false;
-    setClearVersion(v => (v ?? 0) + 1);
-    setSheetRows(SAMPLE_DCF_ROWS);
-    setShow(false);
-    setSummary(null);
-    setSens([]);
-    setErrors({});
-    setIsSampleLoaded(true);
+  const companyName = dataset?.companyName || '';
+
+  // Build calculation traces from model data
+  const traceItems = useMemo<CalculationTrace[]>(() => {
+    if (!dataset) return [];
+    const periods = getPeriods(dataset);
+    const p = periods.length > 0 ? periods[periods.length - 1] : 'Value';
+
+    const fcfRow = findRow(
+      dataset.facts.filter(f => f.metric === 'Free Cash Flow' && f.periodLabel === p).map(f => ({ metric: f.metric, values: [String(f.value)] })),
+      ['Free Cash Flow']
+    );
+    const growthRow = findRow(
+      dataset.facts.filter(f => f.metric === 'Growth Rate (%)').map(f => ({ metric: f.metric, values: [String(f.value)] })),
+      ['Growth Rate (%)', 'Growth Rate']
+    );
+    const yearsRow = findRow(
+      dataset.facts.filter(f => f.metric === 'Projection Years').map(f => ({ metric: f.metric, values: [String(f.value)] })),
+      ['Projection Years']
+    );
+    const waccRow = findRow(
+      dataset.facts.filter(f => f.metric === 'WACC (%)').map(f => ({ metric: f.metric, values: [String(f.value)] })),
+      ['WACC (%)', 'WACC']
+    );
+    const terminalRow = findRow(
+      dataset.facts.filter(f => f.metric === 'Terminal Growth (%)').map(f => ({ metric: f.metric, values: [String(f.value)] })),
+      ['Terminal Growth (%)', 'Terminal Growth']
+    );
+    const netDebtRow = findRow(
+      dataset.facts.filter(f => f.metric === 'Net Debt' && f.periodLabel === p).map(f => ({ metric: f.metric, values: [String(f.value)] })),
+      ['Net Debt']
+    );
+    const sharesRow = findRow(
+      dataset.facts.filter(f => f.metric === 'Shares Outstanding' && f.periodLabel === p).map(f => ({ metric: f.metric, values: [String(f.value)] })),
+      ['Shares Outstanding']
+    );
+    const priceRow = findRow(
+      dataset.facts.filter(f => f.metric === 'Current Price (₹)' && f.periodLabel === p).map(f => ({ metric: f.metric, values: [String(f.value)] })),
+      ['Current Price (₹)', 'Current Price (?)', 'Current Price']
+    );
+
+    const formattedEv = '₹' + fmtNum(Math.round((summary?.ev ?? 0)));
+    const formattedEq = '₹' + fmtNum(Math.round((summary?.eq ?? 0)));
+    const formattedIv = '₹' + fmtNum(Math.round((summary?.iv ?? 0) * 100) / 100);
+    const formattedMos = (summary?.mos ?? 0).toFixed(1) + '%';
+
+    return [
+      {
+        label: 'Enterprise Value',
+        value: formattedEv,
+        formula: 'PV of projected FCF + PV of terminal value',
+        sources: [
+          makeTraceSource('Free Cash Flow', dataset, ['freeCashFlow', 'operatingCashFlow'], fcfRow),
+          makeTraceSource('Growth Rate', dataset, ['growthRate'], growthRow),
+          makeTraceSource('Projection Years', dataset, ['projectionYears'], yearsRow),
+          makeTraceSource('WACC', dataset, ['wacc', 'discountRate'], waccRow),
+          makeTraceSource('Terminal Growth', dataset, ['terminalGrowth'], terminalRow),
+        ],
+      },
+      {
+        label: 'Equity Value',
+        value: formattedEq,
+        formula: 'Enterprise Value - Net Debt',
+        sources: [
+          makeTraceSource('Enterprise Value', null, [], undefined, formattedEv),
+          makeTraceSource('Net Debt', dataset, ['netDebt', 'totalDebt'], netDebtRow),
+        ],
+      },
+      {
+        label: 'Intrinsic Value / Share',
+        value: formattedIv,
+        formula: 'Equity Value / Shares Outstanding',
+        sources: [
+          makeTraceSource('Equity Value', null, [], undefined, formattedEq),
+          makeTraceSource('Shares Outstanding', dataset, ['sharesOutstanding'], sharesRow),
+        ],
+      },
+      {
+        label: 'Margin of Safety',
+        value: formattedMos,
+        formula: '(Intrinsic Value - Current Price) / Current Price',
+        sources: [
+          makeTraceSource('Intrinsic Value / Share', null, [], undefined, formattedIv),
+          makeTraceSource('Current Price', dataset, ['price', 'currentPrice'], priceRow),
+        ],
+      },
+    ];
+  }, [dataset, summary]);
+
+  // Compute scenarios
+  const scenarios = useMemo(() => {
+    if (!dataset) return [];
+    const mapped = readDCFInputs(dataset);
+    const fcf = Number(mapped.fcf);
+    const growth = Number(mapped.growth || 0);
+    const years = Number(mapped.years);
+    const discount = Number(mapped.discount);
+    const terminal = Number(mapped.terminal);
+    const netDebt = mapped.netDebt === '' || mapped.netDebt === undefined ? 0 : Number(mapped.netDebt);
+    const shares = Number(mapped.shares);
+    const price = Number(mapped.price);
+    if (![fcf, years, discount, terminal, shares].every(Number.isFinite)) return [];
+    return computeDCFScenarios(fcf, growth, years, discount, terminal, netDebt, shares, price, {
+      growthDelta: scenarioConfig.growthDelta,
+      waccDelta: scenarioConfig.waccDelta,
+      terminalDelta: scenarioConfig.terminalDelta,
+    });
+  }, [dataset, scenarioConfig]);
+
+  // Empty state — only when no dataset exists
+  if (!hasData) {
+    return (
+      <div>
+        <PageHeader
+          kicker="Valuation"
+          title="DCF Valuation"
+          subtitle="Estimate intrinsic value using projected free cash flow and terminal value."
+          answer="What this helps you answer: Is the stock undervalued or overvalued? What price is fair?"
+        />
+        <EmptyState
+          title="No financial data"
+          desc="Import a financial report to see pre-filled DCF inputs and calculate intrinsic value."
+          action={{ label: 'Import data', href: '/import' }}
+        />
+      </div>
+    );
   }
 
-  const priceVal = useMemo(() => {
-    const mapped = rowsToDCFInputs(sheetRows);
-    return Number(mapped.price) || 0;
-  }, [sheetRows]);
-
-  // Determine provenance for each DCF assumption
-  const metricProvenance = useMemo(() => {
-    const { fcf, shares, netDebt, price } = modelData.data ?? {};
-    return {
-      freeCashFlow: fcf != null ? 'imported' as const : 'manual' as const,
-      sharesOutstanding: shares != null ? 'imported' as const : 'manual' as const,
-      netDebt: netDebt != null ? 'imported' as const : 'manual' as const,
-      currentPrice: price != null ? 'imported' as const : 'manual' as const,
-      growthRate: 'default' as const,
-      wacc: 'default' as const,
-      terminalGrowth: 'default' as const,
-      projectionYears: 'default' as const,
-    };
-  }, [modelData.data]);
+  // Read current price for display
+  const priceVal = Number(inputs.price) || 0;
 
   return (
     <div>
@@ -267,51 +350,36 @@ export default function DCFPage() {
       />
 
       <DataQualityBar
-        source={modelData.companyName || undefined}
-        metrics={sheetRows.filter((r) => r.values[0]?.trim()).length}
+        source={companyName || undefined}
+        metrics={Object.values(inputs).filter(v => v !== '').length}
       />
       <div className="flex items-center gap-2 mb-2 mt-1">
-        <DataSourceBadge variant={isSampleLoaded ? 'sample' : modelData.companyName ? 'imported' : 'manual'} />
+        <DataSourceBadge variant="imported" />
       </div>
 
-      {/* ── Unified ToolSpreadsheet input — same UX as Filing page ── */}
+      {/* ── DCF Assumptions grid — reads from and writes to canonical model ── */}
       <Card>
         <div className="card-body" style={{ borderBottom: '1px solid var(--border-light)' }}>
           <SectionTitle>DCF Assumptions</SectionTitle>
-          <ToolSpreadsheet
-            tool="dcf"
-            initialData={sheetRows.length > 0 ? sheetRows : EMPTY_DCF_ROWS}
-            resetKey={clearVersion}
+          <ModelBoundSpreadsheet
+            statement="all"
             singleColumnLabel="Value"
-            onDataChange={(rows) => setSheetRows(rows)}
-            hint="Type or paste values. Tab to navigate between rows."
+            hint="Type or paste values. Tab to navigate between rows. Edits write back to the model — every surface updates live."
           />
           {/* Provenance indicators for each assumption */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-2xs text-muted">
             <span className="mr-1 font-medium" style={{ fontSize: 10 }}>Source:</span>
-            <ProvenanceBadge kind={metricProvenance.freeCashFlow} label="Free Cash Flow" />
-            <ProvenanceBadge kind={metricProvenance.sharesOutstanding} label="Shares" />
-            <ProvenanceBadge kind={metricProvenance.netDebt} label="Net Debt" />
-            <ProvenanceBadge kind={metricProvenance.currentPrice} label="Price" />
-            <ProvenanceBadge kind={metricProvenance.growthRate} label="Growth Rate" />
-            <ProvenanceBadge kind={metricProvenance.wacc} label="WACC" />
-            <ProvenanceBadge kind={metricProvenance.terminalGrowth} label="Terminal Growth" />
-            <ProvenanceBadge kind={metricProvenance.projectionYears} label="Projection Years" />
+            <ProvenanceBadge kind={metricProvenance.freeCashFlow || 'manual'} label="Free Cash Flow" />
+              <ProvenanceBadge kind={metricProvenance.sharesOutstanding || 'manual'} label="Shares" />
+              <ProvenanceBadge kind={metricProvenance.netDebt || 'manual'} label="Net Debt" />
+              <ProvenanceBadge kind={metricProvenance.currentPrice || 'manual'} label="Price" />
+              <ProvenanceBadge kind={metricProvenance.growthRate || 'default'} label="Growth Rate" />
+              <ProvenanceBadge kind={metricProvenance.wacc || 'default'} label="WACC" />
+              <ProvenanceBadge kind={metricProvenance.terminalGrowth || 'default'} label="Terminal Growth" />
+              <ProvenanceBadge kind={metricProvenance.projectionYears || 'default'} label="Projection Years" />
           </div>
         </div>
-        {Object.keys(errors).length > 0 && (
-          <div className="card-body py-2">
-            {Object.entries(errors).map(([key, msg]) => (
-              <div key={key} className="err-msg">{msg}</div>
-            ))}
-          </div>
-        )}
         <Toolbar onClear={handleClear} onAction={runDCF} actionLabel="Calculate value" />
-        <div className="card-actions" style={{ borderTop: 0 }}>
-          <button type="button" className="btn-ghost btn-sm" onClick={loadSample}>
-            Load sample
-          </button>
-        </div>
       </Card>
 
       {show && summary && (
@@ -319,34 +387,22 @@ export default function DCFPage() {
           summary={summary}
           sens={sens}
           priceVal={priceVal}
-          discount={(() => { const r = sheetRows.find(r => r.metric === 'WACC (%)'); return r ? Number(r.values[0]) || 10 : 10; })()}
-          years={(() => { const r = sheetRows.find(r => r.metric === 'Projection Years'); return r ? Number(r.values[0]) || 5 : 5; })()}
-          isSampleLoaded={isSampleLoaded}
-          companyName={modelData.companyName || ''}
-          dataset={activeDataset}
-          sheetRows={sheetRows}
+          discount={Number(inputs.discount) || 10}
+          years={Number(inputs.years) || 5}
+          companyName={companyName}
+          traceItems={traceItems}
+          scenarios={scenarios}
+          priceStr={'₹' + fmtNum(priceVal)}
+          scenarioConfig={scenarioConfig}
+          setScenarioConfig={setScenarioConfig}
+          resetScenarioConfig={resetScenarioConfig}
         />
-      )}
-
-      {!show && (
-        <>
-          <EmptyState
-            title="DCF Valuation"
-            desc="Enter free cash flow, growth, WACC, terminal growth, debt, shares, and price to estimate intrinsic value."
-            action={{ label: 'Import data', href: '/import' }}
-          />
-          <div className="flex justify-center mt-3">
-            <button type="button" className="btn-secondary btn-sm" onClick={loadSample}>
-              Load sample
-            </button>
-          </div>
-        </>
       )}
     </div>
   );
 }
 
-// ── Results component — unchanged from before ──
+// ── Results component ──
 
 function DCFResults({
   summary,
@@ -354,20 +410,26 @@ function DCFResults({
   priceVal,
   discount,
   years,
-  isSampleLoaded,
   companyName,
-  dataset,
-  sheetRows,
+  traceItems,
+  scenarios,
+  priceStr,
+  scenarioConfig,
+  setScenarioConfig,
+  resetScenarioConfig,
 }: {
   summary: NonNullable<ReturnType<typeof useDCFStore.getState>['summary']>;
   sens: ReturnType<typeof useDCFStore.getState>['sens'];
   priceVal: number;
   discount: number;
   years: number;
-  isSampleLoaded: boolean;
   companyName: string;
-  dataset: FundalystDataset | null;
-  sheetRows: SpreadsheetRow[];
+  traceItems: CalculationTrace[];
+  scenarios: ReturnType<typeof computeDCFScenarios>;
+  priceStr: string;
+  scenarioConfig: DCFScenarioConfig;
+  setScenarioConfig: (patch: Partial<DCFScenarioConfig>) => void;
+  resetScenarioConfig: () => void;
 }) {
   const iv = summary.iv;
   const isUndervalued = iv > priceVal;
@@ -378,76 +440,9 @@ function DCFResults({
     iv: '₹' + fmtNum(Math.round(iv * 100) / 100),
     ev: '₹' + fmtNum(Math.round(summary.ev)),
     eq: '₹' + fmtNum(Math.round(summary.eq)),
-    price: '₹' + fmtNum(priceVal),
+    price: priceStr,
     mos: summary.mos.toFixed(1) + '%',
-  }), [iv, summary.ev, summary.eq, summary.mos, priceVal]);
-
-  const traceItems = useMemo<CalculationTrace[]>(() => {
-    const fcf = findRow(sheetRows, ['Free Cash Flow']);
-    const growth = findRow(sheetRows, ['Growth Rate (%)', 'Growth Rate']);
-    const projectionYears = findRow(sheetRows, ['Projection Years']);
-    const wacc = findRow(sheetRows, ['WACC (%)', 'WACC']);
-    const terminal = findRow(sheetRows, ['Terminal Growth (%)', 'Terminal Growth']);
-    const netDebt = findRow(sheetRows, ['Net Debt']);
-    const shares = findRow(sheetRows, ['Shares Outstanding']);
-    const price = findRow(sheetRows, ['Current Price (₹)', 'Current Price (?)', 'Current Price']);
-
-    return [
-      {
-        label: 'Enterprise Value',
-        value: formatted.ev,
-        formula: 'PV of projected FCF + PV of terminal value',
-        sources: [
-          makeTraceSource('Free Cash Flow', dataset, ['freeCashFlow', 'operatingCashFlow'], fcf),
-          makeTraceSource('Growth Rate', dataset, ['growthRate'], growth),
-          makeTraceSource('Projection Years', dataset, ['projectionYears'], projectionYears),
-          makeTraceSource('WACC', dataset, ['wacc', 'discountRate'], wacc),
-          makeTraceSource('Terminal Growth', dataset, ['terminalGrowth'], terminal),
-        ],
-      },
-      {
-        label: 'Equity Value',
-        value: formatted.eq,
-        formula: 'Enterprise Value - Net Debt',
-        sources: [
-          makeTraceSource('Enterprise Value', null, [], undefined, formatted.ev),
-          makeTraceSource('Net Debt', dataset, ['netDebt', 'totalDebt'], netDebt),
-        ],
-      },
-      {
-        label: 'Intrinsic Value / Share',
-        value: formatted.iv,
-        formula: 'Equity Value / Shares Outstanding',
-        sources: [
-          makeTraceSource('Equity Value', null, [], undefined, formatted.eq),
-          makeTraceSource('Shares Outstanding', dataset, ['sharesOutstanding'], shares),
-        ],
-      },
-      {
-        label: 'Margin of Safety',
-        value: formatted.mos,
-        formula: '(Intrinsic Value - Current Price) / Current Price',
-        sources: [
-          makeTraceSource('Intrinsic Value / Share', null, [], undefined, formatted.iv),
-          makeTraceSource('Current Price', dataset, ['price', 'currentPrice'], price),
-        ],
-      },
-    ];
-  }, [dataset, formatted.eq, formatted.ev, formatted.iv, formatted.mos, sheetRows]);
-
-  const scenarios = useMemo(() => {
-    const m = rowsToDCFInputs(sheetRows);
-    const fcf = Number(m.fcf);
-    const growth = Number(m.growth || 0);
-    const years = Number(m.years);
-    const discount = Number(m.discount);
-    const terminal = Number(m.terminal);
-    const netDebt = m.netDebt === '' || m.netDebt === undefined ? 0 : Number(m.netDebt);
-    const shares = Number(m.shares);
-    const price = Number(m.price);
-    if (![fcf, years, discount, terminal, shares].every(Number.isFinite)) return [];
-    return computeDCFScenarios(fcf, growth, years, discount, terminal, netDebt, shares, price);
-  }, [sheetRows]);
+  }), [iv, summary.ev, summary.eq, summary.mos, priceStr]);
 
   const verdictText = isUndervalued
     ? `Intrinsic value of ${formatted.iv} is above the current price of ${formatted.price}, suggesting the stock may be undervalued.`
@@ -489,6 +484,59 @@ function DCFResults({
               Intrinsic value under bear, base, and bull cases — growth, WACC, and terminal growth flexed together.
               <br />
               <span className="text-muted">Green = above current price ({formatted.price}), red = below.</span>
+            </p>
+            <div className="dcf-scenario-ctrls flex flex-wrap items-end gap-3 mt-2">
+              <label className="flex flex-col gap-1 text-2xs text-muted">
+                <span>Growth ± (pp)</span>
+                <input
+                  type="number"
+                  className="num-input"
+                  value={scenarioConfig.growthDelta}
+                  min={0}
+                  step={0.5}
+                  onChange={(e) => setScenarioConfig({ growthDelta: Math.max(0, Number(e.target.value) || 0) })}
+                  aria-label="Growth spread in percentage points"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-2xs text-muted">
+                <span>WACC ∓ (pp)</span>
+                <input
+                  type="number"
+                  className="num-input"
+                  value={scenarioConfig.waccDelta}
+                  min={0}
+                  step={0.5}
+                  onChange={(e) => setScenarioConfig({ waccDelta: Math.max(0, Number(e.target.value) || 0) })}
+                  aria-label="WACC spread in percentage points"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-2xs text-muted">
+                <span>Terminal ± (pp)</span>
+                <input
+                  type="number"
+                  className="num-input"
+                  value={scenarioConfig.terminalDelta}
+                  min={0}
+                  step={0.5}
+                  onChange={(e) => setScenarioConfig({ terminalDelta: Math.max(0, Number(e.target.value) || 0) })}
+                  aria-label="Terminal growth spread in percentage points"
+                />
+              </label>
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                onClick={resetScenarioConfig}
+                disabled={
+                  scenarioConfig.growthDelta === DEFAULT_DCF_SCENARIO_CONFIG.growthDelta &&
+                  scenarioConfig.waccDelta === DEFAULT_DCF_SCENARIO_CONFIG.waccDelta &&
+                  scenarioConfig.terminalDelta === DEFAULT_DCF_SCENARIO_CONFIG.terminalDelta
+                }
+              >
+                Reset spread
+              </button>
+            </div>
+            <p className="text-2xs text-muted mt-2" style={{ margin: 0 }}>
+              Bear flexes growth/terminal down and WACC up; bull does the reverse. These assumption sets are saved on this device.
             </p>
           </div>
           <div className="overflow-x-auto">
@@ -583,7 +631,7 @@ function DCFResults({
 
       <CalcTimestamp />
       <div className="flex gap-2 flex-wrap mt-2">
-        <TrustBadge label={`Values from: ${isSampleLoaded ? 'Sample data' : companyName || 'User entry'}`} variant="source" />
+        <TrustBadge label={`Values from: ${companyName || 'User entry'}`} variant="source" />
         <TrustBadge label="₹ Indian Market" />
       </div>
       <Disclaimer extra="Method: DCF with Gordon Growth terminal value" />
