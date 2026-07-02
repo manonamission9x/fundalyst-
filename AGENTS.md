@@ -22,15 +22,14 @@ Client-side financial-analysis app. **No backend, no auth, no server, no live ma
 |---|---|---|
 | 1 | `PROJECT.md` | What this project is, who it's for, what's real vs not |
 | 2 | `ARCHITECTURE.md` | Data flow, stores, component tree, key decisions |
-| 3 | `CURRENT_STATUS.md` | What works, what's in progress, known risks |
+| 3 | `HANDoFF.md` | **Current snapshot** (what works / in progress / risks) **+ changelog** — the single status doc |
 | 4 | `FRONTEND.md` | Stack, routing, component conventions, CSS rules |
 | 5 | `DESIGN.md` | Visual language, tokens, colour/typography rules |
 | 6 | `BACKEND.md` | No backend — privacy promise, localStorage |
 | 7 | `DATABASE.md` | Persistence schema, localStorage keys, backup/restore |
 | 8 | `STYLE.md` | Code style, naming, lint rules, PR checklist |
-| 9 | `HANDoFF.md` | Change log (last 3 changes + product state) |
-| 10 | `CODEX_TICKETS.md` | Active tickets — claim one before starting |
-| 11 | `DEEPSEEK_TASKS.md` | Visual/theme fix queue — DeepSeek lane only |
+| 9 | `CODEX_TICKETS.md` | Active tickets — claim one before starting |
+| 10 | `DEEPSEEK_TASKS.md` | Visual/theme fix queue — DeepSeek lane only |
 
 | Topic | Canonical file |
 |---|---|

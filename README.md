@@ -2,7 +2,7 @@
 
 Fundalyst is a financial analysis workspace for investment research. Import financial statements from CSV, Excel, PDF, or screenshots and run valuation models, ratio analysis, peer comparisons, and filing reviews — all from one interface.
 
-> **For the full project overview, see `PROJECT.md`. For architecture, see `ARCHITECTURE.md`. For current status and active tickets, see `CURRENT_STATUS.md` and `CODEX_TICKETS.md`.**
+> **For the full project overview, see `PROJECT.md`. For architecture, see `ARCHITECTURE.md`. For current status + changelog, see `HANDoFF.md`. For active tickets, see `CODEX_TICKETS.md`.**
 
 ## Getting started
 

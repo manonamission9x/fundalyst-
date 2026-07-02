@@ -1975,14 +1975,12 @@ details[open] .details-summary::before {
 .lp-trust svg { color: var(--text-muted); flex-shrink: 0; }
 
 /* Hero product stage — frames the live statement with a "raw -> structured" caption. */
-.lp-stage { position: relative; }
-.lp-stage::before {   /* subtle back-light glow around the stage card */
-  content: ''; position: absolute; inset: -20px;
-  border-radius: var(--radius-lg);
+.lp-stage {
+  position: relative;
+  border-radius: var(--radius-md);
   box-shadow:
-    0 0 40px rgba(255,255,255,0.02),
-    0 0 80px rgba(111,125,140,0.04);
-  pointer-events: none;
+    0 0 20px rgba(255,255,255,0.02),
+    0 0 40px rgba(111,125,140,0.02);
 }
 .lp-stage-caption {
   display: flex; align-items: center; gap: 8px; margin-bottom: var(--space-2);
