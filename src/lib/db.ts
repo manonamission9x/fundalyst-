@@ -17,14 +17,16 @@
 
 import { PrismaClient } from "@gen/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { nodeEnv, requireEnv } from "@/lib/env";
+import { env, isProductionBuild, nodeEnv, requireEnv } from "@/lib/env";
+
+const buildTimeDatabaseUrl = "postgresql://fundalyst:fundalyst_dev@localhost:5432/fundalyst";
 
 const globalForPrisma = globalThis as unknown as {
   __prisma?: PrismaClient;
 };
 
 const adapter = new PrismaPg({
-  connectionString: requireEnv("DATABASE_URL"),
+  connectionString: env.DATABASE_URL || (isProductionBuild ? buildTimeDatabaseUrl : requireEnv("DATABASE_URL")),
 });
 
 export const prisma = globalForPrisma.__prisma ?? new PrismaClient({ adapter });
