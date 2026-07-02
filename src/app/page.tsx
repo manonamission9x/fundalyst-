@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Detective,
   Lightning,
+  LockSimple,
   ShieldCheck,
 } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
@@ -25,10 +26,9 @@ type StatementRow = {
 type ToolCard = {
   href: string;
   icon: Icon;
-  title: string;
+  name: string;
+  question: string;
   value: string;
-  sub: string;
-  tone?: 'positive';
 };
 
 const statementRows: StatementRow[] = [
@@ -39,49 +39,44 @@ const statementRows: StatementRow[] = [
   { line: 'Profit after tax', fy24: '69,621', fy23: '65,009', yoy: '+7.1%', tone: 'pos', source: 'imported', subtotal: true },
 ];
 
-const toolCards: ToolCard[] = [
+const toolCards: ToolCard[] = (['dcf', 'filing', 'trends', 'ratios', 'peer', 'wc'] as const).map((id) => ({
+  href: TOOL_BY_ID[id].href,
+  icon: TOOL_BY_ID[id].icon,
+  name: TOOL_BY_ID[id].shortLabel,
+  question: TOOL_BY_ID[id].answer,
+  value: TOOL_BY_ID[id].value,
+}));
+
+const steps = [
   {
-    href: TOOL_BY_ID.dcf.href,
-    icon: TOOL_BY_ID.dcf.icon,
-    title: TOOL_BY_ID.dcf.label,
-    value: TOOL_BY_ID.dcf.value,
-    sub: TOOL_BY_ID.dcf.description,
+    title: 'Read the filing',
+    desc: 'Drop a PDF, CSV, XLSX, screenshot, or pasted table. Fundalyst detects periods, metrics, units, and statement structure automatically.',
   },
   {
-    href: TOOL_BY_ID.filing.href,
-    icon: TOOL_BY_ID.filing.icon,
-    title: TOOL_BY_ID.filing.label,
-    value: TOOL_BY_ID.filing.value,
-    sub: TOOL_BY_ID.filing.description,
-    tone: 'positive',
+    title: 'Accept the numbers',
+    desc: 'Confidence and provenance labels flag exactly which rows need a look before anything enters the model. You stay the reviewer.',
   },
   {
-    href: TOOL_BY_ID.trends.href,
-    icon: TOOL_BY_ID.trends.icon,
-    title: TOOL_BY_ID.trends.label,
-    value: TOOL_BY_ID.trends.value,
-    sub: TOOL_BY_ID.trends.description,
+    title: 'Move into judgment',
+    desc: 'DCF, ratios, peers, trends, cash cycle, and filing comparison all open pre-filled from the same accepted dataset.',
+  },
+];
+
+const trustCols = [
+  {
+    icon: ShieldCheck,
+    title: 'Private by design',
+    text: 'Parsing, review, modeling, and memo export run locally in the browser. There is no account gate and nothing is uploaded.',
   },
   {
-    href: TOOL_BY_ID.ratios.href,
-    icon: TOOL_BY_ID.ratios.icon,
-    title: TOOL_BY_ID.ratios.label,
-    value: TOOL_BY_ID.ratios.value,
-    sub: TOOL_BY_ID.ratios.description,
+    icon: Detective,
+    title: 'Source-linked calculations',
+    text: 'Every output carries its assumptions and the source facts behind it, so the path from filing value to answer stays visible.',
   },
   {
-    href: TOOL_BY_ID.peer.href,
-    icon: TOOL_BY_ID.peer.icon,
-    title: TOOL_BY_ID.peer.label,
-    value: TOOL_BY_ID.peer.value,
-    sub: TOOL_BY_ID.peer.description,
-  },
-  {
-    href: TOOL_BY_ID.wc.href,
-    icon: TOOL_BY_ID.wc.icon,
-    title: TOOL_BY_ID.wc.label,
-    value: TOOL_BY_ID.wc.value,
-    sub: TOOL_BY_ID.wc.description,
+    icon: Lightning,
+    title: 'Built for real filings',
+    text: 'Indian-market units, multi-period statements, OCR warnings, and local backups are treated as core workflow — not edge cases.',
   },
 ];
 
@@ -98,20 +93,28 @@ export default function HomePage() {
       : null;
 
   return (
-    <div>
+    <div className="lp">
       {resumeName && (
-        <section className="home-resume">
+        <section className="lp-resume fnd-reveal">
           <div>
-            <span className="home-resume-kicker">Continue research</span>
+            <span className="lp-resume-kicker">Continue research</span>
             <h2>{resumeName}</h2>
-            <p>{activeDataset?.facts.length || 0} accepted facts across {activeDataset?.periods.length || 0} period{activeDataset?.periods.length === 1 ? '' : 's'}.</p>
+            <p>
+              {activeDataset?.facts.length || 0} accepted facts across{' '}
+              {activeDataset?.periods.length || 0} period
+              {activeDataset?.periods.length === 1 ? '' : 's'}.
+            </p>
           </div>
-          <div className="home-resume-actions">
-            <Link href="/workspace" className="btn-primary home-cta-btn">
+          <div className="lp-resume-actions">
+            <Link href="/workspace" className="btn-primary lp-cta">
               Open workspace
               <ArrowRight size={15} weight="bold" />
             </Link>
-            <button type="button" className="home-command-hint" onClick={() => window.dispatchEvent(new Event('fundalyst:open-palette'))}>
+            <button
+              type="button"
+              className="lp-cmd"
+              onClick={() => window.dispatchEvent(new Event('fundalyst:open-palette'))}
+            >
               <span className="cmdk-kbd">`</span>
               Type a command
             </button>
@@ -119,206 +122,220 @@ export default function HomePage() {
         </section>
       )}
 
-      <section className="home-hero">
-        <div className="home-hero-grid">
-          <div className="home-hero-copy">
-            <p className="home-kicker">Annual report in. Analyst view out.</p>
-            <h1>Turn filings into numbers you can defend.</h1>
-            <p className="home-lede">
-              Fundalyst reads the filing, normalizes the statements, and carries the
-              accepted data into valuation, ratios, trends, peers, and filing comparison.
+      {/* ── Hero ── */}
+      <section className="lp-hero">
+        <div className="lp-hero-canvas" aria-hidden="true" />
+        <div className="lp-hero-inner">
+          <div className="lp-hero-copy">
+            <span className="lp-eyebrow fnd-reveal" style={{ ['--d' as string]: '0ms' }}>
+              <span className="lp-eyebrow-dot" />
+              Annual report in — analyst view out
+            </span>
+            <h1 className="lp-title fnd-reveal" style={{ ['--d' as string]: '60ms' }}>
+              Turn filings into numbers <em>you can defend.</em>
+            </h1>
+            <p className="lp-lede fnd-reveal" style={{ ['--d' as string]: '120ms' }}>
+              Fundalyst reads the filing, normalizes the statements, and carries every{' '}
+              <strong>accepted</strong> figure into valuation, ratios, trends, peers, and
+              filing comparison — each number keeping its source.
             </p>
-            <div className="home-actions">
-              <Link href="/import" className="btn-primary home-cta-btn">
+            <div className="lp-actions fnd-reveal" style={{ ['--d' as string]: '180ms' }}>
+              <Link href="/import" className="btn-primary lp-cta">
                 Import annual report
                 <ArrowRight size={15} weight="bold" />
               </Link>
               {resumeName ? (
-                <Link href="/research/filing" className="home-cta-ghost">
+                <Link href="/research/filing" className="lp-ghost">
                   Resume {resumeName}
                   <ArrowRight size={14} weight="bold" />
                 </Link>
               ) : (
-                <Link href="/tools/dcf" className="home-cta-ghost">
-                  View interactive demo
+                <Link href="/tools/dcf" className="lp-ghost">
+                  Explore the interactive demo
                   <ArrowRight size={14} weight="bold" />
                 </Link>
               )}
             </div>
-            <p className="home-trust-line">
-              No sign-up. No server upload. Every number keeps its source.
+            <button
+              type="button"
+              className="lp-cmd fnd-reveal"
+              style={{ ['--d' as string]: '220ms' }}
+              onClick={() => window.dispatchEvent(new Event('fundalyst:open-palette'))}
+            >
+              <span className="cmdk-kbd">`</span>
+              or press to run any command
+            </button>
+            <p className="lp-trust fnd-reveal" style={{ ['--d' as string]: '260ms' }}>
+              <LockSimple size={12} weight="regular" />
+              Runs entirely in your browser. Your data never leaves this device.
             </p>
           </div>
 
-          <div className="stmt" aria-label="Extracted annual report preview">
-            <div className="stmt-head">
-              <div>
-                <span className="stmt-title">Extracted statement</span>
-                <span className="stmt-meta">Reliance Industries / Consolidated / FY24</span>
+          <div className="lp-stage fnd-reveal" style={{ ['--d' as string]: '160ms' }}>
+            <div className="lp-stage-caption">
+              <span>Filing PDF</span>
+              <span className="arrow">→</span>
+              <span className="to">Structured, source-linked</span>
+            </div>
+            <div className="stmt" aria-label="Extracted annual report preview">
+              <div className="stmt-head">
+                <div>
+                  <span className="stmt-title">Extracted statement</span>
+                  <span className="stmt-meta">Reliance Industries / Consolidated / FY24</span>
+                </div>
+                <span className="stmt-flag">Review ready</span>
               </div>
-              <span className="stmt-flag">Review ready</span>
-            </div>
-            <table className="stmt-table">
-              <thead>
-                <tr>
-                  <th scope="col">Metric</th>
-                  <th scope="col">FY24</th>
-                  <th scope="col">FY23</th>
-                  <th scope="col">YoY</th>
-                </tr>
-              </thead>
-              <tbody>
-                {statementRows.map((row) => (
-                  <tr key={row.line} className={row.subtotal ? 'subtotal' : undefined}>
-                    <th scope="row" className="stmt-line">
-                      {row.line}
-                      <span className={`stmt-prov ${row.source}`} />
-                    </th>
-                    <td className="stmt-num">{row.fy24}</td>
-                    <td className="stmt-num">{row.fy23}</td>
-                    <td className={`stmt-yoy ${row.tone}`}>{row.yoy}</td>
+              <table className="stmt-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Metric</th>
+                    <th scope="col">FY24</th>
+                    <th scope="col">FY23</th>
+                    <th scope="col">YoY</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="stmt-foot">
-              <span className="k">
-                <span className="d imported" />
-                Imported
-              </span>
-              <span className="k">
-                <span className="d computed" />
-                Computed
-              </span>
-              <span>75 metrics mapped</span>
+                </thead>
+                <tbody>
+                  {statementRows.map((row) => (
+                    <tr key={row.line} className={row.subtotal ? 'subtotal' : undefined}>
+                      <th scope="row" className="stmt-line">
+                        {row.line}
+                        <span className={`stmt-prov ${row.source}`} />
+                      </th>
+                      <td className="stmt-num">{row.fy24}</td>
+                      <td className="stmt-num">{row.fy23}</td>
+                      <td className={`stmt-yoy ${row.tone}`}>{row.yoy}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="stmt-foot">
+                <span className="k">
+                  <span className="d imported" />
+                  Imported
+                </span>
+                <span className="k">
+                  <span className="d computed" />
+                  Computed
+                </span>
+                <span>75 metrics mapped</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="home-strip">
-        <div className="home-strip-item">
-          <span className="home-strip-num">0</span>
-          <span className="home-strip-cap">server uploads</span>
+      {/* ── Trust strip ── */}
+      <section className="lp-strip">
+        {[
+          { num: '0', cap: 'server uploads' },
+          { num: '100%', cap: 'local processing' },
+          { num: '<60s', cap: 'to first analysis' },
+          { num: 'All', cap: 'output source-linked' },
+        ].map((item) => (
+          <div className="lp-strip-item" key={item.cap}>
+            <span className="lp-strip-num">{item.num}</span>
+            <span className="lp-strip-cap">{item.cap}</span>
+          </div>
+        ))}
+      </section>
+
+      {/* ── How it works ── */}
+      <section className="lp-section">
+        <div className="lp-eyebrow-row">
+          <span className="lp-index">01</span>
+          <h2 className="lp-section-title">One review gate, then everything is filled</h2>
         </div>
-        <div className="home-strip-item">
-          <span className="home-strip-num">100%</span>
-          <span className="home-strip-cap">local processing</span>
-        </div>
-        <div className="home-strip-item">
-          <span className="home-strip-num">&lt;60s</span>
-          <span className="home-strip-cap">to first analysis</span>
-        </div>
-        <div className="home-strip-item">
-          <span className="home-strip-num">All</span>
-          <span className="home-strip-cap">output source-linked</span>
+        <p className="lp-section-sub">
+          The filing becomes analysis through a single accept step. After that, every tool
+          reads from the same reviewed dataset — no re-entry, no copy-paste drift.
+        </p>
+        <div className="lp-steps">
+          {steps.map((step, i) => (
+            <div className="lp-step" key={step.title}>
+              <span className="lp-step-num">{i + 1}</span>
+              <div className="lp-step-title">{step.title}</div>
+              <div className="lp-step-desc">{step.desc}</div>
+            </div>
+          ))}
         </div>
       </section>
 
-      <section className="home-section">
-        <div className="home-section-heading">How does the filing become analysis?</div>
-        <div className="home-section-sub">One review gate. Then every tool uses the same accepted dataset.</div>
-        <div className="home-steps">
-          <div className="home-step">
-            <span className="home-step-num">1</span>
-            <div className="home-step-title">Read the filing</div>
-            <div className="home-step-desc">
-              Drop a PDF, CSV, XLSX, screenshot, or pasted table. Fundalyst detects
-              periods, metrics, units, and statement structure.
-            </div>
-          </div>
-          <div className="home-step">
-            <span className="home-step-num">2</span>
-            <div className="home-step-title">Accept the numbers</div>
-            <div className="home-step-desc">
-              Confidence and provenance labels show which rows need attention before
-              they enter the model.
-            </div>
-          </div>
-          <div className="home-step">
-            <span className="home-step-num">3</span>
-            <div className="home-step-title">Move into judgment</div>
-            <div className="home-step-desc">
-              DCF, ratios, peers, trends, cash cycle, and filing comparison open
-              pre-filled.
-            </div>
-          </div>
+      {/* ── Tools ── */}
+      <section className="lp-section">
+        <div className="lp-eyebrow-row">
+          <span className="lp-index">02</span>
+          <h2 className="lp-section-title">Each view answers a real question</h2>
         </div>
-      </section>
-
-      <section className="home-section">
-        <div className="home-section-heading">What decisions can I make from it?</div>
-        <div className="home-section-sub">The outputs are financial views, not disconnected widgets.</div>
-        <div className="home-tools">
+        <p className="lp-section-sub">
+          The outputs are financial views built to settle a decision — not disconnected
+          widgets you have to wire together yourself.
+        </p>
+        <div className="lp-tools">
           {toolCards.map((tool) => {
             const Icon = tool.icon;
             return (
-              <Link href={tool.href} className="home-tool-card" key={tool.href}>
-                <div className="home-tool-card-head">
-                  <span className="home-tool-card-icon">
+              <Link href={tool.href} className="lp-tool" key={tool.href}>
+                <div className="lp-tool-head">
+                  <span className="lp-tool-icon">
                     <Icon size={14} weight="regular" />
                   </span>
-                  <span className="home-tool-card-title">{tool.title}</span>
+                  <span className="lp-tool-name">{tool.name}</span>
                 </div>
-                <div className={`home-tool-card-value ${tool.tone || ''}`}>{tool.value}</div>
-                <div className="home-tool-card-sub">{tool.sub}</div>
+                <div className="lp-tool-q">{tool.question}</div>
+                <div className="lp-tool-value">
+                  {tool.value}
+                  <ArrowRight className="arw" size={13} weight="bold" />
+                </div>
               </Link>
             );
           })}
         </div>
       </section>
 
-      <section className="home-section">
-        <div className="home-section-heading">Can I trust the path from source to answer?</div>
-        <div className="home-section-sub">Trust comes from inspectable work.</div>
-        <div className="home-trust">
-          <div className="home-trust-col">
-            <span className="home-trust-icon">
-              <ShieldCheck size={16} weight="regular" />
-            </span>
-            <div className="home-trust-title">Private by design</div>
-            <div className="home-trust-text">
-              Parsing, review, modeling, and memo export run locally in the browser.
-              There is no account gate.
-            </div>
-          </div>
-          <div className="home-trust-col">
-            <span className="home-trust-icon">
-              <Detective size={16} weight="regular" />
-            </span>
-            <div className="home-trust-title">Source-linked calculations</div>
-            <div className="home-trust-text">
-              Outputs carry assumptions and source facts, so the path from filing value
-              to analysis stays visible.
-            </div>
-          </div>
-          <div className="home-trust-col">
-            <span className="home-trust-icon">
-              <Lightning size={16} weight="regular" />
-            </span>
-            <div className="home-trust-title">Built for real filings</div>
-            <div className="home-trust-text">
-              Indian-market units, multi-period statements, OCR warnings, and local
-              backups are treated as core workflow.
-            </div>
-          </div>
+      {/* ── Trust ── */}
+      <section className="lp-section">
+        <div className="lp-eyebrow-row">
+          <span className="lp-index">03</span>
+          <h2 className="lp-section-title">Trust comes from inspectable work</h2>
+        </div>
+        <p className="lp-section-sub">
+          You should never have to take an output on faith. Every figure traces back to the
+          document it came from.
+        </p>
+        <div className="lp-trust-cols">
+          {trustCols.map((col) => {
+            const Icon = col.icon;
+            return (
+              <div className="lp-trust-col" key={col.title}>
+                <span className="lp-trust-icon">
+                  <Icon size={17} weight="regular" />
+                </span>
+                <div className="lp-trust-title">{col.title}</div>
+                <div className="lp-trust-text">{col.text}</div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
-      <section className="home-final-cta">
-        <h2>The source document is enough.</h2>
-        <p className="home-final-cta-sub">
-          Import it, review the extraction, and start from numbers you can trace.
-        </p>
-        <div className="home-cta-row">
-          <Link href="/import" className="btn-primary home-cta-btn">
-            Import annual report
-            <ArrowRight size={15} weight="bold" />
-          </Link>
-          <Link href="/tools/dcf" className="home-cta-ghost">
-            View interactive demo
-            <ArrowRight size={14} weight="bold" />
-          </Link>
+      {/* ── Final CTA ── */}
+      <section className="lp-final">
+        <div className="lp-final-inner">
+          <h2>The source document is enough.</h2>
+          <p className="lp-final-sub">
+            Import it, review the extraction, and start from numbers you can trace back to
+            the page they came from.
+          </p>
+          <div className="lp-final-row">
+            <Link href="/import" className="btn-primary lp-cta">
+              Import annual report
+              <ArrowRight size={15} weight="bold" />
+            </Link>
+            <Link href="/tools/dcf" className="lp-ghost">
+              Explore the interactive demo
+              <ArrowRight size={14} weight="bold" />
+            </Link>
+          </div>
         </div>
       </section>
     </div>

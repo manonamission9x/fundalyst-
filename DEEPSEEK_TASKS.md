@@ -15,23 +15,23 @@ Implement, don't redesign. One token = one place. Preserve: tabular-nums+mono nu
 ## P1 — consistency
 - [x] **F-06** `chart-theme.ts` used `IBM Plex Sans` (never loaded). Use Inter var.
 - [x] **F-07** Two color systems: `globals.css` tokens vs hardcoded hex in `chart-theme.ts`. Make chart-theme derive from CSS tokens; if charts intentionally differ, name `--chart-accent`.
-- [ ] **F-08** `ui/index.tsx` badges hardcoded off-palette `rgba(245,158,11…)`/`rgba(34,197,94…)`/`rgba(148,163,184…)`. Replace with `--caution`/`--green`/muted tokens.
-- [ ] **F-04** Inline `fontSize:8/9/10/11` bypass the scale. Add `--text-3xs:11px`; replace raw px with tokens.
-- [ ] **F-10** `import/page.tsx` + `PdfViewer.tsx` use inline `style={{}}` literals. Migrate to classes/tokens. No inline px/color/font in page files.
+- [x] - codex 2026-07-02 **F-08** `ui/index.tsx` badges hardcoded off-palette `rgba(245,158,11…)`/`rgba(34,197,94…)`/`rgba(148,163,184…)`. Replace with `--caution`/`--green`/muted tokens.
+- [x] **F-04** Inline `fontSize:8/9/10/11` bypass the scale. Add `--text-3xs:11px`; replace raw px with tokens.
+- [x] **F-10** `import/page.tsx` + `PdfViewer.tsx` use inline `style={{}}` literals. Migrate to classes/tokens. No inline px/color/font in page files.
 
 ## P2 — polish
-- [ ] **F-09** `.nav` bg literal != `--bg`. Derive nav bg from `--bg`.
-- [ ] **F-11** Off-scale radii. Add `--radius-pill:100px`; tokenize all.
-- [ ] **F-05** Mono text drops to 7-9px on mobile. Floor: 11px data / 10px labels.
-- [ ] **F-12** Inline one-off spinner (`ui/index.tsx` Toolbar). Promote to shared `.spinner`.
+- [x] **F-09** `.nav` bg literal != `--bg`. Derive nav bg from `--bg`.
+- [x] **F-11** Off-scale radii. Add `--radius-pill:100px`; tokenize all.
+- [x] **F-05** Mono text drops to 7-9px on mobile. Floor: 11px data / 10px labels.
+- [x] **F-12** Inline one-off spinner (`ui/index.tsx` Toolbar). Promote to shared `.spinner`.
 - [ ] **F-16** Charts have no empty/loading/error state. Add shared wrapper (skeleton/empty/error/chart) reusing `state-card`/`empty-state`.
-- [ ] **F-14** Change cells encode gain/loss by color alone. Make sign/arrow mandatory (~8% color-blind).
+- [x] **F-14** Change cells encode gain/loss by color alone. Make sign/arrow mandatory (~8% color-blind).
 
 ## P3 — brand/cleanup
 - [x] **F-19** Remove unused `@keyframes skeleton-pulse`; one shimmer.
 - [x] **F-17** `.nav-tab.active` 2px border others lack → layout shift. Reserve the space.
-- [ ] **F-13** Two custom icon sets + lucide. Standardize on the custom currentColor set; one stroke/size spec.
-- [ ] **F-18** Brand color hardcoded in `layout.tsx`/`Nav.tsx`. Tokenize; one shared logo component.
+- [x] **F-13** Two custom icon sets + lucide. Standardize on the custom currentColor set; one stroke/size spec.
+- [x] **F-18** Brand color hardcoded in `layout.tsx`/`Nav.tsx`. Tokenize; one shared logo component.
 
 ## Theme re-skin — dark default (Terminal Gold) + light mode
 Single token source; charts derive. Two themes via `:root` (dark default) + `:root[data-theme="light"]`; toggle, respect `prefers-color-scheme`. **Build order: ship Terminal Gold (dark) first; add light second once dark is stable.** **Collision rule:** gold = wayfinding/interactive ONLY, never data. Gain=green, Loss=red, Caution=burnt-orange (distinct hue from gold).
@@ -61,11 +61,11 @@ Type: Inter prose / mono numerics via vars; scale `--text-3xs:11px`(floor)->`--t
 ## Product tasks (do after the visual/theme work)
 Low-stakes, self-contained. Tick each box when done; don't delete this file.
 
-- [ ] **D1 — About out of primary nav -> footer.** Remove About `nav-tab` from `Nav.tsx` (desktop + mobile); add About link to `site-footer` in `layout.tsx`. Keep `/about`.
-- [ ] **D2 — Lazy-load OCR (tesseract.js).** Dynamic `import()` only inside the OCR path (`lib/importer/ocr.ts`) when a scanned/image file is imported; show "preparing OCR…". Text-PDF path must NOT load tesseract.
-- [ ] **D3 — Privacy front-door signal.** One calm line/badge on home hero (`app/page.tsx`): lock glyph + "Runs entirely in your browser. Your data never leaves this device." Use `trust-badge` styling, no new colors.
+- [x] - codex 2026-07-02 **D1 — About out of primary nav -> footer.** Remove About `nav-tab` from `Nav.tsx` (desktop + mobile); add About link to `site-footer` in `layout.tsx`. Keep `/about`.
+- [x] - codex 2026-07-02 **D2 — Lazy-load OCR (tesseract.js).** Dynamic `import()` only inside the OCR path (`lib/importer/ocr.ts`) when a scanned/image file is imported; show "preparing OCR…". Text-PDF path must NOT load tesseract.
+- [x] - codex 2026-07-02 **D3 — Privacy front-door signal.** One calm line/badge on home hero (`app/page.tsx`): lock glyph + "Runs entirely in your browser. Your data never leaves this device." Use `trust-badge` styling, no new colors.
 - [x] **D4 — Nav active-tab no layout shift.** Reserve the 2px active border on inactive tabs in `globals.css` `.nav-tab`. (= F-17)
-- [ ] **D5 — Empty-state copy polish.** Update strings passed to `EmptyState` (not its API): headline names the space, one-line body, verb-first action, sentence case, no "Nothing here yet", no "!".
-- [ ] **D6 — Consolidate number formatting.** One shared `fmtINR`/`fmtPct`/`fmtNum` (`lib/format.ts`); re-export from `memo-export.ts`, `chart-theme.ts`, `lib/calculations.ts`. No behavior change.
+- [x] - codex 2026-07-02 **D5 — Empty-state copy polish.** Update strings passed to `EmptyState` (not its API): headline names the space, one-line body, verb-first action, sentence case, no "Nothing here yet", no "!".
+- [x] **D6 — Consolidate number formatting.** One shared `fmtINR`/`fmtPct`/`fmtNum` (`lib/format.ts`); re-export from `memo-export.ts`, `chart-theme.ts`, `lib/calculations.ts`. No behavior change.
 
 Rules: implement exactly as specced; preserve all principles above; no architectural changes; flag ambiguity instead of guessing. Ownership lanes are in `AGENTS.md` — don't touch architectural items owned by Claude/Codex (command palette, compare, nav restructure, workspace architecture) or restyle the command palette (`components/layout/CommandPalette.tsx`, mounted in `layout.tsx`, styles `.cmdk-*` + `.nav-cmdk-trigger` in `globals.css`).

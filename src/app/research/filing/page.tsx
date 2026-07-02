@@ -470,7 +470,7 @@ export default function FilingPage() {
         <>
           <EmptyState
             title="Filing Comparison"
-            desc="Enter metrics and periods in the spreadsheet above, import a file, or load the sample. The tool highlights revenue growth, margin changes, and debt shifts automatically."
+            desc="Enter two periods of filing metrics to compare revenue growth, margin changes, and debt shifts."
             action={{ label: 'Import data', href: '/import' }}
           />
           <div className="flex justify-center mt-3">

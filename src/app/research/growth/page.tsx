@@ -327,7 +327,7 @@ export default function YoyPage() {
 
       {!rows.length && (
         <>
-          <EmptyState title="Growth Rates" desc="Enter year labels and metrics in the spreadsheet, import a file, or load the sample, then click Calculate. The tool computes year-over-year percentage changes for every line item." action={{ label: 'Import data', href: '/import' }} />
+          <EmptyState title="Growth Rates" desc="Enter year labels and metrics to calculate year-over-year changes for each line item." action={{ label: 'Import data', href: '/import' }} />
           <div className="flex justify-center mt-3">
             <button type="button" className="btn-secondary btn-sm" onClick={loadSample}>
               Load sample

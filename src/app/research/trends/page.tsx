@@ -281,7 +281,7 @@ export default function TrendsPage() {
 
       {!showResults && (
         <>
-          <EmptyState title="Trend Charts" desc="Enter period labels as column headers and metrics below in the spreadsheet, import a file, or load the sample, then click Plot." action={{ label: 'Import data', href: '/import' }} />
+          <EmptyState title="Trend Charts" desc="Enter period labels and metrics to plot how the company changes over time." action={{ label: 'Import data', href: '/import' }} />
           <div className="flex justify-center mt-3">
             <button type="button" className="btn-secondary btn-sm" onClick={loadSample}>
               Load sample

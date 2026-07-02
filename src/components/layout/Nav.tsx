@@ -18,7 +18,6 @@ import {
   IconNavWorkspace,
 } from '@/components/ui';
 import {
-  BookOpenText,
   DownloadSimple,
   MagnifyingGlass,
   Moon,
@@ -369,14 +368,6 @@ export default function Nav() {
                 <DownloadSimple size={13} weight="regular" />
               </button>
             )}
-            <Link
-              href="/about"
-              className="nav-icon-btn"
-              aria-label="Documentation"
-              title="Documentation"
-            >
-              <BookOpenText size={13} weight="regular" />
-            </Link>
             <ThemeToggle />
           </div>
           <button
@@ -442,15 +433,6 @@ export default function Nav() {
         </div>
 
         <div className="nav-mobile-footer">
-          <Link
-            href="/about"
-            className="nav-mobile-clear"
-            onClick={() => setMobileOpen(false)}
-            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-          >
-            <BookOpenText size={11} weight="regular" />
-            Docs
-          </Link>
           {activeDataset && (
             <button
               type="button"

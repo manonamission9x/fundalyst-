@@ -4,6 +4,7 @@ import { detectMetadata } from './detector';
 import { normalizeValue, convertToOnes } from './normalizer';
 import { findBestMetricMatch } from './metric-aliases';
 import { parseCsvWithDetection } from './csv-detector';
+import type { PdfImportProgress } from './pdf-importer';
 
 const MAX_XLSX_BYTES = 10 * 1024 * 1024; // 10MB
 const XLSX_PARSE_TIMEOUT_MS = 15000; // 15s real timeout via Worker.terminate()
@@ -234,18 +235,24 @@ function isLikelyRepairedOcrValue(rawValue: string, sourceType: SourceType): boo
   if (sourceType !== 'ocr') return false;
   return /^-?\d{4,}\.\d{2}$/.test(rawValue.trim());
 }
-async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportReviewState> {
+type ImportProgressCallback = (progress: PdfImportProgress) => void;
+
+async function buildOcrReviewState(
+  file: File,
+  isPdf: boolean,
+  onProgress?: ImportProgressCallback,
+): Promise<ImportReviewState> {
   let sourceType: SourceType = isPdf ? 'pdf-text' : 'ocr';
 
   if (isPdf) {
     // PDF text extraction — use existing pipeline
     const { importPdf } = await import('./pdf-importer');
-    let ocrResult = await importPdf(file);
+    let ocrResult = await importPdf(file, onProgress);
     if (
       ocrResult.sourceType === 'pdf-text' &&
       (!ocrResult.dataset || ocrResult.dataset.facts.length === 0)
     ) {
-      ocrResult = await importPdf(file, undefined, 'scanned');
+      ocrResult = await importPdf(file, onProgress, 'scanned');
       ocrResult.warnings.unshift('No usable financial facts were found in embedded PDF text, so OCR was attempted.');
     }
     sourceType = ocrResult.sourceType;
@@ -400,7 +407,10 @@ async function buildOcrReviewState(file: File, isPdf: boolean): Promise<ImportRe
 
 // ── Build initial review state from file ──
 
-export async function buildReviewState(file: File): Promise<ImportReviewState> {
+export async function buildReviewState(
+  file: File,
+  onProgress?: ImportProgressCallback,
+): Promise<ImportReviewState> {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
   const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
   const isImage = imageExts.includes(ext);
@@ -416,7 +426,7 @@ export async function buildReviewState(file: File): Promise<ImportReviewState> {
 
   // Route images to OCR pipeline
   if (isImage || isPdf) {
-    return buildOcrReviewState(file, isPdf);
+    return buildOcrReviewState(file, isPdf, onProgress);
   }
 
   const sourceType: SourceType = (ext === 'xlsx' || ext === 'xls') ? 'xlsx' : 'csv';

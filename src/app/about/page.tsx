@@ -83,8 +83,9 @@ export default function AboutPage() {
   return (
     <div>
       <PageHeader
-        title="About Fundalyst"
-        subtitle="A browser-based financial analysis tool for Indian markets. No server uploads. No accounts. No black boxes."
+        kicker="About"
+        title="A quiet instrument for reading filings"
+        subtitle="A browser-based financial analysis tool for Indian markets. No server uploads. No accounts. No black boxes — every formula and assumption stays visible."
       />
 
       <div className="about-grid">

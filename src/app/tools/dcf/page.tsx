@@ -331,8 +331,8 @@ export default function DCFPage() {
         <>
           <EmptyState
             title="DCF Valuation"
-            desc="Fill in Free Cash Flow, Growth Rate, WACC, and other assumptions above, import a file, or load the sample, then click Calculate."
-            action={{ label: 'Load from import', href: '/import' }}
+            desc="Enter free cash flow, growth, WACC, terminal growth, debt, shares, and price to estimate intrinsic value."
+            action={{ label: 'Import data', href: '/import' }}
           />
           <div className="flex justify-center mt-3">
             <button type="button" className="btn-secondary btn-sm" onClick={loadSample}>

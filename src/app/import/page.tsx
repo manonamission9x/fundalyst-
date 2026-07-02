@@ -28,6 +28,7 @@ export default function ImportPage() {
   usePageTitle('Import');
   const {
     review, isImporting, error, lastDataset,
+    progressMessage,
     startImport, updateMapping, confirmImport, cancelImport,
     saveMappingTemplate, clearLastDataset,
   } = useImporterStore();
@@ -299,11 +300,12 @@ Price, 185, 210, 230`;
               <div className="pdf-progress-fill" style={{ width: '45%' }} />
             </div>
             <span className="pdf-progress-label">
-              {uploadedFile?.name.toLowerCase().endsWith('.pdf')
+              {progressMessage ||
+              (uploadedFile?.name.toLowerCase().endsWith('.pdf')
                 ? 'Extracting financial data from PDF…'
                 : pastedFile
                   ? 'Processing screenshot…'
-                  : 'Parsing file…'}
+                  : 'Parsing file…')}
             </span>
           </div>
           <div style={{ padding: '0 20px 14px', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>

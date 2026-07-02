@@ -64,7 +64,6 @@ export function IconNavCash() { return <Wallet size={14} weight="regular" />; }
 export function IconNavRatios() { return <Percent size={14} weight="regular" />; }
 export function IconNavPeer() { return <UsersThree size={14} weight="regular" />; }
 export function IconNavWorkspace() { return <SquaresFour size={14} weight="regular" />; }
-export function IconNavAbout() { return <Info size={14} weight="regular" />; }
 
 // ── Insight card icons ──
 export function IconInsightPositive() { return <Smiley size={18} weight="regular" />; }
@@ -77,10 +76,12 @@ interface PageHeaderProps {
   title: string;
   subtitle: string;
   answer?: string;
+  kicker?: string;
 }
-export function PageHeader({ title, subtitle, answer }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, answer, kicker }: PageHeaderProps) {
   return (
     <div className="page-hero">
+      {kicker && <span className="page-hero-kicker">{kicker}</span>}
       <h1>{title}</h1>
       <p className="page-hero-sub">{subtitle}</p>
       {answer && <p className="page-hero-answer">{answer}</p>}
@@ -220,7 +221,7 @@ export function ConfidenceBadge({ confidence, size = 'sm' }: ConfidenceBadgeProp
   const pct = Math.round(confidence * 100);
   const variant = confidence >= 0.9 ? 'high' : confidence >= 0.7 ? 'medium' : 'low';
   const dotClass = variant === 'high' ? 'good' : variant === 'medium' ? '' : 'warn';
-  const fontSize = size === 'xs' ? '8px' : '9px';
+  const fontSize = size === 'xs' ? 'var(--text-micro)' : 'var(--text-3xs)';
   return (
     <span
       className={`confidence-badge ${dotClass}`}
@@ -340,7 +341,7 @@ export function DataSourceBadge({ variant }: DataSourceBadgeProps) {
         border: '1px solid var(--border)',
         background: variant === 'sample' ? 'var(--caution-subtle)' :
                     variant === 'imported' ? 'var(--green-subtle)' :
-                    'rgba(148,163,184,0.12)',
+                    'var(--bg-surface)',
         color: variant === 'sample' ? 'var(--caution)' :
            variant === 'imported' ? 'var(--green)' :
            'var(--text-muted)',

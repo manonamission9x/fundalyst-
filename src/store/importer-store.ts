@@ -23,6 +23,8 @@ interface ImporterState {
   savedMappings: Record<string, string>;
   /** The last confirmed dataset (null = none imported yet) */
   lastDataset: FundalystDataset | null;
+  /** Current import progress message */
+  progressMessage: string | null;
 
   // Actions
   startImport: (file: File) => Promise<void>;
@@ -41,11 +43,14 @@ export const useImporterStore = create<ImporterState>()(
       error: null,
       savedMappings: {},
       lastDataset: null,
+      progressMessage: null,
 
       startImport: async (file: File) => {
-        set({ isImporting: true, error: null });
+        set({ isImporting: true, error: null, progressMessage: null });
         try {
-          const review = await buildReviewState(file);
+          const review = await buildReviewState(file, (progress) => {
+            set({ progressMessage: progress.message });
+          });
           if (!review.dataset || review.rawFacts.length === 0) {
             const detail = review.warnings.length > 0
               ? review.warnings.join(' ')
@@ -63,11 +68,12 @@ export const useImporterStore = create<ImporterState>()(
               return m;
             });
           }
-          set({ review, isImporting: false });
+          set({ review, isImporting: false, progressMessage: null });
         } catch (err) {
           set({
             isImporting: false,
             error: err instanceof Error ? err.message : 'Failed to parse file',
+            progressMessage: null,
           });
         }
       },
@@ -110,7 +116,7 @@ export const useImporterStore = create<ImporterState>()(
       },
 
       cancelImport: () => {
-        set({ review: null, error: null });
+        set({ review: null, error: null, progressMessage: null });
       },
 
       saveMappingTemplate: () => {

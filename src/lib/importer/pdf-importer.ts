@@ -90,7 +90,7 @@ export async function importPdf(
     onProgress?.({ stage, message, percent });
   };
 
-  emit('detecting', 'Checking dependencies and file…', 0);
+  emit('detecting', 'Checking PDF support...', 0);
 
   const fileType = detectFileType(file);
   if (fileType.type !== 'pdf-text') {
@@ -105,11 +105,11 @@ export async function importPdf(
     };
   }
 
-  // Check what's available
-  const [pdfjsOk, ocrOk] = await Promise.all([
-    isPDFAvailable(),
-    isOCRAvailable(),
-  ]);
+  const pdfjsOk = await isPDFAvailable();
+  if (!pdfjsOk && forceMethod !== 'scanned') {
+    emit('extracting-scanned', 'Preparing OCR...', 5);
+  }
+  const ocrOk = !pdfjsOk || forceMethod === 'scanned' ? await isOCRAvailable() : false;
 
   if (!pdfjsOk && !ocrOk) {
     return {
@@ -131,8 +131,20 @@ export async function importPdf(
   let result: OcrResult;
   let method: 'text' | 'scanned-ocr' | 'fallback-ocr';
 
-  if (forceMethod === 'scanned' && ocrOk) {
-    emit('extracting-scanned', 'Performing scanned PDF OCR…', 10);
+  if (forceMethod === 'scanned') {
+    emit('extracting-scanned', 'Preparing OCR...', 5);
+    if (!ocrOk) {
+      return {
+        success: false,
+        dataset: null,
+        tables: [],
+        rawText: '',
+        warnings: ['Tesseract.js is not installed. Run: npm install tesseract.js'],
+        method: 'none',
+        sourceType: 'pdf-text',
+      };
+    }
+    emit('extracting-scanned', 'Performing scanned PDF OCR...', 10);
     result = await extractScannedPdfText(file, makeOcrCallback(emit));
     method = 'scanned-ocr';
   } else if (forceMethod === 'text' && pdfjsOk) {
@@ -146,20 +158,26 @@ export async function importPdf(
 
     // Check if the result seems scanned or tableless. Some scanned PDFs expose
     // hidden/noisy text, but not enough row structure to import.
-    if (result.tables.length === 0 && ocrOk) {
-      emit(
-        'extracting-scanned',
-        'PDF appears scanned. Falling back to OCR…',
-        15,
-      );
-      result = await extractScannedPdfText(file, makeOcrCallback(emit));
-      method = 'fallback-ocr';
+    if (result.tables.length === 0) {
+      emit('extracting-scanned', 'Preparing OCR...', 15);
+      const fallbackOcrOk = await isOCRAvailable();
+      if (fallbackOcrOk) {
+        emit(
+          'extracting-scanned',
+          'PDF appears scanned. Falling back to OCR...',
+          20,
+        );
+        result = await extractScannedPdfText(file, makeOcrCallback(emit));
+        method = 'fallback-ocr';
+      } else {
+        method = 'text';
+      }
     } else {
       method = 'text';
     }
   } else if (ocrOk) {
     // Only OCR available
-    emit('extracting-scanned', 'No PDF text engine. Using OCR…', 10);
+    emit('extracting-scanned', 'No PDF text engine. Using OCR...', 10);
     result = await extractScannedPdfText(file, makeOcrCallback(emit));
     method = 'scanned-ocr';
   } else {

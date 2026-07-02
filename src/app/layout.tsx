@@ -34,16 +34,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </main>
           </ErrorBoundary>
           <footer className="site-footer">
-            <div>
-              Fundalyst
-              <span className="nav-sep" aria-hidden="true" />
-              Your data never leaves your machine
-              <span className="nav-sep" aria-hidden="true" />
-              For research purposes only. Not financial advice.
-              <span className="nav-sep" aria-hidden="true" />
-              <Link href="/about" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>About</Link>
+            <div className="site-footer-top">
+              <div className="site-footer-brand">
+                <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <rect width="20" height="20" rx="3" fill="var(--primary)" />
+                  <path d="M5 14V6L10 10L15 6V14" stroke="rgba(12,12,14,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>Fundalyst</span>
+                <span className="site-footer-tag">Your data never leaves your machine</span>
+              </div>
+              <nav className="site-footer-links" aria-label="Footer">
+                <Link href="/import">Import</Link>
+                <Link href="/research/filing">Research</Link>
+                <Link href="/tools/dcf">Valuation</Link>
+                <Link href="/workspace">Workspace</Link>
+                <Link href="/about">About</Link>
+              </nav>
             </div>
-            <div>&copy; 2026 Fundalyst</div>
+            <div className="site-footer-bottom">
+              <span>For research purposes only. Not financial advice.</span>
+              <span>&copy; 2026 Fundalyst</span>
+            </div>
           </footer>
         </ToastProvider>
       </body>
